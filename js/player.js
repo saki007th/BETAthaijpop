@@ -582,6 +582,13 @@ window.onPlayerStateChange = function(event) {
     if (event.data === 0) {
         if (!window.songs || window.songs.length === 0) return;
 
+        // 🎵 ถ้ามีคิวเพลง ให้เล่นเพลงถัดไปจากคิวก่อน
+        const nextQueuedId = window.takeNextFromQueue ? window.takeNextFromQueue() : null;
+        if (nextQueuedId) {
+            window.playSong(nextQueuedId);
+            return;
+        }
+
         if (window.isShuffleEnabled) {
             let randomIndex = Math.floor(Math.random() * window.songs.length);
             if (window.songs.length > 1) {
@@ -620,6 +627,13 @@ window.toggleLivePlay = function() {
 
 window.nextLiveSong = function() {
     if (!window.songs || window.songs.length === 0 || !window.currentSongId) return;
+
+    // 🎵 ถ้ามีคิวเพลง ให้เล่นเพลงถัดไปจากคิวก่อน
+    const nextQueuedId = window.takeNextFromQueue ? window.takeNextFromQueue() : null;
+    if (nextQueuedId) {
+        window.playSong(nextQueuedId);
+        return;
+    }
 
     if (window.isShuffleEnabled) {
         let randomIndex = Math.floor(Math.random() * window.songs.length);

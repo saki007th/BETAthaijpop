@@ -59,6 +59,8 @@ export async function fetchSongs() {
 
         document.getElementById('loadingOverlay').style.display = 'none';
 
+        if (window.cleanupUserData) window.cleanupUserData();
+
         window.renderRandomPlaylist();
         window.renderArtistWidget();
 
@@ -133,12 +135,82 @@ window.renderSongList = function(query = '', artistFilter = 'All') {
             <div class="song-card-title">${song.title}</div>
             <div class="song-card-artist">🎤 ${song.artist || '-'}</div>
             <div class="song-card-actions">
+                <button class="share-btn add-queue-btn" onclick="event.stopPropagation(); addToQueue('${song.id}')" title="เพิ่มเข้าคิว">➕ คิว</button>
+                <button class="share-btn add-playlist-btn" onclick="event.stopPropagation(); openAddToPlaylistMenu(this, '${song.id}')" title="เพิ่มลงใน Playlist">📂</button>
                 <button class="share-btn" onclick="event.stopPropagation(); copyShareLink('${safeTitle}', this)">🔗 แชร์</button>
                 <div class="song-card-admin">${actionsHtml}</div>
             </div>
         `;
         listContainer.appendChild(item);
     });
+};
+
+// ==========================================
+// 📂 เมนูเลือก Playlist สำหรับเพิ่มเพลงลงใน Playlist
+// ==========================================
+window.openAddToPlaylistMenu = function(btn, songId) {
+    const existing = document.getElementById('addToPlaylistMenu');
+    if (existing) existing.remove();
+
+    const menu = document.createElement('div');
+    menu.id = 'addToPlaylistMenu';
+    menu.className = 'add-playlist-menu';
+    menu.innerHTML = '';
+
+    if (!window.isLoggedIn) {
+        const hint = document.createElement('div');
+        hint.className = 'add-playlist-menu-hint';
+        hint.innerHTML = '🔒 เข้าสู่ระบบเพื่อบันทึก Playlist ส่วนตัว';
+        menu.appendChild(hint);
+    }
+
+    const title = document.createElement('div');
+    title.className = 'add-playlist-menu-title';
+    title.innerText = 'เพิ่มลงใน Playlist';
+    menu.appendChild(title);
+
+    if (window.userPlaylists && window.userPlaylists.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'add-playlist-menu-empty';
+        empty.innerText = 'ยังไม่มี Playlist';
+        menu.appendChild(empty);
+    } else {
+        (window.userPlaylists || []).forEach(pl => {
+            const opt = document.createElement('div');
+            opt.className = 'add-playlist-menu-item';
+            const inList = pl.songIds.includes(songId);
+            opt.innerHTML = `<span>🎧 ${pl.name}</span><span class="apm-arrow">${inList ? '✓' : '＋'}</span>`;
+            if (inList) opt.classList.add('in-list');
+            opt.onclick = () => { window.addSongToPlaylist(songId, pl.pid); menu.remove(); };
+            menu.appendChild(opt);
+        });
+    }
+
+    const create = document.createElement('div');
+    create.className = 'add-playlist-menu-create';
+    create.innerHTML = '➕ สร้าง Playlist ใหม่';
+    create.onclick = () => {
+        const name = prompt('ชื่อ Playlist ใหม่:');
+        if (name && window.createPlaylist(name)) {
+            const newPl = window.userPlaylists[window.userPlaylists.length - 1];
+            window.addSongToPlaylist(songId, newPl.pid);
+        }
+        menu.remove();
+    };
+    menu.appendChild(create);
+
+    const rect = btn.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = rect.bottom + 6 + 'px';
+    menu.style.left = Math.max(8, Math.min(window.innerWidth - 250, rect.left)) + 'px';
+    document.body.appendChild(menu);
+
+    const removeMenu = (e) => {
+        const m = document.getElementById('addToPlaylistMenu');
+        if (m && !m.contains(e.target) && e.target !== btn) m.remove();
+        document.removeEventListener('click', removeMenu);
+    };
+    setTimeout(() => document.addEventListener('click', removeMenu), 0);
 };
 
 // ==========================================

@@ -18,6 +18,7 @@ window.logout = async function() {
 onAuthStateChanged(auth, async (user) => {
     window.isLoggedIn = !!user;
     window.isAdmin = user && ALLOWED_EMAILS.includes(user.email);
+    window.currentUser = user || null;
 
     document.getElementById('btnHeaderLogout').style.display = window.isLoggedIn ? 'flex' : 'none';
     document.getElementById('btnHeaderLogin').style.display = window.isLoggedIn ? 'none' : 'flex';
@@ -26,6 +27,9 @@ onAuthStateChanged(auth, async (user) => {
 
     document.getElementById('sidebarAdminSection').style.display = window.isAdmin ? 'block' : 'none';
     document.getElementById('sidebarAdminDivider').style.display = window.isAdmin ? 'block' : 'none';
+
+    // โหลดคิว + Playlist ของบัญชีนั้น (หรือ data เก่าเก็บในเครื่องถ้า guest)
+    if (window.loadUserData) await window.loadUserData();
 
     // re-render whatever is currently visible so admin-only buttons appear/disappear immediately
     if (document.getElementById('view-library').classList.contains('active') && window.renderSongList) window.renderSongList();
