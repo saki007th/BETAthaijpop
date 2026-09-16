@@ -311,8 +311,8 @@ a{ color:inherit; }
 .np-header-right{ display:flex; gap:10px; }
 
 .np-body{
-    flex:1; min-height:0; display:flex; gap:0; padding:0 0 24px 48px; overflow:hidden;
-    width:100%; margin:0; justify-content:flex-end;
+    flex:1; min-height:0; display:flex; gap:24px; padding:0 32px 24px; overflow:hidden;
+    width:100%; margin:0; justify-content:center;
 }
 .np-media{
     flex:1 1 0; width:auto; min-width:0; align-self:center;
