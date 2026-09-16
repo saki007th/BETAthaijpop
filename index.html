@@ -218,21 +218,21 @@
                 <div id="versionContainer" style="display:none;"></div>
                 <div id="lyricsContainer" class="lyrics-container"></div>
             </div>
-        </div>
 
-        <div id="syncPanel" class="sync-panel" style="display:none;">
-            <div class="sync-panel-header">
-                <span id="syncPanelTitle">⏱ จัดการซิงค์</span>
-                <button class="modal-close-btn" onclick="wm.toggleSyncPanel()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="sync-panel-body">
-                <div id="content-admin-sync">
-                    <div class="sticky-sync-bar" id="lyricControlBtnGroup">
-                        <button class="btn-secondary" onclick="prevLyric()">⏮ ย้อน (ลบเวลา)</button>
-                        <button class="btn-primary" onclick="nextLyric()" style="background:#ffcc00; color:#000;">⏭ ถัดไป (จับจังหวะ)</button>
+            <div id="syncPanel" class="sync-panel" style="display:none;">
+                <div class="sync-panel-header">
+                    <span id="syncPanelTitle">⏱ จัดการซิงค์</span>
+                    <button class="modal-close-btn" onclick="wm.toggleSyncPanel()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="sync-panel-body">
+                    <div id="content-admin-sync">
+                        <div class="sticky-sync-bar" id="lyricControlBtnGroup">
+                            <button class="btn-secondary" onclick="prevLyric()">⏮ ย้อน (ลบเวลา)</button>
+                            <button class="btn-primary" onclick="nextLyric()" style="background:#ffcc00; color:#000;">⏭ ถัดไป (จับจังหวะ)</button>
+                        </div>
+                        <div id="timestampList" class="timestamp-list"></div>
+                        <button id="btnResetSync" class="btn-secondary" onclick="resetSync()" style="margin-top:15px; width:100%;">🔄 ล้างเวลาซิงค์เริ่มใหม่</button>
                     </div>
-                    <div id="timestampList" class="timestamp-list"></div>
-                    <button id="btnResetSync" class="btn-secondary" onclick="resetSync()" style="margin-top:15px; width:100%;">🔄 ล้างเวลาซิงค์เริ่มใหม่</button>
                 </div>
             </div>
         </div>

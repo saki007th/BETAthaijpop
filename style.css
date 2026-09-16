@@ -335,7 +335,7 @@ a{ color:inherit; }
 .np-play-btn{ width:48px; height:48px; border-radius:50%; background:var(--text-1); color:#000; font-size:16px; }
 
 .np-lyrics-panel{
-    flex:0 0 520px; min-width:0; max-width:600px; overflow-y:auto; padding:10px 10px 40px;
+    flex:1 1 480px; min-width:0; max-width:600px; overflow-y:auto; padding:10px 10px 40px;
     display:flex; flex-direction:column; align-items:center;
 }
 
@@ -351,7 +351,7 @@ a{ color:inherit; }
 #btnDockAdminSync:hover{ background:var(--bg-elevated-hover); color:var(--text-1); }
 
 .sync-panel{
-    position:absolute; right:24px; bottom:24px; top:70px; width:420px; max-width:calc(100vw - 48px);
+    flex:0 0 380px; min-width:0; max-width:380px; align-self:stretch;
     background:var(--bg-surface); border:1px solid var(--border-strong); border-radius:var(--r-m);
     box-shadow:0 20px 50px rgba(0,0,0,.5);
     display:flex; flex-direction:column; overflow:hidden;
@@ -524,8 +524,9 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
    14. Responsive fallback (narrow desktop / tablet width)
    ========================================================== */
 @media (max-width: 1240px){
-    .np-body{ gap:0; padding:0 0 20px 28px; }
-    .np-lyrics-panel{ flex-basis:440px; max-width:480px; }
+    .np-body{ gap:16px; padding:0 24px 20px; }
+    .np-lyrics-panel{ flex-basis:400px; max-width:460px; }
+    .sync-panel{ flex-basis:320px; max-width:320px; }
 }
 @media (max-width: 880px){
     .sidebar{ width:64px; padding:16px 8px; }
@@ -536,5 +537,5 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     .np-body{ flex-direction:column; overflow-y:auto; justify-content:flex-start; padding:0 24px 20px; }
     .np-media{ width:100%; max-width:none; align-self:stretch; }
     .np-lyrics-panel{ flex-basis:auto; max-width:none; }
-    .sync-panel{ position:fixed; left:12px; right:12px; width:auto; top:auto; height:70vh; bottom:0; border-radius:var(--r-l) var(--r-l) 0 0; }
+    .sync-panel{ flex:1 0 auto; max-width:none; align-self:stretch; }
 }
