@@ -311,8 +311,8 @@ a{ color:inherit; }
 .np-header-right{ display:flex; gap:10px; }
 
 .np-body{
-    flex:1; min-height:0; display:flex; gap:56px; padding:0 48px 24px; overflow:hidden;
-    max-width:1640px; width:100%; margin:0 auto; justify-content:center;
+    flex:1; min-height:0; display:flex; gap:56px; padding:0 0 24px 48px; overflow:hidden;
+    width:100%; margin:0; justify-content:space-between;
 }
 .np-media{
     flex:1 1 0; width:auto; min-width:0; max-width:920px; align-self:center;
@@ -521,7 +521,7 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
    14. Responsive fallback (narrow desktop / tablet width)
    ========================================================== */
 @media (max-width: 1240px){
-    .np-body{ gap:36px; padding:0 28px 20px; }
+    .np-body{ gap:36px; padding:0 0 20px 28px; }
     .np-lyrics-panel{ flex-basis:440px; max-width:480px; }
     .np-media{ max-width:700px; }
 }
@@ -531,7 +531,7 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     .nav-item span{ display:none; }
     .nav-section-label{ display:none; }
     .sidebar-footer button span{ display:none; }
-    .np-body{ flex-direction:column; overflow-y:auto; }
+    .np-body{ flex-direction:column; overflow-y:auto; justify-content:flex-start; padding:0 24px 20px; }
     .np-media{ width:100%; max-width:none; align-self:stretch; }
     .np-lyrics-panel{ flex-basis:auto; max-width:none; }
     .sync-panel{ position:fixed; left:12px; right:12px; width:auto; top:auto; height:70vh; bottom:0; border-radius:var(--r-l) var(--r-l) 0 0; }
