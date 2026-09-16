@@ -97,6 +97,11 @@
                     <h1 class="content-title">คลังเพลง</h1>
                     <div class="header-actions">
                         <input type="text" id="searchInput" class="search-input" placeholder="🔍 ค้นหาชื่อเพลง หรือ ศิลปิน..." oninput="filterSongs()">
+                        <select id="sortSelect" class="sort-select" onchange="setSongSort(this.value)" title="เรียงลำดับ">
+                            <option value="alpha" selected>เรียงตามตัวอักษร</option>
+                            <option value="oldest">วันเก่า → ใหม่</option>
+                            <option value="newest">วันใหม่ → เก่า</option>
+                        </select>
                         <button id="btnAddSong" class="btn-primary" onclick="openAddView()" style="display:none; margin:0; white-space:nowrap;">✨ เพิ่มเพลง</button>
                     </div>
                 </header>
