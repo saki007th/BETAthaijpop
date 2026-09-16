@@ -287,6 +287,17 @@
                     </div>
                 </div>
             </div>
+
+            <div id="npQueuePanel" class="sync-panel" style="display:none;">
+                <div class="sync-panel-header">
+                    <span>🎵 คิวเพลง <span id="npQueuePanelCount" class="queue-panel-count">0</span></span>
+                    <button class="modal-close-btn" onclick="window.toggleNpQueuePanel()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="sync-panel-body">
+                    <button class="btn-secondary" onclick="window.playQueueHead()" style="margin-bottom:12px; width:100%;">▶️ เล่นเพลงแรกในคิว</button>
+                    <div id="npQueueList"></div>
+                </div>
+            </div>
         </div>
     </div>
 
