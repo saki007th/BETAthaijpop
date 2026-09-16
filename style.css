@@ -744,6 +744,20 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     transition:background .15s var(--ease);
 }
 .queue-item:hover{ background:var(--bg-elevated-hover); }
+.queue-item.current-playing{
+    border:1px solid rgba(52,199,89,.4);
+    background:rgba(52,199,89,.08);
+    margin-bottom:4px;
+}
+.queue-item.current-playing:hover{ background:rgba(52,199,89,.14); }
+.now-playing-label{
+    display:flex; align-items:center; gap:6px; flex-shrink:0;
+    color:var(--success); font-size:11px; font-weight:700; white-space:nowrap;
+}
+.now-playing-label .live-icon{ height:10px; }
+.now-playing-label .live-icon .bar{ width:2.5px; background:var(--success); animation:eqBar 1s infinite ease-in-out alternate; }
+.now-playing-label .live-icon .bar:nth-child(2){ animation-delay:.2s; }
+.now-playing-label .live-icon .bar:nth-child(3){ animation-delay:.4s; }
 .queue-item-thumb{ width:44px; height:44px; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--bg-surface-2); }
 .queue-item-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
 .queue-item-info{ flex:1; min-width:0; }
