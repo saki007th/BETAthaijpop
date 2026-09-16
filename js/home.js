@@ -104,10 +104,10 @@ window.renderRecentlyAdded = function() {
 
         item.innerHTML = `
             <img src="${thumbUrl}" onerror="this.src=''">
+            <div class="random-song-date">${dateStr || '—'}</div>
             <div class="random-song-info">
                 <div class="random-song-title">${song.title}</div>
                 <div class="random-song-artist">🎤 ${song.artist || '-'}</div>
-                <div class="random-song-date">📅 ${dateStr || 'ไม่ระบุ'}</div>
             </div>
         `;
         container.appendChild(item);
