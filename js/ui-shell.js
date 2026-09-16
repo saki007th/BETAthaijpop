@@ -48,6 +48,7 @@ window.wm = {
 
     collapseNowPlaying() {
         document.getElementById('nowPlayingView').classList.remove('active');
+        if (window.closeNpQueuePanel) window.closeNpQueuePanel();
     },
 
     updateSyncTitle(title) {
@@ -63,6 +64,10 @@ window.wm = {
         const panel = document.getElementById('syncPanel');
         const isOpen = panel.style.display !== 'none';
         panel.style.display = isOpen ? 'none' : 'flex';
+        if (!isOpen) {
+            // ถ้าเปิดหน้าจัดการเนื้อเพลง ให้ปิดแผงคิวไปก่อน
+            if (window.closeNpQueuePanel) window.closeNpQueuePanel();
+        }
         if (!isOpen && window.renderTimestampEditor) window.renderTimestampEditor();
     },
 

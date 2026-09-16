@@ -145,11 +145,13 @@ window.updateQueueBadges = function() {
     const panelCount = document.getElementById('queuePanelCount');
     const npBadge = document.getElementById('npQueueCount');
     const npControlsBadge = document.getElementById('npControlsQueueCount');
+    const npPanelCount = document.getElementById('npQueuePanelCount');
     if (badge) { badge.style.display = count > 0 ? 'flex' : 'none'; badge.innerText = count; }
     if (navBadge) { navBadge.style.display = count > 0 ? 'flex' : 'none'; navBadge.innerText = count; }
     if (panelCount) panelCount.innerText = count;
     if (npBadge) { npBadge.style.display = count > 0 ? 'flex' : 'none'; npBadge.innerText = count; }
     if (npControlsBadge) { npControlsBadge.style.display = count > 0 ? 'flex' : 'none'; npControlsBadge.innerText = count; }
+    if (npPanelCount) npPanelCount.innerText = count;
 };
 
 // ==========================================
@@ -296,21 +298,52 @@ window.addPlaylistToQueue = function(pid) {
 // 🖼️ วาด UI คิว
 // ==========================================
 window.openQueuePanel = function() {
-    window.renderQueuePanel();
+    // ถ้ากำลังเปิดหน้าเครื่องเล่น (วิดีโอ) → ใช้แผงคิวแบบเดียวกับหน้าจัดการเนื้อเพลง
+    const npView = document.getElementById('nowPlayingView');
+    if (npView && npView.classList.contains('active')) {
+        const npPanel = document.getElementById('npQueuePanel');
+        if (npPanel && npPanel.style.display !== 'none') { window.closeNpQueuePanel(); return; }
+        window.openNpQueuePanel();
+        return;
+    }
+    // นอกหน้าเครื่องเล่น → ใช้แผงเลื่อนด้านขวาเหมือนเดิม
     const panel = document.getElementById('queuePanel');
-    if (panel) panel.classList.add('active');
+    if (!panel) return;
+    if (panel.classList.contains('active')) { panel.classList.remove('active'); return; }
+    window.renderQueuePanel();
+    panel.classList.add('active');
 };
 
 window.closeQueuePanel = function() {
     const panel = document.getElementById('queuePanel');
     if (panel) panel.classList.remove('active');
+    window.closeNpQueuePanel();
 };
 
-window.renderQueuePanel = function() {
-    const container = document.getElementById('queueList');
-    if (!container) return;
+window.openNpQueuePanel = function() {
+    const panel = document.getElementById('npQueuePanel');
+    if (!panel) return;
+    panel.style.display = 'flex';
+    window.renderQueuePanel();
+    // ปิดหน้าจัดการเนื้อเพลงไปก่อนเพื่อไม่ให้แน่นเกิน
+    const syncPanel = document.getElementById('syncPanel');
+    if (syncPanel && syncPanel.style.display !== 'none') syncPanel.style.display = 'none';
+};
 
-    window.updateQueueBadges();
+window.closeNpQueuePanel = function() {
+    const panel = document.getElementById('npQueuePanel');
+    if (panel) panel.style.display = 'none';
+};
+
+window.toggleNpQueuePanel = function() {
+    const panel = document.getElementById('npQueuePanel');
+    if (!panel) return;
+    if (panel.style.display !== 'none') window.closeNpQueuePanel();
+    else window.openNpQueuePanel();
+};
+
+function renderQueueListInto(container) {
+    if (!container) return;
 
     if (!window.playQueue || window.playQueue.length === 0) {
         container.innerHTML = '<div class="queue-empty">คิวยังว่าง<br><span style="font-size:.85em; color:var(--text-3);">กดปุ่ม ➕ คิว ที่เพลงเพื่อเพิ่มเพลงที่จะเล่นถัดไป</span></div>';
@@ -342,6 +375,17 @@ window.renderQueuePanel = function() {
         `;
         container.appendChild(item);
     });
+}
+
+// เปิดคิววาดลงในแผงเลื่อนด้านขวา และถ้าแผงคิวในหน้าเครื่องเล่นเปิดอยู่ก็วาดด้วย
+window.renderQueuePanel = function() {
+    window.updateQueueBadges();
+    renderQueueListInto(document.getElementById('queueList'));
+
+    const npPanel = document.getElementById('npQueuePanel');
+    if (npPanel && npPanel.style.display !== 'none') {
+        renderQueueListInto(document.getElementById('npQueueList'));
+    }
 };
 
 // เล่นเพลงตำแหน่งว่าในคิว เอาตัวมันและของก่อนหน้าออก (กลายเป็นเพลงถัดไป)
