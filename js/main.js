@@ -8,6 +8,25 @@ import { initializeSingerColors } from './singerColors.js';
 window.isLoggedIn = false;
 window.isAdmin = false;
 
+/* ---------- profile menu ---------- */
+let profileMenuOpen = false;
+
+function toggleProfileMenu(show) {
+    const menu = document.getElementById('profileMenu');
+    if (show === undefined) show = !profileMenuOpen;
+    profileMenuOpen = show;
+    menu.classList.toggle('open', show);
+    if (show) document.addEventListener('click', onOutsideProfileClick, true);
+    else      document.removeEventListener('click', onOutsideProfileClick, true);
+}
+
+function onOutsideProfileClick(e) {
+    if (!document.getElementById('profileBar').contains(e.target) &&
+        !document.getElementById('profileMenu').contains(e.target)) {
+        toggleProfileMenu(false);
+    }
+}
+
 function applyProfileUI(user) {
     const profileName   = document.getElementById('profileName');
     const profileEmail  = document.getElementById('profileEmail');
@@ -16,17 +35,30 @@ function applyProfileUI(user) {
     const profileBar    = document.getElementById('profileBar');
     const adminTag      = document.getElementById('profileAdminTag');
 
+    const menuName      = document.getElementById('profileMenuName');
+    const menuEmail     = document.getElementById('profileMenuEmail');
+    const menuAvatar    = document.getElementById('profileMenuAvatar');
+    const menuAvatarIcon= document.getElementById('profileMenuAvatarIcon');
+
     if (user) {
-        profileName.textContent  = user.displayName || (user.email ? user.email.split('@')[0] : 'ผู้ใช้');
-        profileEmail.textContent = user.email || '';
+        const name  = user.displayName || (user.email ? user.email.split('@')[0] : 'ผู้ใช้');
+        const email = user.email || '';
+
+        profileName.textContent  = name;
+        profileEmail.textContent = email;
         if (user.photoURL) {
             profileAvatar.style.backgroundImage = `url('${user.photoURL}')`;
             avatarIcon.style.display = 'none';
-        } else {
-            avatarIcon.style.display = '';
-        }
+        } else { avatarIcon.style.display = ''; }
         adminTag.style.display = ALLOWED_EMAILS.includes(user.email) ? 'inline-block' : 'none';
         profileBar.title = 'บัญชี Google';
+
+        menuName.textContent  = name;
+        menuEmail.textContent = email;
+        if (user.photoURL) {
+            menuAvatar.style.backgroundImage = `url('${user.photoURL}')`;
+            menuAvatarIcon.style.display = 'none';
+        } else { menuAvatarIcon.style.display = ''; }
     } else {
         profileName.textContent  = 'เข้าสู่ระบบ';
         profileEmail.textContent = 'ใช้บัญชี Google';
@@ -34,11 +66,17 @@ function applyProfileUI(user) {
         avatarIcon.style.display = '';
         adminTag.style.display = 'none';
         profileBar.title = 'เข้าสู่ระบบ';
+        menuName.textContent  = '-';
+        menuEmail.textContent = '';
+        menuAvatar.style.backgroundImage = '';
+        menuAvatarIcon.style.display = '';
+        toggleProfileMenu(false);
     }
 }
 
 window.handleProfileClick = function() {
-    if (!window.isLoggedIn) window.loginWithGoogle();
+    if (!window.isLoggedIn) { window.loginWithGoogle(); return; }
+    toggleProfileMenu();
 };
 
 window.loginWithGoogle = async function() {
@@ -46,9 +84,13 @@ window.loginWithGoogle = async function() {
 };
 
 window.logout = async function() {
-    if (confirm('ต้องการออกจากระบบใช่หรือไม่?')) { await signOut(auth); }
+    if (confirm('ต้องการออกจากระบบใช่หรือไม่?')) {
+        toggleProfileMenu(false);
+        await signOut(auth);
+    }
 };
 
+/* ---------- auth state ---------- */
 onAuthStateChanged(auth, async (user) => {
     window.isLoggedIn = !!user;
     window.isAdmin = user && ALLOWED_EMAILS.includes(user.email);
@@ -56,7 +98,6 @@ onAuthStateChanged(auth, async (user) => {
 
     applyProfileUI(user);
 
-    document.getElementById('btnHeaderLogout').style.display = window.isLoggedIn ? 'flex' : 'none';
     document.getElementById('btnHeaderLogin').style.display = window.isLoggedIn ? 'none' : 'flex';
     document.getElementById('btnAddSong').style.display = window.isAdmin ? 'inline-block' : 'none';
     document.getElementById('btnDockAdminSync').style.display = window.isAdmin ? 'flex' : 'none';

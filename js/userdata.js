@@ -403,9 +403,25 @@ window.renderPlaylistsView = function() {
     window.userPlaylists.forEach(pl => {
         const card = document.createElement('div');
         card.className = 'playlist-card';
+
+        // หน้าปก: สุ่มเพลงหนึ่งเพลงใน Playlist ขึ้นมาแสดง (ถ้ามีเพลง)
+        let coverStyle = '';
+        let coverEmoji = '🎧';
+        if (pl.songIds.length > 0) {
+            const validSongs = pl.songIds.map(id => (window.songs || []).find(s => s.id === id)).filter(Boolean);
+            if (validSongs.length > 0) {
+                const coverSong = validSongs[Math.floor(Math.random() * validSongs.length)];
+                const vId = window.extractYouTubeID(coverSong.audioPath);
+                if (vId) {
+                    coverStyle = `background-image:url('https://img.youtube.com/vi/${vId}/mqdefault.jpg');`;
+                    coverEmoji = '';
+                }
+            }
+        }
+
         card.innerHTML = `
             <div class="playlist-card-top">
-                <div class="playlist-card-emoji">🎧</div>
+                <div class="playlist-card-cover" style="${coverStyle}">${coverEmoji}</div>
                 <div class="playlist-card-name">${pl.name}</div>
                 <div class="playlist-card-count">${pl.songIds.length} เพลง</div>
             </div>
