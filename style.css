@@ -311,18 +311,30 @@ a{ color:inherit; }
 .np-header-right{ display:flex; gap:10px; }
 
 .np-body{
-    flex:1; min-height:0; display:flex; gap:28px; padding:0 40px 24px; overflow:hidden;
+    flex:1; min-height:0; display:flex; gap:56px; padding:0 40px 24px; overflow:hidden;
+    max-width:1180px; width:100%; margin:0 auto; justify-content:center;
 }
 .np-media{
-    width:44%; max-width:560px; flex-shrink:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width:460px; flex-shrink:0;
+    display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;
 }
 .np-media-frame{
     width:100%; aspect-ratio:16/9; border-radius:var(--r-l); overflow:hidden;
-    background:#000; box-shadow:0 30px 60px rgba(0,0,0,.5);
+    background:#000; box-shadow:0 30px 60px rgba(0,0,0,.5); flex-shrink:0;
 }
+
+/* title / artist / scrub / transport controls under the video */
+.np-controls-block{ margin-top:22px; }
+.np-track-title{ font-size:19px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.np-track-artist{ font-size:13.5px; color:var(--text-3); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.np-scrub{ height:4px; border-radius:2px; background:var(--bg-elevated); margin:20px 0 16px; cursor:pointer; position:relative; }
+.np-scrub-fill{ position:absolute; left:0; top:0; height:100%; width:0%; background:var(--text-1); border-radius:2px; pointer-events:none; }
+.np-controls-row{ display:flex; align-items:center; justify-content:center; gap:30px; }
+.np-ctrl-btn{ background:none; border:none; color:var(--text-1); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.np-play-btn{ width:48px; height:48px; border-radius:50%; background:var(--text-1); color:#000; font-size:16px; }
+
 .np-lyrics-panel{
-    flex:1; min-width:0; overflow-y:auto; padding:10px 10px 40px;
+    flex:1; min-width:0; max-width:560px; overflow-y:auto; padding:10px 10px 40px;
     display:flex; flex-direction:column; align-items:center;
 }
 

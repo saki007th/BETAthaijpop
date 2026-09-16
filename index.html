@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-              
+
     <!-- 🔴 Mobile Redirect -->
     <script>
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -198,7 +198,21 @@
                         <div id="youtubePlayer" style="width:100%; height:100%;"></div>
                     </div>
                 </div>
-                <div id="btnDockAdminSync" style="display:none; margin-top:16px;" onclick="wm.toggleSyncPanel()">⏱ จัดการซิงค์เนื้อเพลง</div>
+
+                <div class="np-controls-block">
+                    <div id="npTrackTitle" class="np-track-title">-</div>
+                    <div id="npTrackArtist" class="np-track-artist">-</div>
+                    <div class="np-scrub" id="npScrub" title="ลากเพื่อไปยังตำแหน่งเพลง">
+                        <div class="np-scrub-fill" id="npScrubFill"></div>
+                    </div>
+                    <div class="np-controls-row">
+                        <button class="np-ctrl-btn" onclick="prevLiveSong()" title="ก่อนหน้า"><i class="fa-solid fa-backward-step"></i></button>
+                        <button id="npPlayPauseBtn" class="np-ctrl-btn np-play-btn" onclick="toggleLivePlay()" title="เล่น/พัก"><i class="fa-solid fa-pause"></i></button>
+                        <button class="np-ctrl-btn" onclick="nextLiveSong()" title="ถัดไป"><i class="fa-solid fa-forward-step"></i></button>
+                    </div>
+                </div>
+
+                <div id="btnDockAdminSync" style="display:none; margin-top:20px;" onclick="wm.toggleSyncPanel()">⏱ จัดการซิงค์เนื้อเพลง</div>
             </div>
             <div class="np-lyrics-panel" id="content-lyrics">
                 <div id="versionContainer" style="display:none;"></div>
