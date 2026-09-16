@@ -70,8 +70,19 @@
             <div class="sidebar-spacer"></div>
 
             <div class="sidebar-footer">
+                <div id="profileBar" class="profile-bar" onclick="handleProfileClick()" title="เข้าสู่ระบบ">
+                    <div id="profileAvatar" class="profile-avatar">
+                        <i class="fa-solid fa-user" id="profileAvatarIcon"></i>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name" id="profileName">เข้าสู่ระบบ</div>
+                        <div class="profile-email" id="profileEmail">ใช้บัญชี Google</div>
+                        <div id="profileAdminTag" class="profile-admin-tag" style="display:none;">แอดมิน</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right profile-chevron" id="profileChevron"></i>
+                </div>
                 <button id="btnHeaderLogin" onclick="loginWithGoogle()">
-                    <i class="fa-solid fa-user"></i><span>เข้าสู่ระบบแอดมิน</span>
+                    <i class="fa-brands fa-google"></i><span>เข้าสู่ระบบด้วย Google</span>
                 </button>
                 <button id="btnHeaderLogout" style="display:none;" onclick="logout()">
                     <i class="fa-solid fa-right-from-bracket"></i><span>ออกจากระบบ</span>
