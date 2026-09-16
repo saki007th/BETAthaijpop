@@ -154,6 +154,7 @@ function createBadgeElement(label, artistName, index) {
 window.playSong = function(id) {
     window.currentSongId = id;
     const song = window.songs.find(s => s.id === id); if (!song) return;
+    if (window.startListeningStats) window.startListeningStats(id);
 
     window.currentCoverIndex = -1;
     window.renderVersionBadges();
@@ -210,6 +211,8 @@ window.playSong = function(id) {
 
     clearInterval(window.syncInterval);
     window.syncInterval = setInterval(() => {
+        if (window.tickStats) window.tickStats();
+
         if (!window.ytPlayer || typeof window.ytPlayer.getCurrentTime !== 'function') return;
         const currentSong = window.songs.find(s => s.id === window.currentSongId); if (!currentSong) return;
 
@@ -580,6 +583,8 @@ window.onPlayerStateChange = function(event) {
     }
 
     if (event.data === 0) {
+        if (window.endListeningStats) window.endListeningStats();
+
         if (!window.songs || window.songs.length === 0) return;
 
         // 🎵 ถ้ามีคิวเพลง ให้เล่นเพลงถัดไปจากคิวก่อน

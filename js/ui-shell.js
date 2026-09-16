@@ -16,6 +16,8 @@ window.wm = {
 
         const nav = document.querySelector(`.nav-item[data-view="${viewName}"]`);
         if (nav) nav.classList.add('active');
+
+        if (viewName === 'home' && window.renderHomeStats) window.renderHomeStats();
     },
 
     openLibrary() {
@@ -110,6 +112,20 @@ window.closeSheet = function() {
     addModal.classList.remove('active');
     if (wasGenericOpen && window._sheetOnClose) { window._sheetOnClose(); window._sheetOnClose = null; }
 };
+
+// click-to-seek on the Now Playing progress bar
+document.addEventListener('DOMContentLoaded', () => {
+    const scrub = document.getElementById('npScrub');
+    if (scrub) {
+        scrub.addEventListener('click', (e) => {
+            if (!window.ytPlayer || typeof window.ytPlayer.getDuration !== 'function') return;
+            const rect = scrub.getBoundingClientRect();
+            const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+            const duration = window.ytPlayer.getDuration();
+            if (duration > 0) window.ytPlayer.seekTo(duration * ratio, true);
+        });
+    }
+});
 
 // close any open singer-select dropdown when clicking elsewhere (timestamp editor)
 document.addEventListener('click', function(e) {

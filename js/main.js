@@ -106,6 +106,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('sidebarAdminDivider').style.display = window.isAdmin ? 'block' : 'none';
 
     if (window.loadUserData) await window.loadUserData();
+    if (window.loadStats) await window.loadStats();
 
     if (document.getElementById('view-library').classList.contains('active') && window.renderSongList) window.renderSongList();
     if (window.currentSongId && window.renderTimestampEditor) window.renderTimestampEditor();

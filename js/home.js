@@ -70,3 +70,113 @@ window.renderRandomPlaylist = function() {
         container.appendChild(item);
     });
 };
+
+// ==========================================
+// 📊 สถิติการฟัง (แสดงบนหน้าแรก) มาจาก firestore userData
+// ==========================================
+window.renderHomeStats = function() {
+    const container = document.getElementById('homeStats');
+    if (!container || !window.stats) return;
+
+    const st = window.stats;
+    const hasData = (st.totalPlays > 0 || st.totalSeconds > 0) && window.songs && window.songs.length > 0;
+
+    if (!hasData) {
+        container.innerHTML = `
+            <div class="stats-card">
+                <div class="stats-card-head">
+                    <h2 class="section-title">📊 สถิติการฟังของคุณ</h2>
+                    ${accountTag()}
+                </div>
+                <div class="stats-empty">
+                    ยังไม่มีสถิติการฟัง<br>
+                    <span style="font-size:.9em; color:var(--text-3);">กดเล่นเพลงจากคลังเพลงหรือหน้าแรก แล้วสถิติจะถูกบันทึกที่นี่ 🎧</span>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // 🔥 เพลงที่ฟังบ่อยสุด (เรียงตามจำนวนครั้งที่เล่น)
+    const topEntries = Object.entries(st.songs || {})
+        .map(([id, v]) => ({ id, ...v }))
+        .sort((a, b) => (b.plays - a.plays) || (b.seconds - a.seconds))
+        .slice(0, 4);
+
+    // 🕘 เพิ่งฟังไป (จาก recent)
+    const recentList = (st.recent || []).slice(0, 5);
+
+    const topSongsHtml = topEntries.map(e => {
+        const song = (window.songs || []).find(s => s.id === e.id);
+        if (!song) return '';
+        const videoId = window.extractYouTubeID(song.audioPath);
+        const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : '';
+        return `
+            <div class="stat-song-item" onclick="playSong('${e.id}')">
+                <img src="${thumbUrl}" onerror="this.style.display='none'">
+                <div class="stat-song-info">
+                    <div class="stat-song-title">${song.title}</div>
+                    <div class="stat-song-artist">🎤 ${song.artist || '-'}</div>
+                </div>
+                <div class="stat-song-meta">${e.plays} ครั้ง<br>${window.formatShortDuration(e.seconds)}</div>
+            </div>
+        `;
+    }).join('');
+
+    const recentSongsHtml = recentList.map(r => {
+        const song = (window.songs || []).find(s => s.id === r.songId);
+        if (!song) return '';
+        const videoId = window.extractYouTubeID(song.audioPath);
+        const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : '';
+        return `
+            <div class="stat-song-item" onclick="playSong('${r.songId}')">
+                <img src="${thumbUrl}" onerror="this.style.display='none'">
+                <div class="stat-song-info">
+                    <div class="stat-song-title">${song.title}</div>
+                    <div class="stat-song-artist">🎤 ${song.artist || '-'}</div>
+                </div>
+                <div class="stat-song-meta">${window.formatShortDuration(r.sec || 0)}</div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="stats-card">
+            <div class="stats-card-head">
+                <h2 class="section-title">📊 สถิติการฟังของคุณ</h2>
+                ${accountTag()}
+            </div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value">${window.formatDuration(st.totalSeconds)}</div>
+                    <div class="stat-label">⏱ เวลาฟังทั้งหมด</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${st.totalPlays}</div>
+                    <div class="stat-label">🎵 เพลงที่เคยเล่น</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">${window.formatShortDuration(st.todaySeconds || 0)}</div>
+                    <div class="stat-label">🎧 วันนี้ (${st.todayCount || 0} เพลง)</div>
+                </div>
+            </div>
+            <div class="stats-lists">
+                <div class="stats-col">
+                    <div class="stats-col-title">🔥 เพลงที่ฟังบ่อย</div>
+                    ${topSongsHtml || '<div class="stats-empty">ยังไม่มีข้อมูล</div>'}
+                </div>
+                <div class="stats-col">
+                    <div class="stats-col-title">🕘 เพิ่งฟังไป</div>
+                    ${recentSongsHtml || '<div class="stats-empty">ยังไม่มีข้อมูล</div>'}
+                </div>
+            </div>
+        </div>
+    `;
+
+    function accountTag() {
+        const name = window.currentUser ? (window.currentUser.displayName || window.currentUser.email || '') : '';
+        return window.isLoggedIn
+            ? `<span class="stats-account-tag" title="บันทึกตามบัญชี ${name || ''}">🤍 ${name || 'บัญชีของคุณ'}</span>`
+            : '<span class="stats-account-tag">🔒 ยังไม่ได้ล็อกอิน (บันทึกชั่วคราว)</span>';
+    }
+};
