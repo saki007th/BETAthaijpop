@@ -22,7 +22,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('btnHeaderLogout').style.display = window.isLoggedIn ? 'flex' : 'none';
     document.getElementById('btnHeaderLogin').style.display = window.isLoggedIn ? 'none' : 'flex';
     document.getElementById('btnAddSong').style.display = window.isAdmin ? 'inline-block' : 'none';
-    document.getElementById('btnDockAdminSync').style.display = window.isAdmin ? 'block' : 'none';
+    document.getElementById('btnDockAdminSync').style.display = window.isAdmin ? 'flex' : 'none';
 
     document.getElementById('sidebarAdminSection').style.display = window.isAdmin ? 'block' : 'none';
     document.getElementById('sidebarAdminDivider').style.display = window.isAdmin ? 'block' : 'none';
