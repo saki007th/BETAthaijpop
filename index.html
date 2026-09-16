@@ -188,6 +188,7 @@
             <button onclick="wm.collapseNowPlaying()" title="ย่อหน้าต่าง"><i class="fa-solid fa-chevron-down"></i></button>
             <span class="np-header-title">กำลังเล่น</span>
             <div class="np-header-right">
+                <button id="btnDockAdminSync" onclick="wm.toggleSyncPanel()" title="⏱ จัดการซิงค์เนื้อเพลง">⏱</button>
                 <button onclick="togglePiPMode()" title="หน้าต่างลอย (PiP)"><i class="fa-solid fa-clone"></i></button>
             </div>
         </div>
@@ -211,9 +212,8 @@
                         <button class="np-ctrl-btn" onclick="nextLiveSong()" title="ถัดไป"><i class="fa-solid fa-forward-step"></i></button>
                     </div>
                 </div>
-
-                <div id="btnDockAdminSync" style="display:none; margin-top:20px;" onclick="wm.toggleSyncPanel()">⏱ จัดการซิงค์เนื้อเพลง</div>
             </div>
+
             <div class="np-lyrics-panel" id="content-lyrics">
                 <div id="versionContainer" style="display:none;"></div>
                 <div id="lyricsContainer" class="lyrics-container"></div>
