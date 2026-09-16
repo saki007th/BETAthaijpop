@@ -344,13 +344,36 @@ window.toggleNpQueuePanel = function() {
 
 function renderQueueListInto(container) {
     if (!container) return;
+    container.innerHTML = '';
 
-    if (!window.playQueue || window.playQueue.length === 0) {
-        container.innerHTML = '<div class="queue-empty">คิวยังว่าง<br><span style="font-size:.85em; color:var(--text-3);">กดปุ่ม ➕ คิว ที่เพลงเพื่อเพิ่มเพลงที่จะเล่นถัดไป</span></div>';
-        return;
+    // 🎧 เพลงที่กำลังเล่น (แสดงไว้หัวคิวเท่านั้น — ไม่บันทึกเข้า Firebase)
+    const currentSong = (window.songs || []).find(s => s.id === window.currentSongId);
+    if (currentSong) {
+        const currentVideoId = window.extractYouTubeID(currentSong.audioPath);
+        const currentThumb = currentVideoId ? `https://img.youtube.com/vi/${currentVideoId}/mqdefault.jpg` : '';
+        const item = document.createElement('div');
+        item.className = 'queue-item current-playing';
+        item.innerHTML = `
+            <div class="queue-item-thumb"><img src="${currentThumb}" onerror="this.style.display='none'"></div>
+            <div class="queue-item-info">
+                <div class="queue-item-title">${currentSong.title}</div>
+                <div class="queue-item-artist">🎤 ${currentSong.artist || '-'}</div>
+            </div>
+            <div class="now-playing-label">
+                <span class="live-icon"><div class="bar"></div><div class="bar"></div><div class="bar"></div></span>
+                กำลังเล่น
+            </div>
+        `;
+        container.appendChild(item);
     }
 
-    container.innerHTML = '';
+    if (!window.playQueue || window.playQueue.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'queue-empty';
+        empty.innerHTML = `${currentSong ? 'คิวถัดไปว่าง' : 'คิวยังว่าง'}<br><span style="font-size:.85em; color:var(--text-3);">กดปุ่ม ➕ คิว ที่เพลงเพื่อเพิ่มเพลงที่จะเล่นถัดไป</span>`;
+        container.appendChild(empty);
+        return;
+    }
 
     window.playQueue.forEach((songId, index) => {
         const song = (window.songs || []).find(s => s.id === songId);
