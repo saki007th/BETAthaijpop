@@ -326,6 +326,13 @@ a{ color:inherit; }
 
 /* title / artist / scrub / transport controls under the video */
 .np-controls-block{ margin-top:22px; }
+.np-track-meta{ display:flex; align-items:center; gap:14px; min-width:0; }
+.np-track-thumb{
+    width:56px; height:56px; border-radius:10px; flex-shrink:0;
+    background:var(--bg-surface-2) center/cover no-repeat;
+    box-shadow:0 8px 20px rgba(0,0,0,.45);
+}
+.np-track-info{ min-width:0; }
 .np-track-title{ font-size:19px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .np-track-artist{ font-size:13.5px; color:var(--text-3); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .np-scrub{ height:4px; border-radius:2px; background:var(--bg-elevated); margin:20px 0 16px; cursor:pointer; position:relative; }
