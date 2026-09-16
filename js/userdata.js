@@ -144,12 +144,12 @@ window.updateQueueBadges = function() {
     const navBadge = document.getElementById('queueNavCount');
     const panelCount = document.getElementById('queuePanelCount');
     const npBadge = document.getElementById('npQueueCount');
-    const npLyricsBadge = document.getElementById('npLyricsQueueCount');
+    const npControlsBadge = document.getElementById('npControlsQueueCount');
     if (badge) { badge.style.display = count > 0 ? 'flex' : 'none'; badge.innerText = count; }
     if (navBadge) { navBadge.style.display = count > 0 ? 'flex' : 'none'; navBadge.innerText = count; }
     if (panelCount) panelCount.innerText = count;
     if (npBadge) { npBadge.style.display = count > 0 ? 'flex' : 'none'; npBadge.innerText = count; }
-    if (npLyricsBadge) { npLyricsBadge.style.display = count > 0 ? 'flex' : 'none'; npLyricsBadge.innerText = count; }
+    if (npControlsBadge) { npControlsBadge.style.display = count > 0 ? 'flex' : 'none'; npControlsBadge.innerText = count; }
 };
 
 // ==========================================
