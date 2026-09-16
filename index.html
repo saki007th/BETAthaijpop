@@ -222,6 +222,10 @@
                             <div id="npTrackTitle" class="np-track-title">-</div>
                             <div id="npTrackArtist" class="np-track-artist">-</div>
                         </div>
+                        <button class="np-ctrl-queue-btn" onclick="openQueuePanel()" title="เปิดหน้าคิวเพลง">
+                            <i class="fa-solid fa-list-ol"></i>
+                            <span id="npControlsQueueCount" class="np-queue-badge" style="display:none;"></span>
+                        </button>
                     </div>
                     <div class="np-scrub" id="npScrub" title="ลากเพื่อไปยังตำแหน่งเพลง">
                         <div class="np-scrub-fill" id="npScrubFill"></div>
@@ -235,13 +239,6 @@
             </div>
 
             <div class="np-lyrics-panel" id="content-lyrics">
-                <div class="np-lyrics-toolbar">
-                    <span class="np-lyrics-toolbar-title">เนื้อเพลง</span>
-                    <button class="np-queue-btn" onclick="openQueuePanel()" title="เปิดหน้าคิวเพลง">
-                        <i class="fa-solid fa-list-ol"></i>
-                        <span id="npLyricsQueueCount" class="np-queue-badge" style="display:none;"></span>
-                    </button>
-                </div>
                 <div id="versionContainer" style="display:none;"></div>
                 <div id="lyricsContainer" class="lyrics-container"></div>
             </div>
