@@ -384,6 +384,7 @@ a{ color:inherit; }
 
 /* Lift the sidebar footer above the persistent player bar while a song is playing */
 #app-shell:has(~ .player-bar:not(.hidden)) .sidebar{ padding-bottom:calc(18px + 64px); }
+#app-shell:has(~ .player-bar:not(.hidden)) .content-body{ padding-bottom:calc(28px + 64px); }
 
 .player-progress-bg{
     position:absolute; top:0; left:0; height:2px; width:0%;
@@ -838,6 +839,7 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 @media (max-width: 880px){
     .sidebar{ width:64px; padding:16px 8px; }
     #app-shell:has(~ .player-bar:not(.hidden)) .sidebar{ padding-bottom:calc(16px + 64px); }
+    #app-shell:has(~ .player-bar:not(.hidden)) .content-body{ padding-bottom:calc(28px + 64px); }
     .sidebar-brand{ display:none; }
     .nav-item span{ display:none; }
     .nav-section-label{ display:none; }
