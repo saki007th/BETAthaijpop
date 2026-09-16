@@ -164,6 +164,8 @@ window.playSong = function(id) {
     if (liveAct) {
         document.getElementById('liveTitle').innerText = song.title;
         document.getElementById('liveArtist').innerText = '🎤 ' + (song.artist || '-');
+        document.getElementById('npTrackTitle').innerText = song.title;
+        document.getElementById('npTrackArtist').innerText = '🎤 ' + (song.artist || '-');
 
         const ytId = window.extractYouTubeID(song.audioPath);
         if (ytId) {
@@ -217,6 +219,8 @@ window.playSong = function(id) {
             const percent = (currentTime / duration) * 100;
             const progressBg = document.getElementById('playerProgressBarBg');
             if (progressBg) progressBg.style.width = percent + '%';
+            const npFill = document.getElementById('npScrubFill');
+            if (npFill) npFill.style.width = percent + '%';
         }
 
         let correctIndex = -1;
@@ -560,12 +564,15 @@ window.onPlayerStateChange = function(event) {
     const playPauseBtn = document.getElementById('livePlayPauseBtn');
     const liveAct = document.getElementById('liveActivity');
 
+    const npPlayBtn = document.getElementById('npPlayPauseBtn');
     if (event.data === 1) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         if (liveAct) liveAct.classList.remove('paused');
     }
     if (event.data === 2) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (liveAct) liveAct.classList.add('paused');
     }
 
