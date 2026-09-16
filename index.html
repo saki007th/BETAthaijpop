@@ -116,35 +116,12 @@
                 <header class="content-header"><h1 class="content-title">ตั้งค่า</h1></header>
                 <div class="content-body">
                     <div id="content-settings" class="settings-body">
-                        <h3>🖼️ ภาพพื้นหลัง (Wallpaper)</h3>
-                        <div class="wallpaper-grid">
-                            <button class="btn-secondary" onclick="setWallpaper('default')">🌌 สีพื้นฐาน</button>
-                            <button class="btn-secondary" onclick="setWallpaper('https://images.unsplash.com/photo-1538370965046-79c0d6907d47?q=80&w=2000')">🌆 ไซเบอร์พังก์</button>
-                            <button class="btn-secondary" onclick="setWallpaper('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')">⛰️ ภูเขาดวงดาว</button>
-                            <button class="btn-secondary" onclick="setWallpaper('https://images.unsplash.com/photo-1506744626753-1fa28f673b0c?q=80&w=2000')">🏞️ ธรรมชาติ</button>
-                        </div>
-                        <input type="text" id="inputCustomWallpaper" placeholder="หรือวางลิงก์รูปภาพ (URL) ของคุณที่นี่..." onchange="setWallpaper(this.value)">
-
-                        <label>รูปแบบภาพพื้นหลัง:</label>
-                        <select id="bgSizeSelect" onchange="setBgSize(this.value)" style="margin-bottom:30px;">
-                            <option value="cover">เต็มจอ (ภาพอาจถูกตัดขอบ)</option>
-                            <option value="contain">พอดีจอ (เห็นภาพครบ แต่อาจมีขอบดำ)</option>
-                        </select>
-
-                        <hr style="border:0; border-top:1px solid var(--border-soft); margin-bottom:25px;">
-
                         <h3>🔀 โหมดเล่นเพลง</h3>
                         <div style="margin-bottom:25px;">
                             <label class="lang-toggle" style="display:inline-flex;">
                                 <input type="checkbox" id="toggleShuffleBtn" onchange="toggleShuffle(this.checked)"> สุ่มเพลงอัตโนมัติเมื่อเล่นจบ
                             </label>
                         </div>
-
-                        <h3>🪟 ความโปร่งใสของแผงกระจก</h3>
-                        <label>ความโปร่งใส (Opacity):</label>
-                        <input type="range" id="sliderOpacity" min="10" max="100" value="95" oninput="setWindowStyle()" style="margin-bottom:10px;">
-                        <label>ความเบลอ (Blur):</label>
-                        <input type="range" id="sliderBlur" min="0" max="50" value="20" oninput="setWindowStyle()" style="margin-bottom:25px;">
 
                         <h3>📝 ขนาดตัวอักษรเนื้อเพลง</h3>
                         <input type="range" id="sliderFontSize" min="0.8" max="2.5" step="0.1" value="1.15" oninput="setLyricFontSize(this.value)" style="margin-bottom:30px;">

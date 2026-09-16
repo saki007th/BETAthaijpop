@@ -34,10 +34,7 @@
     --wb-bg-r:28; --wb-bg-g:28; --wb-bg-b:30;
 
     /* user-adjustable (Settings view) */
-    --window-opacity:0.95;
-    --window-blur:20px;
     --lyric-font-size:1.15em;
-    --bg-size:cover;
 }
 
 *{ box-sizing:border-box; }
@@ -61,8 +58,8 @@ a{ color:inherit; }
    ========================================================== */
 #desktop-wallpaper{
     position:fixed; inset:0; background-color:var(--bg-page);
-    background-size:var(--bg-size); background-repeat:no-repeat; background-position:center;
-    z-index:-20; transition:background .5s ease, background-size .3s ease;
+    background-size:cover; background-repeat:no-repeat; background-position:center;
+    z-index:-20; transition:background .5s ease;
 }
 #dynamic-bg{
     position:fixed; top:-5%; left:-5%; width:110vw; height:110vh;
@@ -497,8 +494,6 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 .settings-body{ max-width:520px; }
 .settings-body h3{ font-size:14px; font-weight:600; margin:26px 0 12px; }
 .settings-body h3:first-child{ margin-top:0; }
-.wallpaper-grid{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px; }
-.wallpaper-grid button{ flex:1; font-size:.85em; margin-bottom:0; }
 
 /* ==========================================================
    11. Modal / sheet system (Add song, Notify, Singer colors)
