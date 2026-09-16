@@ -324,8 +324,11 @@ a{ color:inherit; }
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .random-song-date{
-    font-size:10px; color:rgba(255,255,255,.65); margin-top:3px; text-shadow:0 1px 3px rgba(0,0,0,.6);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    position:absolute; top:10px; right:10px; z-index:2;
+    font-size:15px; font-weight:700; color:#fff;
+    background:rgba(0,0,0,.55); backdrop-filter:blur(6px);
+    padding:5px 12px; border-radius:var(--r-pill);
+    text-shadow:none; white-space:nowrap;
 }
 
 /* ---------- 5.5 สถิติการฟังเพลง (หน้าแรก) ---------- */
