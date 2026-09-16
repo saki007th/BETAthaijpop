@@ -316,6 +316,7 @@ a{ color:inherit; }
 }
 .np-media{
     flex:1 1 0; width:auto; min-width:0; align-self:center;
+    max-width:min(100%, calc((100vh - 290px) * 16 / 9));
     display:flex; flex-direction:column; align-items:stretch; justify-content:center;
 }
 .np-media-frame{
