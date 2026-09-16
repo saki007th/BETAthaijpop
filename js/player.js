@@ -168,13 +168,16 @@ window.playSong = function(id) {
         document.getElementById('npTrackArtist').innerText = '🎤 ' + (song.artist || '-');
 
         const ytId = window.extractYouTubeID(song.audioPath);
+        const npThumb = document.getElementById('npTrackThumb');
         if (ytId) {
             const thumbUrl = `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
             liveAct.style.setProperty('--live-bg', `url('${thumbUrl}')`);
             window.extractDominantColor(thumbUrl);
+            if (npThumb) npThumb.style.backgroundImage = `url('${thumbUrl}')`;
         } else {
             liveAct.style.removeProperty('--live-bg');
             window.resetWinBoxColor();
+            if (npThumb) npThumb.style.backgroundImage = '';
         }
 
         liveAct.classList.remove('hidden'); liveAct.classList.remove('paused');
