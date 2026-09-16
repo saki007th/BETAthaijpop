@@ -311,8 +311,8 @@ a{ color:inherit; }
 .np-header-right{ display:flex; gap:10px; }
 
 .np-body{
-    flex:1; min-height:0; display:flex; gap:24px; padding:0 0 24px 48px; overflow:hidden;
-    width:100%; margin:0; justify-content:space-between;
+    flex:1; min-height:0; display:flex; gap:0; padding:0 0 24px 48px; overflow:hidden;
+    width:100%; margin:0; justify-content:flex-end;
 }
 .np-media{
     flex:1 1 0; width:auto; min-width:0; align-self:center;
@@ -524,7 +524,7 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
    14. Responsive fallback (narrow desktop / tablet width)
    ========================================================== */
 @media (max-width: 1240px){
-    .np-body{ gap:20px; padding:0 0 20px 28px; }
+    .np-body{ gap:0; padding:0 0 20px 28px; }
     .np-lyrics-panel{ flex-basis:440px; max-width:480px; }
 }
 @media (max-width: 880px){
