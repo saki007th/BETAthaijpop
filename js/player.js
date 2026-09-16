@@ -575,14 +575,17 @@ window.onPlayerStateChange = function(event) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         if (liveAct) liveAct.classList.remove('paused');
+        window.startEqBars();
     }
     if (event.data === 2) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (liveAct) liveAct.classList.add('paused');
+        window.stopEqBars();
     }
 
     if (event.data === 0) {
+        window.stopEqBars();
         if (window.endListeningStats) window.endListeningStats();
 
         if (!window.songs || window.songs.length === 0) return;
@@ -660,6 +663,41 @@ window.prevLiveSong = function() {
     const currentIdx = window.songs.findIndex(s => s.id === window.currentSongId);
     const prevIndex = currentIdx - 1 >= 0 ? currentIdx - 1 : window.songs.length - 1;
     window.playSong(window.songs[prevIndex].id);
+};
+
+// ==========================================
+// 🎵 Visualizer (random smooth equalizer bars)
+// ==========================================
+window._eqInterval = null;
+
+window.startEqBars = function() {
+    if (window._eqInterval) return;
+    const bars = document.querySelectorAll('#liveActivity .live-icon .bar');
+    if (!bars.length) return;
+
+    const baseHeights = [4, 6, 5, 4];
+    let prevHeights = [...baseHeights];
+
+    window._eqInterval = setInterval(() => {
+        bars.forEach((bar, i) => {
+            const base = baseHeights[i] || 4;
+            const max = 18;
+            const delta = Math.random() * 12 - 4;
+            let newH = Math.round(Math.min(max, Math.max(base, prevHeights[i] + delta)));
+            prevHeights[i] = newH;
+            bar.style.height = newH + 'px';
+        });
+    }, 110);
+};
+
+window.stopEqBars = function() {
+    if (window._eqInterval) {
+        clearInterval(window._eqInterval);
+        window._eqInterval = null;
+    }
+    document.querySelectorAll('#liveActivity .live-icon .bar').forEach(bar => {
+        bar.style.height = '4px';
+    });
 };
 
 // ==========================================
