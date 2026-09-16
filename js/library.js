@@ -5,6 +5,13 @@ import { db, songsCollection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 
 
 window.songs = [];
 window.currentFilter = 'All';
+window.songSort = 'alpha';
+
+window.setSongSort = function(value) {
+    window.songSort = value;
+    window.renderSongList(document.getElementById('searchInput').value.toLowerCase(), window.currentFilter);
+};
+window.setSongSort = window.setSongSort;
 
 window.updateArtistSuggestions = function() {
     const datalist = document.getElementById('artistList');
@@ -106,8 +113,15 @@ window.renderSongList = function(query = '', artistFilter = 'All') {
         return ((song.title && song.title.toLowerCase().includes(q)) || artist.toLowerCase().includes(q)) && (artistFilter === 'All' || artist.includes(artistFilter));
     });
 
+    filtered.sort((a, b) => {
+        if (window.songSort === 'alpha') return (a.title || '').localeCompare(b.title || '', 'th');
+        if (window.songSort === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
+        if (window.songSort === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+        return 0;
+    });
+
     filtered.forEach(song => {
-        const item = document.createElement('div'); item.className = 'song-item';
+        const item = document.createElement('div'); item.className = 'song-card';
         const videoId = window.extractYouTubeID(song.audioPath);
         const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
         let actionsHtml = window.isAdmin ? `<button class="btn-secondary" onclick="event.stopPropagation(); editSong('${song.id}')">✏️</button><button class="btn-secondary" style="color:#ff3b30;" onclick="event.stopPropagation(); deleteSong('${song.id}')">ลบ</button>` : '';
@@ -115,11 +129,12 @@ window.renderSongList = function(query = '', artistFilter = 'All') {
 
         item.onclick = () => window.playSong(song.id);
         item.innerHTML = `
-            <img src="${thumbUrl}" onerror="this.style.display='none'">
-            <div><div class="song-title">${song.title}</div><div class="song-artist">🎤 ${song.artist || '-'}</div></div>
-            <div class="song-actions">
+            <div class="song-card-thumb"><img src="${thumbUrl}" onerror="this.style.display='none'" loading="lazy"></div>
+            <div class="song-card-title">${song.title}</div>
+            <div class="song-card-artist">🎤 ${song.artist || '-'}</div>
+            <div class="song-card-actions">
                 <button class="share-btn" onclick="event.stopPropagation(); copyShareLink('${safeTitle}', this)">🔗 แชร์</button>
-                ${actionsHtml}
+                <div class="song-card-admin">${actionsHtml}</div>
             </div>
         `;
         listContainer.appendChild(item);
