@@ -70,6 +70,9 @@
             <div class="sidebar-spacer"></div>
 
             <div class="sidebar-footer">
+                <button id="btnHeaderLogin" onclick="loginWithGoogle()">
+                    <i class="fa-brands fa-google"></i><span>เข้าสู่ระบบด้วย Google</span>
+                </button>
                 <div id="profileBar" class="profile-bar" onclick="handleProfileClick()" title="เข้าสู่ระบบ">
                     <div id="profileAvatar" class="profile-avatar">
                         <i class="fa-solid fa-user" id="profileAvatarIcon"></i>
@@ -81,12 +84,20 @@
                     </div>
                     <i class="fa-solid fa-chevron-right profile-chevron" id="profileChevron"></i>
                 </div>
-                <button id="btnHeaderLogin" onclick="loginWithGoogle()">
-                    <i class="fa-brands fa-google"></i><span>เข้าสู่ระบบด้วย Google</span>
-                </button>
-                <button id="btnHeaderLogout" style="display:none;" onclick="logout()">
-                    <i class="fa-solid fa-right-from-bracket"></i><span>ออกจากระบบ</span>
-                </button>
+                <div id="profileMenu" class="profile-menu">
+                    <div class="profile-menu-header">
+                        <div id="profileMenuAvatar" class="profile-menu-avatar">
+                            <i class="fa-solid fa-user" id="profileMenuAvatarIcon"></i>
+                        </div>
+                        <div id="profileMenuName" class="profile-menu-name">-</div>
+                        <div id="profileMenuEmail" class="profile-menu-email">-</div>
+                    </div>
+                    <div class="profile-menu-divider"></div>
+                    <button class="profile-menu-btn" onclick="logout()">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>ออกจากระบบ</span>
+                    </button>
+                </div>
             </div>
         </aside>
 
