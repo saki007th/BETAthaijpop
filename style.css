@@ -311,11 +311,11 @@ a{ color:inherit; }
 .np-header-right{ display:flex; gap:10px; }
 
 .np-body{
-    flex:1; min-height:0; display:flex; gap:56px; padding:0 0 24px 48px; overflow:hidden;
+    flex:1; min-height:0; display:flex; gap:24px; padding:0 0 24px 48px; overflow:hidden;
     width:100%; margin:0; justify-content:space-between;
 }
 .np-media{
-    flex:1 1 0; width:auto; min-width:0; max-width:920px; align-self:center;
+    flex:1 1 0; width:auto; min-width:0; align-self:center;
     display:flex; flex-direction:column; align-items:stretch; justify-content:center;
 }
 .np-media-frame{
@@ -521,9 +521,8 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
    14. Responsive fallback (narrow desktop / tablet width)
    ========================================================== */
 @media (max-width: 1240px){
-    .np-body{ gap:36px; padding:0 0 20px 28px; }
+    .np-body{ gap:20px; padding:0 0 20px 28px; }
     .np-lyrics-panel{ flex-basis:440px; max-width:480px; }
-    .np-media{ max-width:700px; }
 }
 @media (max-width: 880px){
     .sidebar{ width:64px; padding:16px 8px; }
