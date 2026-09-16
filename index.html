@@ -200,6 +200,10 @@
             <span class="np-header-title">กำลังเล่น</span>
             <div class="np-header-right">
                 <button id="btnDockAdminSync" onclick="wm.toggleSyncPanel()" title="⏱ จัดการซิงค์เนื้อเพลง">⏱</button>
+                <button class="np-queue-btn" onclick="openQueuePanel()" title="เปิดหน้าคิวเพลง">
+                    <i class="fa-solid fa-list-ol"></i>
+                    <span id="npQueueCount" class="np-queue-badge" style="display:none;"></span>
+                </button>
                 <button onclick="togglePiPMode()" title="หน้าต่างลอย (PiP)"><i class="fa-solid fa-clone"></i></button>
             </div>
         </div>
@@ -231,6 +235,13 @@
             </div>
 
             <div class="np-lyrics-panel" id="content-lyrics">
+                <div class="np-lyrics-toolbar">
+                    <span class="np-lyrics-toolbar-title">เนื้อเพลง</span>
+                    <button class="np-queue-btn" onclick="openQueuePanel()" title="เปิดหน้าคิวเพลง">
+                        <i class="fa-solid fa-list-ol"></i>
+                        <span id="npLyricsQueueCount" class="np-queue-badge" style="display:none;"></span>
+                    </button>
+                </div>
                 <div id="versionContainer" style="display:none;"></div>
                 <div id="lyricsContainer" class="lyrics-container"></div>
             </div>
