@@ -58,7 +58,7 @@ window.renderRandomPlaylist = function() {
         item.onclick = () => window.playSong(song.id);
 
         const videoId = window.extractYouTubeID(song.audioPath);
-        const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : '';
+        const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
 
         item.innerHTML = `
             <img src="${thumbUrl}" onerror="this.src=''">
