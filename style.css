@@ -569,6 +569,14 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     display:flex; align-items:center; justify-content:center;
 }
 
+/* --- ปุ่มคิวในหน้าเครื่องเล่น (Now Playing) --- */
+.np-queue-btn{ position:relative; }
+.np-queue-btn .np-queue-badge{
+    position:absolute; top:-4px; right:-4px; min-width:15px; height:15px; padding:0 3px;
+    background:var(--danger); color:#fff; border-radius:var(--r-pill); border:1px solid var(--bg-surface);
+    font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+
 /* --- Queue drawer (ด้านขวา) --- */
 .queue-panel{
     position:fixed; top:0; right:0; bottom:0; width:360px; max-width:92vw;
