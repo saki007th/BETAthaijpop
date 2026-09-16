@@ -90,11 +90,24 @@ window.renderRecentlyAdded = function() {
         const videoId = window.extractYouTubeID(song.audioPath);
         const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
 
+        let dateStr = '';
+        const ts = song.createdAt;
+        if (ts) {
+            let ms = (typeof ts === 'number') ? ts
+                : (typeof ts === 'object' && ts.seconds) ? ts.seconds * 1000
+                : new Date(ts).getTime();
+            if (!isNaN(ms)) {
+                const d = new Date(ms);
+                dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
+            }
+        }
+
         item.innerHTML = `
             <img src="${thumbUrl}" onerror="this.src=''">
             <div class="random-song-info">
                 <div class="random-song-title">${song.title}</div>
                 <div class="random-song-artist">🎤 ${song.artist || '-'}</div>
+                <div class="random-song-date">📅 ${dateStr || 'ไม่ระบุ'}</div>
             </div>
         `;
         container.appendChild(item);
