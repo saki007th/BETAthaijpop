@@ -143,9 +143,13 @@ window.updateQueueBadges = function() {
     const badge = document.getElementById('queueCountBadge');
     const navBadge = document.getElementById('queueNavCount');
     const panelCount = document.getElementById('queuePanelCount');
+    const npBadge = document.getElementById('npQueueCount');
+    const npLyricsBadge = document.getElementById('npLyricsQueueCount');
     if (badge) { badge.style.display = count > 0 ? 'flex' : 'none'; badge.innerText = count; }
     if (navBadge) { navBadge.style.display = count > 0 ? 'flex' : 'none'; navBadge.innerText = count; }
     if (panelCount) panelCount.innerText = count;
+    if (npBadge) { npBadge.style.display = count > 0 ? 'flex' : 'none'; npBadge.innerText = count; }
+    if (npLyricsBadge) { npLyricsBadge.style.display = count > 0 ? 'flex' : 'none'; npLyricsBadge.innerText = count; }
 };
 
 // ==========================================
