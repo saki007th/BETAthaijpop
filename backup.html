@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการหลังบ้าน (Admin Tools)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: #0a0a0c; 
+            color: #f5f5f7; 
+            margin: 0; padding: 0; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            min-height: 100vh;
+        }
+        .container {
+            background: #1c1c1e;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        h2 { margin-top: 0; color: #0a84ff; }
+        .info-text { color: #8e8e93; font-size: 0.9em; margin-bottom: 30px; line-height: 1.5; }
+        
+        button {
+            background: #2c2c2e; color: #fff; border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px 20px; font-size: 1em; font-weight: 600;
+            border-radius: 12px; cursor: pointer; width: 100%; margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+        button:hover { background: #3a3a3c; transform: translateY(-2px); }
+        button:disabled { background: #1c1c1e; color: #48484a; cursor: not-allowed; border-color: transparent; }
+        
+        .btn-primary { background: #0a84ff; border-color: #0a84ff; }
+        .btn-primary:hover { background: #0071e3; }
+        .btn-export { background: rgba(10, 132, 255, 0.1); color: #0a84ff; border-color: rgba(10, 132, 255, 0.3); }
+        .btn-export:hover { background: rgba(10, 132, 255, 0.2); }
+        .btn-import { background: rgba(52, 199, 89, 0.1); color: #34c759; border-color: rgba(52, 199, 89, 0.3); }
+        .btn-import:hover { background: rgba(52, 199, 89, 0.2); }
+        .btn-logout { background: transparent; color: #ff453a; margin-top: 20px; border: none; font-size: 0.9em; }
+        .btn-logout:hover { background: rgba(255, 69, 58, 0.1); border: none; }
+
+        #adminPanel { display: none; }
+        #loginPanel { display: block; }
+        
+        #statusMessage {
+            margin-top: 15px; font-size: 0.9em; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- หน้าล็อกอิน -->
+        <div id="loginPanel">
+            <h2>🔒 ยืนยันตัวตนแอดมิน</h2>
+            <p class="info-text">กรุณาเข้าสู่ระบบด้วยบัญชีแอดมินเพื่อเข้าถึงเครื่องมือจัดการฐานข้อมูลเนื้อเพลง</p>
+            <button class="btn-primary" id="btnLogin">เข้าสู่ระบบด้วย Google</button>
+        </div>
+
+        <!-- หน้าเครื่องมือ (แสดงเมื่อล็อกอินผ่าน) -->
+        <div id="adminPanel">
+            <h2>🛠️ เครื่องมือสำรองข้อมูล</h2>
+            <p class="info-text">ระบบนี้แยกอิสระจากเว็บไซต์หลัก<br>ใช้สำหรับส่งออก (Export) และกู้คืน (Import) ข้อมูลเพลงใน Firestore</p>
+            
+            <button class="btn-export" id="btnExport">📥 1. ส่งออกข้อมูล (Backup to JSON)</button>
+            <button class="btn-import" id="btnImportClick">📤 2. กู้คืนข้อมูล (Import from JSON)</button>
+            
+            <!-- ซ่อน input file ไว้ -->
+            <input type="file" id="fileImport" accept=".json" style="display: none;">
+            
+            <div id="statusMessage"></div>
+
+            <button class="btn-logout" id="btnLogout">ออกจากระบบ</button>
+        </div>
+    </div>
+
+    <!-- สคริปต์การทำงานของ Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDV-gefPFqCmAvYmrSXeb5W1JUKf4Ev50Q",
+            authDomain: "musix-syn.firebaseapp.com",
+            projectId: "musix-syn",
+            storageBucket: "musix-syn.firebasestorage.app",
+            messagingSenderId: "154980084057",
+            appId: "1:154980084057:web:e0af2ed833cb127f3b8448"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        
+        const ALLOWED_EMAILS = ["sashikiwa@gmail.com", "panupong.bb27115@gmail.com"];
+        let isAdmin = false;
+
+        const loginPanel = document.getElementById('loginPanel');
+        const adminPanel = document.getElementById('adminPanel');
+        const statusMessage = document.getElementById('statusMessage');
+
+        function showStatus(msg, color) {
+            statusMessage.style.color = color;
+            statusMessage.innerText = msg;
+            setTimeout(() => { statusMessage.innerText = ''; }, 5000);
+        }
+
+        // 1. ระบบตรวจสอบสถานะ
+        onAuthStateChanged(auth, (user) => {
+            if (user && ALLOWED_EMAILS.includes(user.email)) {
+                isAdmin = true;
+                loginPanel.style.display = 'none';
+                adminPanel.style.display = 'block';
+            } else {
+                isAdmin = false;
+                loginPanel.style.display = 'block';
+                adminPanel.style.display = 'none';
+                if (user) {
+                    alert("บัญชีนี้ไม่มีสิทธิ์เข้าถึง กรุณาใช้บัญชีแอดมิน");
+                    signOut(auth);
+                }
+            }
+        });
+
+        // 2. ล็อกอิน / ล็อกเอาท์
+        document.getElementById('btnLogin').onclick = () => signInWithPopup(auth, provider);
+        document.getElementById('btnLogout').onclick = () => signOut(auth);
+
+        // 3. ระบบส่งออกข้อมูล (Export)
+        document.getElementById('btnExport').onclick = async () => {
+            if (!isAdmin) return;
+            const btn = document.getElementById('btnExport');
+            btn.innerText = "กำลังดึงข้อมูล...";
+            btn.disabled = true;
+
+            try {
+                const querySnapshot = await getDocs(collection(db, 'songs'));
+                const songs = [];
+                querySnapshot.forEach((doc) => {
+                    songs.push({ id: doc.id, ...doc.data() });
+                });
+
+                if (songs.length === 0) {
+                    showStatus("ไม่มีข้อมูลเพลงในระบบ", "#ff453a");
+                    return;
+                }
+
+                const backupData = JSON.stringify(songs, null, 2);
+                const blob = new Blob([backupData], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = new Date().toISOString().split('T')[0];
+                a.download = `musix_db_backup_${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showStatus(`✅ ดาวน์โหลดสำเร็จ (${songs.length} เพลง)`, "#34c759");
+            } catch (error) {
+                console.error(error);
+                showStatus("❌ เกิดข้อผิดพลาด", "#ff453a");
+            } finally {
+                btn.innerText = "📥 1. ส่งออกข้อมูล (Backup to JSON)";
+                btn.disabled = false;
+            }
+        };
+
+        // 4. ระบบนำเข้าข้อมูล (Import)
+        document.getElementById('btnImportClick').onclick = () => {
+            document.getElementById('fileImport').click();
+        };
+
+        document.getElementById('fileImport').onchange = (event) => {
+            if (!isAdmin) return;
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!confirm('⚠️ คำเตือน: ระบบจะนำข้อมูลในไฟล์นี้ไปบันทึกทับฐานข้อมูลเดิม\nแน่ใจหรือไม่ที่จะดำเนินการ?')) {
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                showStatus("กำลังนำเข้าข้อมูล กรุณารอสักครู่...", "#0a84ff");
+                try {
+                    const importedSongs = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedSongs)) throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
+
+                    let successCount = 0;
+                    for (const song of importedSongs) {
+                        if (song.id && song.title) {
+                            const { id, ...songData } = song;
+                            // ใช้ setDoc เพื่อบันทึกทับข้อมูลเดิมโดยใช้ ID ตัวเดิม
+                            await setDoc(doc(db, "songs", id), songData);
+                            successCount++;
+                        }
+                    }
+                    showStatus(`✅ กู้คืนข้อมูลสำเร็จ ${successCount} เพลง`, "#34c759");
+                } catch (err) {
+                    console.error(err);
+                    showStatus("❌ ไฟล์ขัดข้อง หรือรูปแบบผิดพลาด", "#ff453a");
+                }
+                event.target.value = ''; 
+            };
+            reader.readAsText(file);
+        };
+    </script>
+</body>
+</html>

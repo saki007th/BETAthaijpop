@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+
+    <!-- 🔴 Mobile Redirect -->
+    <script>
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            window.location.href = "mobile.html" + window.location.search;
+        }
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Lyric Workspace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="desktop-wallpaper"></div>
+    <div id="dynamic-bg"></div>
+
+    <div id="loadingOverlay">
+        <div>กำลังโหลดข้อมูลคลังเพลง...</div>
+    </div>
+
+    <div id="app-shell">
+        <!-- ================= Sidebar ================= -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">My Lyric Workspace</div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="home" onclick="wm.showView('home')">
+                    <i class="fa-solid fa-house"></i><span>หน้าแรก</span>
+                </button>
+                <button class="nav-item" data-view="library" onclick="wm.openLibrary()">
+                    <i class="fa-solid fa-record-vinyl"></i><span>คลังเพลง</span>
+                </button>
+                <button class="nav-item" data-view="settings" onclick="wm.openSettings()">
+                    <i class="fa-solid fa-gear"></i><span>ตั้งค่า</span>
+                </button>
+            </nav>
+
+            <div class="nav-divider" id="sidebarAdminDivider" style="display:none;"></div>
+            <div id="sidebarAdminSection" style="display:none;">
+                <div class="nav-section-label">สำหรับแอดมิน</div>
+                <button class="nav-item" onclick="openSingerColorManager(window.db)">
+                    <i class="fa-solid fa-palette"></i><span>สีนักร้อง</span>
+                </button>
+                <button class="nav-item" onclick="window.open('backup.html', '_blank')">
+                    <i class="fa-solid fa-database"></i><span>สำรองข้อมูล</span>
+                </button>
+            </div>
+
+            <div class="sidebar-spacer"></div>
+
+            <div class="sidebar-footer">
+                <button id="btnHeaderLogin" onclick="loginWithGoogle()">
+                    <i class="fa-solid fa-user"></i><span>เข้าสู่ระบบแอดมิน</span>
+                </button>
+                <button id="btnHeaderLogout" style="display:none;" onclick="logout()">
+                    <i class="fa-solid fa-right-from-bracket"></i><span>ออกจากระบบ</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ================= Main content ================= -->
+        <main class="main-content">
+
+            <!-- ---- Home view ---- -->
+            <section id="view-home" class="content-view active">
+                <header class="content-header">
+                    <h1 class="content-title">หน้าแรก</h1>
+                    <button id="btnDockNotify" class="icon-btn" onclick="window.openNotifyWindow()" title="เพลงใหม่ล่าสุด">
+                        <i class="fa-solid fa-bell"></i>
+                        <span id="notifyBadge" class="notify-badge" style="display:none;"></span>
+                    </button>
+                </header>
+                <div class="content-body">
+                    <div id="content-artist-widget">
+                        <div id="artistWidgetContent">
+                            <div style="text-align:center; color:var(--text-3); margin-top:20px;">กำลังโหลดศิลปิน...</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <h2 class="section-title" style="margin-bottom:0;">✨ เพลงสุ่มน่าฟัง</h2>
+                        <button class="widget-refresh-btn" onclick="renderRandomPlaylist()" title="สุ่มใหม่" style="margin-top:20px;">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+                    <div id="randomSongList" class="home-random-row"></div>
+                </div>
+            </section>
+
+            <!-- ---- Library view ---- -->
+            <section id="view-library" class="content-view">
+                <header class="content-header">
+                    <h1 class="content-title">คลังเพลง</h1>
+                    <div class="header-actions">
+                        <input type="text" id="searchInput" class="search-input" placeholder="🔍 ค้นหาชื่อเพลง หรือ ศิลปิน..." oninput="filterSongs()">
+                        <button id="btnAddSong" class="btn-primary" onclick="openAddView()" style="display:none; margin:0; white-space:nowrap;">✨ เพิ่มเพลง</button>
+                    </div>
+                </header>
+                <div class="content-body">
+                    <div id="artistChips" class="chip-row"></div>
+                    <div id="songList" class="song-list"></div>
+                </div>
+            </section>
+
+            <!-- ---- Settings view ---- -->
+            <section id="view-settings" class="content-view">
+                <header class="content-header"><h1 class="content-title">ตั้งค่า</h1></header>
+                <div class="content-body">
+                    <div id="content-settings" class="settings-body">
+                        <h3>🖼️ ภาพพื้นหลัง (Wallpaper)</h3>
+                        <div class="wallpaper-grid">
+                            <button class="btn-secondary" onclick="setWallpaper('default')">🌌 สีพื้นฐาน</button>
+                            <button class="btn-secondary" onclick="setWallpaper('https://images.unsplash.com/photo-1538370965046-79c0d6907d47?q=80&w=2000')">🌆 ไซเบอร์พังก์</button>
+                            <button class="btn-secondary" onclick="setWallpaper('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')">⛰️ ภูเขาดวงดาว</button>
+                            <button class="btn-secondary" onclick="setWallpaper('https://images.unsplash.com/photo-1506744626753-1fa28f673b0c?q=80&w=2000')">🏞️ ธรรมชาติ</button>
+                        </div>
+                        <input type="text" id="inputCustomWallpaper" placeholder="หรือวางลิงก์รูปภาพ (URL) ของคุณที่นี่..." onchange="setWallpaper(this.value)">
+
+                        <label>รูปแบบภาพพื้นหลัง:</label>
+                        <select id="bgSizeSelect" onchange="setBgSize(this.value)" style="margin-bottom:30px;">
+                            <option value="cover">เต็มจอ (ภาพอาจถูกตัดขอบ)</option>
+                            <option value="contain">พอดีจอ (เห็นภาพครบ แต่อาจมีขอบดำ)</option>
+                        </select>
+
+                        <hr style="border:0; border-top:1px solid var(--border-soft); margin-bottom:25px;">
+
+                        <h3>🔀 โหมดเล่นเพลง</h3>
+                        <div style="margin-bottom:25px;">
+                            <label class="lang-toggle" style="display:inline-flex;">
+                                <input type="checkbox" id="toggleShuffleBtn" onchange="toggleShuffle(this.checked)"> สุ่มเพลงอัตโนมัติเมื่อเล่นจบ
+                            </label>
+                        </div>
+
+                        <h3>🪟 ความโปร่งใสของแผงกระจก</h3>
+                        <label>ความโปร่งใส (Opacity):</label>
+                        <input type="range" id="sliderOpacity" min="10" max="100" value="95" oninput="setWindowStyle()" style="margin-bottom:10px;">
+                        <label>ความเบลอ (Blur):</label>
+                        <input type="range" id="sliderBlur" min="0" max="50" value="20" oninput="setWindowStyle()" style="margin-bottom:25px;">
+
+                        <h3>📝 ขนาดตัวอักษรเนื้อเพลง</h3>
+                        <input type="range" id="sliderFontSize" min="0.8" max="2.5" step="0.1" value="1.15" oninput="setLyricFontSize(this.value)" style="margin-bottom:30px;">
+
+                        <h3>🈯️ แสดง/ซ่อนภาษา</h3>
+                        <div id="lyricLangToggles" style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <label class="lang-toggle"><input type="checkbox" checked onchange="toggleLang(0)"> 🇯🇵 ญี่ปุ่น</label>
+                            <label class="lang-toggle"><input type="checkbox" checked onchange="toggleLang(1)"> 🔤 โรมาจิ</label>
+                            <label class="lang-toggle"><input type="checkbox" checked onchange="toggleLang(2)"> 🇹🇭 ไทย</label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= Persistent player bar (was #liveActivity) ================= -->
+    <div id="liveActivity" class="player-bar hidden" onclick="if(window.currentSongId) wm.openPlayer(document.getElementById('liveTitle').innerText)" title="เปิดหน้าเครื่องเล่น">
+        <div id="playerProgressBarBg" class="player-progress-bg"></div>
+        <div class="player-bar-inner">
+            <div class="player-left">
+                <div class="live-thumb"></div>
+                <div class="live-info">
+                    <div id="liveTitle" class="live-title">-</div>
+                    <div id="liveArtist" class="live-artist">-</div>
+                </div>
+            </div>
+            <div class="player-center">
+                <div class="live-controls">
+                    <button class="live-btn" onclick="event.stopPropagation(); prevLiveSong()" title="ก่อนหน้า"><i class="fa-solid fa-backward-step"></i></button>
+                    <button id="livePlayPauseBtn" class="live-btn" onclick="event.stopPropagation(); toggleLivePlay()" title="เล่น/พัก"><i class="fa-solid fa-pause"></i></button>
+                    <button class="live-btn" onclick="event.stopPropagation(); nextLiveSong()" title="ถัดไป"><i class="fa-solid fa-forward-step"></i></button>
+                </div>
+            </div>
+            <div class="player-right">
+                <div class="live-icon"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+                <button class="icon-btn" onclick="event.stopPropagation(); togglePiPMode()" title="หน้าต่างลอย (PiP)"><i class="fa-solid fa-clone"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Now Playing (expanded) ================= -->
+    <div id="nowPlayingView" class="now-playing-view">
+        <div class="np-header">
+            <button onclick="wm.collapseNowPlaying()" title="ย่อหน้าต่าง"><i class="fa-solid fa-chevron-down"></i></button>
+            <span class="np-header-title">กำลังเล่น</span>
+            <div class="np-header-right">
+                <button onclick="togglePiPMode()" title="หน้าต่างลอย (PiP)"><i class="fa-solid fa-clone"></i></button>
+            </div>
+        </div>
+        <div class="np-body">
+            <div class="np-media">
+                <div class="np-media-frame">
+                    <div id="content-player" style="width:100%; height:100%; background:#000;">
+                        <div id="youtubePlayer" style="width:100%; height:100%;"></div>
+                    </div>
+                </div>
+                <div id="btnDockAdminSync" style="display:none; margin-top:16px;" onclick="wm.toggleSyncPanel()">⏱ จัดการซิงค์เนื้อเพลง</div>
+            </div>
+            <div class="np-lyrics-panel" id="content-lyrics">
+                <div id="versionContainer" style="display:none;"></div>
+                <div id="lyricsContainer" class="lyrics-container"></div>
+            </div>
+        </div>
+
+        <div id="syncPanel" class="sync-panel" style="display:none;">
+            <div class="sync-panel-header">
+                <span id="syncPanelTitle">⏱ จัดการซิงค์</span>
+                <button class="modal-close-btn" onclick="wm.toggleSyncPanel()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="sync-panel-body">
+                <div id="content-admin-sync">
+                    <div class="sticky-sync-bar" id="lyricControlBtnGroup">
+                        <button class="btn-secondary" onclick="prevLyric()">⏮ ย้อน (ลบเวลา)</button>
+                        <button class="btn-primary" onclick="nextLyric()" style="background:#ffcc00; color:#000;">⏭ ถัดไป (จับจังหวะ)</button>
+                    </div>
+                    <div id="timestampList" class="timestamp-list"></div>
+                    <button id="btnResetSync" class="btn-secondary" onclick="resetSync()" style="margin-top:15px; width:100%;">🔄 ล้างเวลาซิงค์เริ่มใหม่</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Add / Edit song modal ================= -->
+    <div id="modalBackdrop" class="modal-backdrop" onclick="window.closeSheet()"></div>
+
+    <div id="modalAdd" class="modal-sheet">
+        <div class="modal-header">
+            <span id="modalAddTitle">เพิ่มเพลงใหม่</span>
+            <button class="modal-close-btn" onclick="window.closeAddModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="content-add">
+                <label>ชื่อเพลง:</label>
+                <input type="text" id="inputTitle" placeholder="เช่น ソワレ (Soirée)">
+                <label>ชื่อศิลปิน:</label>
+                <input type="text" id="inputArtist" placeholder="เช่น [Suisei] [Miko]" list="artistList">
+                <datalist id="artistList"></datalist>
+                <label>ลิงก์ YouTube:</label>
+                <input type="text" id="inputAudio" placeholder="วางลิงก์วิดีโอ YouTube ที่นี่">
+                <label>เนื้อเพลง:</label>
+                <textarea id="inputLyrics" placeholder="ท่อนที่ 1 ญี่ปุ่น&#10;ท่อนที่ 1 โรมาจิ&#10;ท่อนที่ 1 ไทย&#10;&#10;ท่อนที่ 2..."></textarea>
+
+                <hr style="border:0; border-top:1px solid var(--border-soft); margin:20px 0 10px 0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <label style="margin:0; color:#ffcc00; font-size:.9em;">🎧 เวอร์ชัน Cover (ถ้ามี)</label>
+                    <button class="btn-secondary" onclick="addCoverInput()" style="padding:4px 10px; font-size:.8em; background:rgba(255,204,0,.2); color:#ffcc00; border:1px solid rgba(255,204,0,.4);">➕ เพิ่ม Cover</button>
+                </div>
+                <div id="coverInputsContainer"></div>
+
+                <button id="btnSave" class="btn-primary" onclick="saveSong()" style="width:100%; margin-top:15px;">💾 บันทึกเพลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Generic sheet (Notify / Singer colors) ================= -->
+    <div id="genericModalSheet" class="modal-sheet modal-wide">
+        <div class="modal-header">
+            <span id="genericModalTitle">-</span>
+            <button class="modal-close-btn" onclick="window.closeSheet()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="genericModalBody" style="max-height:70vh;"></div>
+    </div>
+
+    <!-- ================= Scripts ================= -->
+    <script src="pip.js"></script>
+    <script src="notify.js"></script>
+    <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/ui-shell.js"></script>
+    <script type="module" src="js/settings.js"></script>
+    <script type="module" src="js/home.js"></script>
+    <script type="module" src="js/library.js"></script>
+    <script type="module" src="js/player.js"></script>
+    <script type="module" src="js/singerColors.js"></script>
+    <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
