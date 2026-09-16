@@ -44,6 +44,13 @@
                 <button class="nav-item" data-view="library" onclick="wm.openLibrary()">
                     <i class="fa-solid fa-record-vinyl"></i><span>คลังเพลง</span>
                 </button>
+                <button class="nav-item" onclick="openQueuePanel()" title="คิวเพลง">
+                    <i class="fa-solid fa-list-ol"></i><span>คิวเพลง</span>
+                    <span id="queueNavCount" class="nav-badge" style="display:none;"></span>
+                </button>
+                <button class="nav-item" data-view="playlists" onclick="openPlaylistsView()">
+                    <i class="fa-solid fa-list"></i><span>Playlist</span>
+                </button>
                 <button class="nav-item" data-view="settings" onclick="wm.openSettings()">
                     <i class="fa-solid fa-gear"></i><span>ตั้งค่า</span>
                 </button>
@@ -146,6 +153,14 @@
                 </div>
             </section>
 
+            <!-- ---- Playlists view ---- -->
+            <section id="view-playlists" class="content-view">
+                <header class="content-header"><h1 class="content-title">🎧 Playlist ของฉัน</h1></header>
+                <div class="content-body">
+                    <div id="playlistsContainer"></div>
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -169,6 +184,10 @@
             </div>
             <div class="player-right">
                 <div class="live-icon"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+                <button class="icon-btn queue-bar-btn" onclick="event.stopPropagation(); openQueuePanel()" title="คิวเพลง">
+                    <i class="fa-solid fa-list-ol"></i>
+                    <span id="queueCountBadge" class="notify-badge" style="display:none;"></span>
+                </button>
                 <button class="icon-btn" onclick="event.stopPropagation(); togglePiPMode()" title="หน้าต่างลอย (PiP)"><i class="fa-solid fa-clone"></i></button>
             </div>
         </div>
@@ -235,6 +254,19 @@
         </div>
     </div>
 
+    <!-- ================= คิวเพลง (Queue drawer) ================= -->
+    <div id="queuePanel" class="queue-panel">
+        <div class="queue-panel-header">
+            <div class="queue-panel-title">🎵 คิวเพลง <span id="queuePanelCount" class="queue-panel-count">0</span></div>
+            <div class="queue-panel-actions">
+                <button class="btn-secondary" onclick="window.playQueueHead()" title="เล่นเพลงแรกในคิว">▶️ เล่น</button>
+                <button class="btn-secondary" onclick="window.clearQueue()" title="ล้างคิว"><i class="fa-solid fa-trash-can"></i></button>
+                <button class="modal-close-btn" onclick="window.closeQueuePanel()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="queue-panel-body" id="queueList"></div>
+    </div>
+
     <!-- ================= Add / Edit song modal ================= -->
     <div id="modalBackdrop" class="modal-backdrop" onclick="window.closeSheet()"></div>
 
@@ -287,6 +319,7 @@
     <script type="module" src="js/library.js"></script>
     <script type="module" src="js/player.js"></script>
     <script type="module" src="js/singerColors.js"></script>
+    <script type="module" src="js/userdata.js"></script>
     <script type="module" src="js/main.js"></script>
 
 </body>

@@ -193,13 +193,14 @@ a{ color:inherit; }
 }
 .song-card-actions{
     position:absolute; top:8px; right:8px; z-index:3;
-    display:flex; align-items:center; gap:6px;
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end; max-width:calc(100% - 16px);
 }
 .song-card-actions .share-btn,
 .song-card-admin .btn-secondary{
     background:rgba(0,0,0,.55); backdrop-filter:blur(6px); color:#fff;
     border:1px solid rgba(255,255,255,.25); padding:5px 10px; font-size:11px; border-radius:var(--r-pill);
 }
+.song-card-actions .share-btn{ white-space:nowrap; }
 .song-card-admin{ display:flex; gap:6px; }
 .song-card-actions .share-btn:hover{ background:rgba(0,0,0,.75); }
 .song-card-admin .btn-secondary{ font-weight:500; }
@@ -541,9 +542,139 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 }
 
 /* ==========================================================
-   13. Cover version inputs, share toast (kept from original)
+    13. Cover version inputs, share toast (kept from original)
    ========================================================== */
 .share-btn{ background:transparent; color:var(--accent); border:1px solid var(--accent); padding:6px 12px; border-radius:var(--r-pill); font-size:12px; cursor:pointer; }
+
+/* ==========================================================
+    13.5 คิวเพลง + Playlist ส่วนตัว
+   ========================================================== */
+.nav-badge{
+    margin-left:auto; min-width:18px; height:18px; padding:0 5px;
+    background:var(--accent); color:#fff; border-radius:var(--r-pill);
+    font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.nav-item.active .nav-badge{ background:#fff; color:var(--accent); }
+
+.song-card-actions .add-queue-btn{ color:#34c759; border-color:rgba(52,199,89,.6); }
+.song-card-actions .add-queue-btn:hover{ background:rgba(52,199,89,.25); }
+.song-card-actions .add-playlist-btn{ color:#ffcc00; border-color:rgba(255,204,0,.6); }
+.song-card-actions .add-playlist-btn:hover{ background:rgba(255,204,0,.25); }
+
+/* --- ปุ่มคิวในแถบ player (มี badge จำนวน) --- */
+.queue-bar-btn{ position:relative; }
+.queue-bar-btn .notify-badge{
+    top:0; right:0; width:15px; height:15px; font-size:9px;
+    color:#fff; background:var(--danger); border:1px solid var(--bg-bar);
+    display:flex; align-items:center; justify-content:center;
+}
+
+/* --- Queue drawer (ด้านขวา) --- */
+.queue-panel{
+    position:fixed; top:0; right:0; bottom:0; width:360px; max-width:92vw;
+    background:var(--bg-surface); border-left:1px solid var(--border-strong);
+    z-index:700; display:flex; flex-direction:column;
+    transform:translateX(105%); transition:transform .3s var(--ease);
+    box-shadow:-20px 0 50px rgba(0,0,0,.5);
+}
+.queue-panel.active{ transform:translateX(0); }
+.queue-panel-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px; border-bottom:1px solid var(--border-soft); flex-shrink:0;
+}
+.queue-panel-title{ font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.queue-panel-count{
+    background:var(--bg-elevated); color:var(--text-2); border-radius:var(--r-pill);
+    padding:2px 10px; font-size:11.5px; font-weight:600;
+}
+.queue-panel-actions{ display:flex; align-items:center; gap:8px; }
+.queue-panel-actions .btn-secondary{ padding:6px 12px; font-size:12px; }
+.queue-panel-body{ flex:1; overflow-y:auto; padding:14px 18px; }
+.queue-empty{
+    text-align:center; color:var(--text-2); padding:50px 10px; line-height:1.8; font-size:14px;
+}
+
+.queue-list-wide{ display:flex; flex-direction:column; gap:8px; }
+.queue-item{
+    display:flex; align-items:center; gap:12px;
+    background:var(--bg-elevated); padding:8px 10px; border-radius:var(--r-s);
+    transition:background .15s var(--ease);
+}
+.queue-item:hover{ background:var(--bg-elevated-hover); }
+.queue-item-thumb{ width:44px; height:44px; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--bg-surface-2); }
+.queue-item-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+.queue-item-info{ flex:1; min-width:0; }
+.queue-item-title{ font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.queue-item-artist{ font-size:11.5px; color:var(--text-3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.queue-item-controls{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.q-btn{
+    background:var(--bg-surface-2); border:none; color:var(--text-1);
+    width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:11px;
+    display:flex; align-items:center; justify-content:center;
+}
+.q-btn:hover{ background:#3a3a3c; }
+.q-btn:disabled{ opacity:.3; cursor:default; }
+.q-btn-danger:hover{ background:rgba(255,59,48,.3); color:#ff6b61; }
+
+/* --- เมนูเพิ่มลง Playlist --- */
+.add-playlist-menu{
+    background:var(--bg-surface-2); border:1px solid var(--border-strong); border-radius:12px;
+    padding:8px; min-width:220px; max-width:250px; box-shadow:0 15px 40px rgba(0,0,0,.6);
+    z-index:99999;
+}
+.add-playlist-menu-title{
+    font-size:12px; font-weight:600; color:var(--text-2); padding:6px 10px; border-bottom:1px solid var(--border-soft); margin-bottom:6px;
+}
+.add-playlist-menu-hint{ font-size:12px; color:var(--text-2); padding:8px 10px; text-align:center; }
+.add-playlist-menu-empty{ font-size:12.5px; color:var(--text-3); padding:10px; text-align:center; }
+.add-playlist-menu-item{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px;
+}
+.add-playlist-menu-item:hover{ background:var(--bg-elevated); }
+.add-playlist-menu-item.in-list{ color:var(--success); }
+.apm-arrow{ color:var(--text-3); font-size:12px; }
+.add-playlist-menu-create{
+    padding:9px 10px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--accent); font-weight:600;
+    border-top:1px solid var(--border-soft); margin-top:6px;
+}
+.add-playlist-menu-create:hover{ background:var(--accent-wash); }
+
+/* --- หน้า Playlists --- */
+.playlist-header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:18px; gap:12px; flex-wrap:wrap;
+}
+.playlist-header-left{ font-size:13px; color:var(--text-2); }
+.playlist-count{ background:var(--bg-elevated); padding:6px 14px; border-radius:var(--r-pill); font-size:12.5px; }
+.playlist-login-hint{
+    background:rgba(255,204,0,.08); border:1px solid rgba(255,204,0,.3); color:var(--text-2);
+    padding:14px 16px; border-radius:var(--r-m); font-size:13px; margin-bottom:18px; line-height:1.7;
+}
+.playlist-login-hint b{ color:var(--edit); }
+.playlist-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+.playlist-card{
+    background:linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border:1px solid var(--border-soft); border-radius:var(--r-m); padding:16px;
+    cursor:pointer; transition:transform .15s var(--ease), box-shadow .15s var(--ease);
+}
+.playlist-card:hover{ transform:translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,.35); }
+.playlist-card-top{ margin-bottom:14px; }
+.playlist-card-emoji{ font-size:28px; margin-bottom:10px; }
+.playlist-card-name{ font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.playlist-card-count{ font-size:12px; color:var(--text-3); margin-top:4px; }
+.playlist-card-actions{ display:flex; flex-wrap:wrap; gap:8px; }
+.playlist-card-actions .btn-secondary{ padding:7px 12px; font-size:12px; }
+
+.playlist-detail-header{
+    display:flex; align-items:center; gap:14px; margin-bottom:12px;
+}
+.playlist-detail-header .btn-secondary{ padding:7px 12px; font-size:12.5px; }
+.playlist-detail-title{ flex:1; font-size:19px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.playlist-detail-sub{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-bottom:18px; color:var(--text-2); font-size:13px;
+}
 
 /* ==========================================================
     14. Responsive fallback (narrow desktop / tablet width)
