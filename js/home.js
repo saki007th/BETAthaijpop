@@ -71,6 +71,36 @@ window.renderRandomPlaylist = function() {
     });
 };
 
+window.renderRecentlyAdded = function() {
+    const container = document.getElementById('recentlyAddedList');
+    if (!container || !window.songs || window.songs.length === 0) return;
+
+    container.innerHTML = '';
+
+    const recent = [...window.songs]
+        .filter(s => s.createdAt)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 5);
+
+    recent.forEach(song => {
+        const item = document.createElement('div');
+        item.className = 'random-song-item';
+        item.onclick = () => window.playSong(song.id);
+
+        const videoId = window.extractYouTubeID(song.audioPath);
+        const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
+
+        item.innerHTML = `
+            <img src="${thumbUrl}" onerror="this.src=''">
+            <div class="random-song-info">
+                <div class="random-song-title">${song.title}</div>
+                <div class="random-song-artist">🎤 ${song.artist || '-'}</div>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+};
+
 // ==========================================
 // 📊 สถิติการฟัง (แสดงบนหน้าแรก) มาจาก firestore userData
 // ==========================================
