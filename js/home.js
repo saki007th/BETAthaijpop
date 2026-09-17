@@ -31,7 +31,8 @@ window.renderArtistWidget = function() {
         const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : '';
         html += `
             <div class="widget-song-item" onclick="playSong('${song.id}')">
-                <img src="${thumbUrl}" onerror="this.style.display='none'">
+                <img src="${thumbUrl}" onerror="this.style.display='none'" loading="lazy">
+                <span class="view-badge" data-song="${song.id}"></span>
                 <div class="widget-song-info">
                     <div class="widget-song-title">${song.title}</div>
                 </div>
@@ -61,7 +62,8 @@ window.renderRandomPlaylist = function() {
         const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
 
         item.innerHTML = `
-            <img src="${thumbUrl}" onerror="this.src=''">
+            <img src="${thumbUrl}" onerror="this.src=''" onclick="event.stopPropagation()">
+            <span class="view-badge" data-song="${song.id}"></span>
             <div class="random-song-info">
                 <div class="random-song-title">${song.title}</div>
                 <div class="random-song-artist">🎤 ${song.artist || '-'}</div>

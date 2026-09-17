@@ -2,7 +2,7 @@
 // config.js - Firebase init, shared across modules
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, setDoc, getDoc, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 export const ALLOWED_EMAILS = ["sashikiwa@gmail.com", "panupong.bb27115@gmail.com"];
@@ -24,7 +24,7 @@ export const provider = new GoogleAuthProvider();
 export const songsCollection = collection(db, 'songs');
 
 export {
-    getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, setDoc, getDoc,
+    getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, setDoc, getDoc, increment, serverTimestamp,
     getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
 };
 

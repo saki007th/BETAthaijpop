@@ -133,7 +133,9 @@ window.renderSongList = function(query = '', artistFilter = 'All') {
 
         item.onclick = () => window.playSong(song.id);
         item.innerHTML = `
-            <div class="song-card-thumb"><img src="${thumbUrl}" onerror="this.style.display='none'" loading="lazy"></div>
+            <div class="song-card-thumb"><img src="${thumbUrl}" onerror="this.style.display='none'" loading="lazy">
+                <span class="view-badge" data-song="${song.id}">👁 ${window.formatViewCount((window.globalViews || {})[song.id])}</span>
+            </div>
             <div class="song-card-title">${song.title}</div>
             <div class="song-card-artist">🎤 ${song.artist || '-'}</div>
             <div class="song-card-actions">

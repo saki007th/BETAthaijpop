@@ -107,6 +107,7 @@ onAuthStateChanged(auth, async (user) => {
 
     if (window.loadUserData) await window.loadUserData();
     if (window.loadStats) await window.loadStats();
+    if (window.loadGlobalViews) window.loadGlobalViews();   // โหลดวิวรวมสาธารณะทั้งเว็บ
 
     if (document.getElementById('view-library').classList.contains('active') && window.renderSongList) window.renderSongList();
     if (window.currentSongId && window.renderTimestampEditor) window.renderTimestampEditor();
