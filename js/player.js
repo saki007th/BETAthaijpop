@@ -22,9 +22,15 @@ window._lastVideoQuality = null;
 
 window.formatVideoQuality = function(q) {
     const map = {
-        'highres': '1080p+', 'hd2160': '2160p', 'hd1440': '1440p',
-        'hd1080': '1080p', 'hd720': '720p', 'large': '480p',
-        'medium': '360p', 'small': '240p', 'tiny': '144p'
+        'highres': '4K',
+        'hd2160': '4K',
+        'hd1440': '2K',
+        'hd1080': 'HD+',
+        'hd720': 'HD',
+        'large': 'SD',
+        'medium': '360p',
+        'small': '240p',
+        'tiny': '144p'
     };
     return map[q] || (q && q !== 'auto' && q !== 'unknown' ? String(q) : null);
 };
@@ -38,14 +44,15 @@ window.qualityFromVideoSize = function() {
         }
         if (v && v.videoWidth && v.videoHeight) {
             const h = v.videoHeight;
-            if (h >= 2160) return '2160p';
-            if (h >= 1440) return '1440p';
-            if (h >= 1080) return '1080p';
-            if (h >= 720) return '720p';
-            if (h >= 480) return '480p';
+            if (h >= 4320) return '8K';
+            if (h >= 2160) return '4K';
+            if (h >= 1440) return '2K';
+            if (h >= 1080) return 'HD+';
+            if (h >= 720) return 'HD';
+            if (h >= 480) return 'SD';
             if (h >= 360) return '360p';
             if (h >= 240) return '240p';
-            return h + 'p';
+            return '144p';
         }
     } catch (e) {}
     return null;
@@ -77,7 +84,14 @@ window.updateVideoQuality = function(qEvent) {
     if (label) {
         window._lastVideoQuality = label;
         el.textContent = label;
+        el.title = 'ความละเอียดวิดีโอ: ' + window.qualityLabelDetail(label, q);
     }
+};
+
+window.qualityLabelDetail = function(label, q) {
+    const map = { 'hd2160':'2160p', 'hd1440':'1440p', 'hd1080':'1080p', 'hd720':'720p', 'large':'480p', 'medium':'360p', 'small':'240p', 'tiny':'144p', 'highres':'สูงกว่า 1080p' };
+    const detail = (q && map[q]) ? map[q] : null;
+    return detail && label ? label + ' (' + detail + ')' : label;
 };
 
 // ==========================================
