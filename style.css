@@ -919,22 +919,24 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 .now-playing-view.immersive .np-controls-block{
     position:absolute; left:50%; bottom:20px; transform:translateX(-50%);
     margin:0; z-index:8;
-    display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap;
+    display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:nowrap;
     max-width:min(92vw, 760px);
+    overflow:hidden;
     padding:10px 20px; border-radius:16px;
     background:rgba(10,10,14,.62); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
     border:1px solid rgba(255,255,255,.08); box-shadow:0 10px 30px rgba(0,0,0,.5);
 }
-.now-playing-view.immersive .np-track-meta{ gap:10px; min-width:0; }
-.now-playing-view.immersive .np-track-thumb{ width:38px; height:38px; border-radius:9px; }
+.now-playing-view.immersive .np-track-meta{ gap:10px; min-width:0; flex-wrap:nowrap; overflow:hidden; }
+.now-playing-view.immersive .np-track-thumb{ width:38px; height:38px; border-radius:9px; flex-shrink:0; }
+.now-playing-view.immersive .np-track-info{ min-width:0; flex:1 1 0; overflow:hidden; }
 .now-playing-view.immersive .np-track-title{ font-size:14px; max-width:240px; }
 .now-playing-view.immersive .np-track-artist{ font-size:12px; }
 .now-playing-view.immersive .np-ctrl-queue-btn{ display:none; }
 .now-playing-view.immersive .np-immersive-text-btn{
-    background:var(--accent); color:#fff; border-color:transparent;
+    background:var(--accent); color:#fff; border-color:transparent; flex-shrink:0;
 }
 .now-playing-view.immersive .np-scrub{ display:none; }
-.now-playing-view.immersive .np-controls-row{ gap:18px; }
+.now-playing-view.immersive .np-controls-row{ gap:18px; flex-shrink:0; }
 .now-playing-view.immersive .np-play-btn{ width:44px; height:44px; }
 
 /* current lyric line as a cinematic overlay above the transport bar */
