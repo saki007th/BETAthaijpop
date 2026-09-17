@@ -103,6 +103,11 @@
 
         <!-- ================= Main content ================= -->
         <main class="main-content">
+            <!-- Resolution bar (hidden on mobile) -->
+            <div id="resolutionBar" class="resolution-bar" title="ความละเอียดหน้าจอปัจจุบัน">
+                <i class="fa-solid fa-display"></i>
+                <span id="resolutionText">-</span>
+            </div>
 
             <!-- ---- Home view ---- -->
             <section id="view-home" class="content-view active">
@@ -373,6 +378,15 @@
     </div>
 
     <!-- ================= Scripts ================= -->
+    <script>
+        function updateResolutionBar(){
+            var el = document.getElementById('resolutionText');
+            if (!el) return;
+            el.textContent = window.innerWidth + ' × ' + window.innerHeight;
+        }
+        window.addEventListener('resize', updateResolutionBar);
+        updateResolutionBar();
+    </script>
     <script src="pip.js"></script>
     <script src="notify.js"></script>
     <script type="module" src="js/config.js"></script>
