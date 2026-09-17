@@ -51,6 +51,20 @@ window.wm = {
         if (window.closeNpQueuePanel) window.closeNpQueuePanel();
     },
 
+    toggleImmersive() {
+        const view = document.getElementById('nowPlayingView');
+        if (!view) return;
+        const isImmersive = view.classList.toggle('immersive');
+        localStorage.setItem('ws_immersive', isImmersive ? '1' : '0');
+        const icon = document.querySelector('#btnImmersive i');
+        if (icon) icon.className = isImmersive ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+        if (isImmersive) {
+            const sp = document.getElementById('syncPanel'); if (sp) sp.style.display = 'none';
+            const qp = document.getElementById('npQueuePanel'); if (qp) qp.style.display = 'none';
+        }
+        return isImmersive;
+    },
+
     updateSyncTitle(title) {
         const el = document.getElementById('syncPanelTitle');
         if (el) el.innerText = "⏱ ซิงค์: " + title;
@@ -129,6 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const duration = window.ytPlayer.getDuration();
             if (duration > 0) window.ytPlayer.seekTo(duration * ratio, true);
         });
+    }
+
+    if (localStorage.getItem('ws_immersive') === '1') {
+        const view = document.getElementById('nowPlayingView');
+        if (view) view.classList.add('immersive');
+        const icon = document.querySelector('#btnImmersive i');
+        if (icon) icon.className = 'fa-solid fa-compress';
     }
 });
 

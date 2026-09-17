@@ -473,7 +473,13 @@ window.updateLyricDisplay = function() {
 
     if (window.currentLyricIndex >= 0 && window.currentLyricIndex < window.currentLyricsArray.length) {
         const activeLine = document.getElementById(`lyric-line-${window.currentLyricIndex}`);
-        if (activeLine) { activeLine.classList.add('active'); activeLine.scrollIntoView({ behavior: "smooth", block: "center" }); }
+        if (activeLine) {
+            activeLine.classList.add('active');
+            const npView = document.getElementById('nowPlayingView');
+            if (!npView || !npView.classList.contains('immersive')) {
+                activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
     }
     window.syncTimestampEditorUI();
 };
