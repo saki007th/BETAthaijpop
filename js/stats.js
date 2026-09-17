@@ -1,7 +1,7 @@
 // ==========================================
 // stats.js - สถิติการฟังเพลง (บันทึกไปยัง firestore userData / localStorage)
 // ==========================================
-import { db, doc, setDoc, getDoc, getDocs, collection, increment, updateDoc, serverTimestamp } from './config.js';
+import { db, doc, setDoc, getDoc } from './config.js';
 
 const STATS_KEY = 'ujm_stats_cache';
 const RECENT_LIMIT = 8;
@@ -176,9 +176,6 @@ window.startListeningStats = function(songId) {
     if (!window.stats.songs[songId]) window.stats.songs[songId] = { plays: 0, seconds: 0 };
     window.stats.songs[songId].plays += 1;
 
-    // นับวิวรวมสาธารณะทั้งเว็บด้วย (กันสแปมภายใน ~15 วิ ต่อเพลงต่อเครื่อง)
-    if (window.countGlobalView) window.countGlobalView(songId);
-
     persistStats(true);
     maybeRenderHome();
 };
@@ -272,83 +269,3 @@ window.addEventListener('beforeunload', () => persistStats(true));
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') persistStats(true);
 });
-
-// ==========================================
-// วิวรวมสาธารณะทั้งเว็บ (globalView / songViews collection ใน Firestore)
-// - doc เพลง = songViews/{songId} มีฟิลด์ { plays, updatedAt }
-// - count ด้วย increment() แบบ atomic กันการเขียนหลายเครื่องทับกัน
-// - localStorage cache ป้องกันการเขียน Firestore ถี่เกินไป + แสดงผลเร็ว
-// ==========================================
-
-const VIEWS_KEY = 'ujm_views_cache';       // { [songId]: plays } cache เฉพาะเครื่อง
-let _viewsLoaded = false;
-let _viewCooldown = {};                    // { [songId]: เวลานับล่าสุด } กันบอทกดซ้ำ
-
-// ---------- รูปแบบตัวเลขวิว (K/M) ----------
-window.formatViewCount = function(n) {
-    n = n || 0;
-    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-    return String(Math.floor(n));
-};
-
-// ---------- โหลดวิวจาก localStorage (ใช้รีบๆ ก่อนโหลด Firestore ทัน) ----------
-function loadViewsLocal() {
-    try {
-        const local = JSON.parse(localStorage.getItem(VIEWS_KEY));
-        window.globalViews = (local && typeof local === 'object') ? local : {};
-    } catch (e) { window.globalViews = {}; }
-}
-function saveViewsLocal() {
-    try { localStorage.setItem(VIEWS_KEY, JSON.stringify(window.globalViews)); } catch (e) {}
-}
-
-// ---------- โหลดวิวรวมจาก Firestore + merge กับ cache ----------
-window.loadGlobalViews = async function() {
-    loadViewsLocal();
-    _viewsLoaded = true;
-    try {
-        const snap = await getDocs(collection(db, 'songViews'));
-        snap.forEach(d => {
-            const v = d.data();
-            const plays = (v && v.plays) || 0;
-            if (d.id && plays) window.globalViews[d.id] = Math.max(window.globalViews[d.id] || 0, plays);
-        });
-        saveViewsLocal();
-    } catch (e) { console.error('Error loading global views:', e); }
-    window.refreshViewBadges();
-};
-
-// ---------- นับวิว (เพิ่มวิวสาธารณะ 1 เมื่อเริ่มฟังเพลงนั้นจริงๆ) ----------
-// กันสแปม: เพลงเดียวกันภายใน ~15 วิ ไม่นับซ้ำบนเครื่องเดียวกัน (กันบอทคลิกซ้ำ)
-window.countGlobalView = function(songId) {
-    if (!songId) return;
-    const now = Date.now();
-    if (_viewCooldown[songId] && (now - _viewCooldown[songId]) < 15000) return; // กันวิวซ้ำเพลงเดิมถี่เกินไป
-    _viewCooldown[songId] = now;
-
-    if (!window.globalViews) window.globalViews = {};
-    window.globalViews[songId] = (window.globalViews[songId] || 0) + 1;
-    saveViewsLocal();
-
-    // เขียน Firestore แบบ atomic (กันการเขียน 2 เครื่องทับกัน)
-    const ref = doc(db, 'songViews', songId);
-    setDoc(ref, { plays: increment(1), updatedAt: serverTimestamp() }, { merge: true })
-        .catch(e => console.error('Error counting view:', e));
-
-    window.refreshViewBadges();
-};
-
-// ---------- อัปเดต badge วิวบนการ์ดเพลงทั้งหมดที่เปิดอยู่ ----------
-window.refreshViewBadges = function() {
-    if (!window.globalViews) return;
-    document.querySelectorAll('.view-badge').forEach(el => {
-        const id = el.getAttribute('data-song');
-        if (id && window.globalViews[id] != null) {
-            el.textContent = '👁 ' + window.formatViewCount(window.globalViews[id]);
-        }
-    });
-};
-
-// เรียก refresh ทุก 30 วินาที ให้วิวสดตามคนอื่นทั่วเว็บ
-setInterval(() => { if (_viewsLoaded) window.refreshViewBadges(); }, 30000);
