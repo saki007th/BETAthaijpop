@@ -486,6 +486,14 @@ a{ color:inherit; }
     transition:all .2s var(--ease);
 }
 .np-ctrl-queue-btn:hover{ background:var(--bg-elevated-hover); color:var(--text-1); transform:scale(1.05); }
+.np-immersive-text-btn{
+    flex-shrink:0; height:40px; padding:0 16px; border-radius:var(--r-pill);
+    background:var(--bg-elevated); border:1px solid var(--border-soft); color:var(--text-2);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:600; letter-spacing:.3px; white-space:nowrap;
+    transition:all .2s var(--ease);
+}
+.np-immersive-text-btn:hover{ background:var(--bg-elevated-hover); color:var(--text-1); transform:scale(1.05); }
 .np-track-meta .np-queue-badge{
     position:absolute; top:-3px; right:-3px; min-width:16px; height:16px; padding:0 4px;
     background:var(--danger); color:#fff; border-radius:var(--r-pill); border:1px solid var(--bg-surface);
@@ -916,6 +924,9 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 .now-playing-view.immersive .np-track-title{ font-size:14px; max-width:240px; }
 .now-playing-view.immersive .np-track-artist{ font-size:12px; }
 .now-playing-view.immersive .np-ctrl-queue-btn{ display:none; }
+.now-playing-view.immersive .np-immersive-text-btn{
+    background:var(--accent); color:#fff; border-color:transparent;
+}
 .now-playing-view.immersive .np-scrub{ display:none; }
 .now-playing-view.immersive .np-controls-row{ gap:18px; }
 .now-playing-view.immersive .np-play-btn{ width:44px; height:44px; }
