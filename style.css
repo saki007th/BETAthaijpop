@@ -940,17 +940,23 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 }
 .now-playing-view.immersive #versionContainer{ display:none !important; }
 .now-playing-view.immersive .lyrics-container{
-    max-width:min(90%, 1000px); width:auto; padding:0; text-align:center;
+    max-width:min(82%, 720px); width:auto; padding:0; text-align:center;
 }
 .now-playing-view.immersive .lyric-line{
     display:none !important; opacity:0; visibility:hidden; pointer-events:none;
 }
 .now-playing-view.immersive .lyric-line.active{
     display:block !important; opacity:1; visibility:visible;
-    font-size:calc(var(--lyric-font-size) + .55em);
-    background:rgba(0,0,0,.58); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    border:1px solid rgba(255,255,255,.12); border-radius:14px;
-    padding:12px 30px; color:var(--text-1); font-weight:600;
-    text-shadow:0 2px 12px rgba(0,0,0,.8); line-height:1.45;
+    font-size:var(--lyric-font-size);
+    background:rgba(0,0,0,.42); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.07); border-radius:10px;
+    padding:6px 18px; color:#fff; font-weight:600; line-height:1.4; overflow:hidden;
+}
+/* separate colors for the two languages, same as normal mode */
+.now-playing-view.immersive .lyric-line.active .lyric-main{
+    color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.7);
+}
+.now-playing-view.immersive .lyric-line.active .lyric-sub{
+    -webkit-text-fill-color:transparent; text-shadow:none;
 }
 .now-playing-view.immersive .lyric-line.active .reading-text{ opacity:1; }
