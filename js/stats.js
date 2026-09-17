@@ -1,7 +1,7 @@
 // ==========================================
 // stats.js - สถิติการฟังเพลง (บันทึกไปยัง firestore userData / localStorage)
 // ==========================================
-import { db, doc, setDoc, getDoc } from './config.js';
+import { db, doc, setDoc, getDoc, updateDoc, increment } from './config.js';
 
 const STATS_KEY = 'ujm_stats_cache';
 const RECENT_LIMIT = 8;
@@ -153,6 +153,17 @@ function persistStats(force) {
 window.flushStats = function() { persistStats(true); };
 window.forceFlushStats = window.flushStats;
 
+// ---------- 🎯 ตัวนับยอดวิวสาธารณะ (เขียนลง songs/{songId}) ----------
+// ต้องมีคนล็อกอินเท่านั้น (rules บังคับ) — ใช้ increment() ฝั่ง server กันอ่าน-เขียน clash
+function bumpSongCounter(songId, patch) {
+    if (!songId || !window.isLoggedIn) return;
+    const data = {};
+    if (patch.plays) data.plays = increment(patch.plays);
+    if (patch.seconds && patch.seconds >= 1) data.seconds = increment(patch.seconds);
+    if (Object.keys(data).length === 0) return;
+    updateDoc(doc(db, 'songs', songId), data).catch(e => console.error('Error updating song counter:', e));
+}
+
 // ---------- เริ่ม/หยุด session ติดตามการฟัง ----------
 window.startListeningStats = function(songId) {
     if (!_loaded) loadSync();
@@ -175,6 +186,9 @@ window.startListeningStats = function(songId) {
     window.stats.todayCount += 1;
     if (!window.stats.songs[songId]) window.stats.songs[songId] = { plays: 0, seconds: 0 };
     window.stats.songs[songId].plays += 1;
+
+    // นับยอดวิวรวมทุกคน (songs/{songId}.plays) — ต้องล็อกอิน ถูก rules บังคับ
+    bumpSongCounter(songId, { plays: 1 });
 
     persistStats(true);
     maybeRenderHome();
@@ -208,9 +222,12 @@ window.tickStats = function() {
 // จบ session (เปลี่ยนเพลง / เพลงจบ) บันทึกเพลงที่เพิ่งฟังลง recent
 function endListeningStats() {
     if (!_sessionActive) return;
-    if (_sessionSongId && _sessionSeconds >= 1) {
-        window.stats.recent.unshift({ songId: _sessionSongId, ts: Date.now(), sec: Math.floor(_sessionSeconds) });
+    const sessionSec = Math.floor(_sessionSeconds);
+    if (_sessionSongId && sessionSec >= 1) {
+        window.stats.recent.unshift({ songId: _sessionSongId, ts: Date.now(), sec: sessionSec });
         if (window.stats.recent.length > RECENT_LIMIT) window.stats.recent.length = RECENT_LIMIT;
+        // เวลาฟังรวมทุกคน (songs/{songId}.seconds)
+        bumpSongCounter(_sessionSongId, { seconds: sessionSec });
     }
     _sessionActive = false;
     _sessionSongId = null;

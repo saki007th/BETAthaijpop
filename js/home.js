@@ -115,6 +115,56 @@ window.renderRecentlyAdded = function() {
 };
 
 // ==========================================
+// 🔥 เพลงยอดนิยมทั้งระบบ (ยอดรวมทุกบัญชี มาจาก songs/{id}.plays)
+// ==========================================
+window.renderSystemTop = function() {
+    const container = document.getElementById('systemTopList');
+    if (!container || !window.songs) return;
+
+    const list = [...window.songs]
+        .filter(s => (s.plays || 0) > 0)
+        .sort((a, b) => (b.plays - a.plays) || ((b.seconds || 0) - (a.seconds || 0)))
+        .slice(0, 5);
+
+    if (list.length === 0) {
+        container.innerHTML = `
+            <div class="stats-card">
+                <div class="stats-card-head">
+                    <h2 class="section-title">🔥 เพลงยอดนิยมทั้งระบบ</h2>
+                </div>
+                <div class="stats-empty">ยังไม่มีข้อมูล<br><span style="font-size:.9em; color:var(--text-3);">ล็อกอินแล้วกดเล่นเพลง ยอดวิวจะรวมกันที่นี่ 🎧</span></div>
+            </div>
+        `;
+        return;
+    }
+
+    const items = list.map(s => {
+        const videoId = window.extractYouTubeID(s.audioPath);
+        const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : '';
+        return `
+            <div class="stat-song-item" onclick="playSong('${s.id}')">
+                <img src="${thumbUrl}" onerror="this.style.display='none'">
+                <div class="stat-song-info">
+                    <div class="stat-song-title">${s.title}</div>
+                    <div class="stat-song-artist">🎤 ${s.artist || '-'}</div>
+                </div>
+                <div class="stat-song-meta">👁 ${s.plays} ครั้ง<br>🎧 ${window.formatShortDuration(s.seconds || 0)}</div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="stats-card">
+            <div class="stats-card-head">
+                <h2 class="section-title">🔥 เพลงยอดนิยมทั้งระบบ</h2>
+                <span class="stats-account-tag">ยอดรวมทุกบัญชีที่ล็อกอิน</span>
+            </div>
+            ${items}
+        </div>
+    `;
+};
+
+// ==========================================
 // 📊 สถิติการฟัง (แสดงบนหน้าแรก) มาจาก firestore userData
 // ==========================================
 window.renderHomeStats = function() {

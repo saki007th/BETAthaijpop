@@ -1,7 +1,7 @@
 // ==========================================
 // library.js - song data, library list, admin add/edit/delete
 // ==========================================
-import { db, songsCollection, getDocs, addDoc, updateDoc, doc, deleteDoc } from './config.js';
+import { db, songsCollection, collection, getDocs, addDoc, updateDoc, doc, deleteDoc, increment } from './config.js';
 
 window.songs = [];
 window.currentFilter = 'All';
@@ -53,7 +53,9 @@ export async function fetchSongs() {
                 timestamps: data.timestamps || [],
                 singers: data.singers || [],
                 covers: data.covers || [],
-                createdAt: data.createdAt
+                createdAt: data.createdAt,
+                plays: data.plays || 0,
+                seconds: data.seconds || 0
             });
         });
 
@@ -64,6 +66,7 @@ export async function fetchSongs() {
         window.renderRandomPlaylist();
         window.renderArtistWidget();
         if (window.renderRecentlyAdded) window.renderRecentlyAdded();
+        if (window.renderSystemTop) window.renderSystemTop();
         if (window.renderHomeStats) window.renderHomeStats();
 
         if (window.checkNewSongsNotification) window.checkNewSongsNotification();
@@ -134,6 +137,7 @@ window.renderSongList = function(query = '', artistFilter = 'All') {
         item.onclick = () => window.playSong(song.id);
         item.innerHTML = `
             <div class="song-card-thumb"><img src="${thumbUrl}" onerror="this.style.display='none'" loading="lazy"></div>
+            <div class="song-card-views" title="ยอดฟังรวมทุกคน">👁 ${song.plays || 0}</div>
             <div class="song-card-title">${song.title}</div>
             <div class="song-card-artist">🎤 ${song.artist || '-'}</div>
             <div class="song-card-actions">
@@ -279,7 +283,7 @@ window.saveSong = async function() {
         if (window.editingSongId) {
             await updateDoc(doc(db, "songs", window.editingSongId), { title, artist, audioPath, lyrics, covers: validCovers });
         } else {
-            await addDoc(songsCollection, { title, artist, audioPath, lyrics, timestamps: [], singers: [], covers: validCovers, createdAt: Date.now() });
+            await addDoc(songsCollection, { title, artist, audioPath, lyrics, timestamps: [], singers: [], covers: validCovers, createdAt: Date.now(), plays: 0, seconds: 0 });
         }
         await fetchSongs();
         window.closeAddModal();
@@ -292,4 +296,54 @@ window.deleteSong = async function(id) {
     if (confirm('ต้องการลบเพลงนี้ใช่หรือไม่?')) {
         try { await deleteDoc(doc(db, "songs", id)); await fetchSongs(); window.renderSongList(); } catch (e) { console.error(e); }
     }
+};
+
+// ==========================================
+// 🔄 ตัวนับยอดวิว: เติม plays/seconds ที่ขาด + seed ประวัติจาก userData (รันครั้งเดียว)
+// - ขั้น "เติม field" ทำได้เลย (admin)
+// - ขั้น "seed" จะอ่าน userData ทุกบัญชี → ต้องเปิด rules userData ให้อ่านได้ก่อนชั่วคราว
+//   (ยกตัวอย่างท้ายไฟล์) แล้วค่อยปิดกลับ
+// ==========================================
+window.backfillSongPlays = async function() {
+    if (!window.isAdmin) { alert('เฉพาะแอดมิน'); return; }
+    if (!confirm('เติม plays/seconds ให้เพลงที่ยังไม่มี และลองดึงยอดจาก userData ทุกบัญชี?')) return;
+    try {
+        const snap = await getDocs(songsCollection);
+        const writes = [];
+        snap.forEach(d => {
+            const data = d.data();
+            if (typeof data.plays !== 'number' || typeof data.seconds !== 'number') {
+                writes.push(updateDoc(doc(db, 'songs', d.id), {
+                    plays: typeof data.plays === 'number' ? data.plays : 0,
+                    seconds: typeof data.seconds === 'number' ? data.seconds : 0
+                }));
+            }
+        });
+        await Promise.all(writes);
+        console.log(`[backfill] เติม field ที่ขาด: ${writes.length} เพลง`);
+
+        let seeded = 0;
+        try {
+            const users = await getDocs(collection(db, 'userData'));
+            const acc = {};
+            users.forEach(u => {
+                const songs = (u.data().stats || {}).songs || {};
+                Object.entries(songs).forEach(([sid, v]) => {
+                    if (!acc[sid]) acc[sid] = { plays: 0, seconds: 0 };
+                    acc[sid].plays += v.plays || 0;
+                    acc[sid].seconds += v.seconds || 0;
+                });
+            });
+            const seeds = Object.entries(acc)
+                .filter(([, v]) => v.plays > 0 || v.seconds > 0)
+                .map(([sid, v]) => updateDoc(doc(db, 'songs', sid), { plays: increment(v.plays), seconds: increment(v.seconds) }));
+            await Promise.all(seeds);
+            seeded = seeds.length;
+            console.log(`[backfill] seed ประวัติจาก userData: ${seeded} เพลง`);
+        } catch (e) {
+            console.warn('[backfill] seed ข้าม (rules userData ยังปิดอ่านรวม):', e.message);
+        }
+        await fetchSongs();
+        alert(`เติม field ${writes.length} เพลง, seed ยอด ${seeded} เพลง`);
+    } catch (e) { console.error(e); alert('เกิดข้อผิดพลาด ดู console'); }
 };
