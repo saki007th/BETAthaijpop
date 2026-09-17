@@ -873,3 +873,73 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     .np-lyrics-panel{ flex-basis:auto; max-width:none; }
     .sync-panel{ flex:1 0 auto; max-width:none; align-self:stretch; }
 }
+
+/* ==========================================================
+    15. Immersive Mode - video expands near full screen,
+        current lyric line overlays near the bottom
+   ========================================================== */
+.np-immersive-btn{ position:relative; }
+
+.now-playing-view.immersive .np-header{
+    position:absolute; top:0; left:0; right:0; z-index:20;
+    background:linear-gradient(180deg, rgba(0,0,0,.7), rgba(0,0,0,0));
+}
+.now-playing-view.immersive .np-header button:hover{ background:rgba(255,255,255,.12); }
+.now-playing-view.immersive .np-immersive-btn{ background:var(--accent); color:#fff; }
+
+.now-playing-view.immersive .np-body{
+    position:absolute; inset:0; padding:0; gap:0; overflow:hidden;
+    flex-direction:row; justify-content:center; align-items:stretch;
+}
+
+.now-playing-view.immersive .np-media{
+    position:absolute; inset:0; max-width:none; display:block;
+    align-self:stretch;
+}
+.now-playing-view.immersive .np-media-frame{
+    width:100%; height:100%; aspect-ratio:auto; border-radius:0;
+    box-shadow:none; background:#000;
+}
+
+/* compact transport bar overlaying the bottom of the video */
+.now-playing-view.immersive .np-controls-block{
+    position:absolute; left:50%; bottom:20px; transform:translateX(-50%);
+    margin:0; z-index:8;
+    display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap;
+    max-width:min(92vw, 760px);
+    padding:10px 20px; border-radius:16px;
+    background:rgba(10,10,14,.62); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.08); box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+.now-playing-view.immersive .np-track-meta{ gap:10px; min-width:0; }
+.now-playing-view.immersive .np-track-thumb{ width:38px; height:38px; border-radius:9px; }
+.now-playing-view.immersive .np-track-title{ font-size:14px; max-width:240px; }
+.now-playing-view.immersive .np-track-artist{ font-size:12px; }
+.now-playing-view.immersive .np-ctrl-queue-btn{ display:none; }
+.now-playing-view.immersive .np-scrub{ display:none; }
+.now-playing-view.immersive .np-controls-row{ gap:18px; }
+.now-playing-view.immersive .np-play-btn{ width:44px; height:44px; }
+
+/* current lyric line as a cinematic overlay above the transport bar */
+.now-playing-view.immersive .np-lyrics-panel{
+    position:absolute; left:0; right:0; bottom:110px; z-index:7;
+    flex:none; max-width:100%; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    overflow:visible; padding:0; pointer-events:none;
+}
+.now-playing-view.immersive #versionContainer{ display:none !important; }
+.now-playing-view.immersive .lyrics-container{
+    max-width:min(90%, 1000px); width:auto; padding:0; text-align:center;
+}
+.now-playing-view.immersive .lyric-line{
+    display:none !important; opacity:0; visibility:hidden; pointer-events:none;
+}
+.now-playing-view.immersive .lyric-line.active{
+    display:block !important; opacity:1; visibility:visible;
+    font-size:calc(var(--lyric-font-size) + .55em);
+    background:rgba(0,0,0,.58); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.12); border-radius:14px;
+    padding:12px 30px; color:var(--text-1); font-weight:600;
+    text-shadow:0 2px 12px rgba(0,0,0,.8); line-height:1.45;
+}
+.now-playing-view.immersive .lyric-line.active .reading-text{ opacity:1; }
