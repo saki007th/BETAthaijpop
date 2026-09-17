@@ -16,6 +16,106 @@ window.onYouTubeIframeAPIReady = function() { window.isYTApiReady = true; };
 const ytTag = document.createElement('script'); ytTag.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(ytTag);
 
 // ==========================================
+// 🎬 ป้ายแสดงความละเอียดวิดีโอ (ที่หน้าเครื่องเล่น)
+// ==========================================
+window._lastVideoQuality = null;
+
+window.formatVideoQuality = function(q) {
+    const map = {
+        'highres': '1080p+', 'hd2160': '2160p', 'hd1440': '1440p',
+        'hd1080': '1080p', 'hd720': '720p', 'large': '480p',
+        'medium': '360p', 'small': '240p', 'tiny': '144p'
+    };
+    return map[q] || (q && q !== 'auto' && q !== 'unknown' ? String(q) : null);
+};
+
+// หา resolution จริงจาก video element ภายใน YT player (HTML5)
+window.qualityFromVideoSize = function() {
+    try {
+        let v = null;
+        if (window.ytPlayer && typeof window.ytPlayer.getVideoElement === 'function') {
+            v = window.ytPlayer.getVideoElement();
+        }
+        if (v && v.videoWidth && v.videoHeight) {
+            const h = v.videoHeight;
+            if (h >= 2160) return '2160p';
+            if (h >= 1440) return '1440p';
+            if (h >= 1080) return '1080p';
+            if (h >= 720) return '720p';
+            if (h >= 480) return '480p';
+            if (h >= 360) return '360p';
+            if (h >= 240) return '240p';
+            return h + 'p';
+        }
+    } catch (e) {}
+    return null;
+};
+
+window.updateVideoQuality = function(qEvent) {
+    const el = document.getElementById('npVideoQuality');
+    if (!el) return;
+
+    let q = null;
+    if (qEvent && typeof qEvent.data === 'string') q = qEvent.data;
+    else if (qEvent && typeof qEvent === 'string') q = qEvent;
+
+    if (!q || q === 'unknown') {
+        if (window.ytPlayer) {
+            if (typeof window.ytPlayer.getVideoQuality === 'function') {
+                try { q = window.ytPlayer.getVideoQuality(); } catch (e) {}
+            }
+            if ((!q || q === 'unknown' || q === 'auto') && typeof window.ytPlayer.getPlaybackQuality === 'function') {
+                try { q = window.ytPlayer.getPlaybackQuality(); } catch (e) {}
+            }
+        }
+    }
+
+    let label = window.formatVideoQuality(q);
+    if (!label) label = window.qualityFromVideoSize();
+    if (!label && window._lastVideoQuality) label = window._lastVideoQuality;
+
+    if (label) {
+        window._lastVideoQuality = label;
+        el.textContent = label;
+    }
+};
+
+// ==========================================
+// 📡 ดึงความละเอียดจริงจาก YT iframe ผ่าน widget postMessage
+// (getPlaybackQuality ใช้ไม่ได้กับ HTML5 embed)
+// ==========================================
+window.ytQualityPingId = 0;
+window._lastQualityPing = 0;
+
+window.pingYTQuality = function() {
+    const iframe = document.querySelector('#youtubePlayer iframe');
+    if (!iframe || !iframe.contentWindow || !window.ytPlayer) return;
+    window.ytQualityPingId++;
+    try {
+        iframe.contentWindow.postMessage(JSON.stringify({
+            event: 'listening',
+            id: window.ytQualityPingId,
+            channel: 'widget'
+        }), 'https://www.youtube.com');
+    } catch (e) {}
+};
+
+window.yy_origin_ok = function(origin) {
+    return typeof origin === 'string' &&
+        (origin === 'https://www.youtube.com' || origin === 'https://www.youtube-nocookie.com' || origin === 'https://youtube.com');
+};
+
+window.addEventListener('message', function(e) {
+    if (!window.yy_origin_ok(e.origin)) return;
+    let msg = null;
+    try { msg = JSON.parse(e.data); } catch (err) { return; }
+    if (!msg || msg.channel !== 'widget' || !msg.infoDelivery) return;
+    const info = msg.infoDelivery || {};
+    const q = info.currentQuality || info.playbackQuality || null;
+    if (q) window.updateVideoQuality(q);
+});
+
+// ==========================================
 // เวลาซิงค์ & คนร้อง (รองรับเวอร์ชัน Cover)
 // ==========================================
 window.getActiveTimestamps = function(song) {
@@ -138,7 +238,7 @@ function createBadgeElement(label, artistName, index) {
         if (index >= 0 && song.covers && song.covers[index]) targetVideoPath = song.covers[index].audioPath;
 
         const videoId = window.extractYouTubeID(targetVideoPath);
-        if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') window.ytPlayer.loadVideoById(videoId);
+        if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') { window.ytPlayer.loadVideoById(videoId); window.updateVideoQuality(); }
 
         window.currentLyricIndex = -1;
         window.renderTimestampEditor();
@@ -199,12 +299,13 @@ window.playSong = function(id) {
 
     if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
         window.ytPlayer.loadVideoById(videoId);
+        window.updateVideoQuality();
     } else {
         if (window.isYTApiReady || (window.YT && window.YT.Player)) {
             window.ytPlayer = new YT.Player('youtubePlayer', {
                 height: '100%', width: '100%', videoId: videoId,
                 playerVars: { 'playsinline': 1, 'controls': 1, 'autoplay': 1 },
-                events: { 'onStateChange': window.onPlayerStateChange }
+                events: { 'onStateChange': window.onPlayerStateChange, 'onPlaybackQualityChange': window.updateVideoQuality }
             });
         }
     }
@@ -214,6 +315,12 @@ window.playSong = function(id) {
         if (window.tickStats) window.tickStats();
 
         if (!window.ytPlayer || typeof window.ytPlayer.getCurrentTime !== 'function') return;
+        window.updateVideoQuality();
+        const now2 = Date.now();
+        if (now2 - window._lastQualityPing > 1000) {
+            window._lastQualityPing = now2;
+            if (window.ytPlayer && typeof window.ytPlayer.getPlayerState === 'function' && window.ytPlayer.getPlayerState() === 1) window.pingYTQuality();
+        }
         const currentSong = window.songs.find(s => s.id === window.currentSongId); if (!currentSong) return;
 
         const activeTimestamps = window.getActiveTimestamps(currentSong);
@@ -582,6 +689,7 @@ window.onPlayerStateChange = function(event) {
         if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         if (liveAct) liveAct.classList.remove('paused');
         window.startEqBars();
+        window.pingYTQuality();
     }
     if (event.data === 2) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
