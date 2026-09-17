@@ -199,22 +199,15 @@ window.playSong = function(id) {
 
     if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
         window.ytPlayer.loadVideoById(videoId);
-        window.refreshQualityMenu();
     } else {
         if (window.isYTApiReady || (window.YT && window.YT.Player)) {
             window.ytPlayer = new YT.Player('youtubePlayer', {
                 height: '100%', width: '100%', videoId: videoId,
                 playerVars: { 'playsinline': 1, 'controls': 1, 'autoplay': 1 },
-                events: {
-                    'onStateChange': window.onPlayerStateChange,
-                    'onPlaybackQualityChange': window.onPlayerPlaybackQualityChange,
-                    'onPlaybackRateChange': window.onPlayerPlaybackRateChange
-                }
+                events: { 'onStateChange': window.onPlayerStateChange }
             });
         }
     }
-
-    setTimeout(() => { if (window.refreshQualityMenu) window.refreshQualityMenu(); }, 3500);
 
     clearInterval(window.syncInterval);
     window.syncInterval = setInterval(() => {
@@ -841,117 +834,3 @@ window.startCalibration = function() {
     });
     observer.observe(document.body, { childList: true });
 };
-
-// ==========================================
-// 🎚️ คุณภาพวิดีโอ (ปุ่ม Gear + เมนูคุณภาพ)
-// ==========================================
-window.QUALITY_DEFS = [
-    { key: 'highres', label: 'Max (4K/สูงสุด)', short: '4K+' },
-    { key: 'hd2160',  label: '2160p (4K)',       short: '2160p' },
-    { key: 'hd1440',  label: '1440p (2K)',       short: '1440p' },
-    { key: 'hd1080',  label: '1080p (Full HD)',  short: '1080p' },
-    { key: 'hd720',   label: '720p (HD)',        short: '720p' },
-    { key: 'large',   label: '480p',             short: '480p' },
-    { key: 'medium',  label: '360p',             short: '360p' },
-    { key: 'small',   label: '240p',             short: '240p' },
-    { key: 'tiny',    label: '144p',             short: '144p' }
-];
-window.autoQualityIndex = 0; // 'auto' แสดงเป็นตัวเลือกแรก
-
-window.toggleQualityMenu = function(event) {
-    event.stopPropagation(); event.preventDefault();
-    const menu = document.getElementById('qualityMenu');
-    if (!menu) return;
-    const willShow = menu.style.display === 'none';
-    menu.style.display = willShow ? 'block' : 'none';
-    if (willShow) window.populateQualityMenu();
-};
-
-window.refreshQualityMenu = function() {
-    window.populateQualityMenu();
-};
-
-// เติมรายการคุณภาพที่วิดีโอนั้นมีจริง ๆ จาก YT Player
-window.populateQualityMenu = function() {
-    const list = document.getElementById('qualityMenuList');
-    const menu = document.getElementById('qualityMenu');
-    if (!list) return;
-
-    let available = [];
-    if (window.ytPlayer && typeof window.ytPlayer.getAvailableQualityLevels === 'function') {
-        try { available = window.ytPlayer.getAvailableQualityLevels() || []; } catch(e) { available = []; }
-    }
-
-    let current = 'auto';
-    if (window.ytPlayer && typeof window.ytPlayer.getPlaybackQuality === 'function') {
-        try { current = window.ytPlayer.getPlaybackQuality() || 'auto'; } catch(e) {}
-    }
-
-    // ตัวเลือก Auto (อัตโนมัติ) อยู่เสมอ
-    const options = [ { key: 'auto', label: 'อัตโนมัติ', short: 'Auto' } ];
-
-    const defsOrdered = window.QUALITY_DEFS.slice().reverse(); // เอาความละเอียดสูงสุดก่อน ตามลำดับ QUALITY_DEFS (highres แรก) → reverse เป็นและ
-
-
-    window.QUALITY_DEFS.forEach(def => {
-        options.push({ key: def.key, label: def.label, short: def.short });
-    });
-
-    list.innerHTML = '';
-    options.forEach(opt => {
-        const row = document.createElement('div');
-        row.className = 'quality-option' + (opt.key === current ? ' active' : '');
-        row.dataset.q = opt.key;
-        row.innerHTML = `<span>${opt.label}</span>`;
-        row.onclick = (e) => { e.stopPropagation(); window.setYoutubeQuality(opt.key); };
-        list.appendChild(row);
-    });
-
-    window.updateQualityButtonLabel(current);
-};
-
-window.setYoutubeQuality = function(level) {
-    if (!window.ytPlayer || typeof window.ytPlayer.setPlaybackQuality !== 'function') return;
-    try {
-        if (level === 'auto') {
-            window.ytPlayer.setPlaybackQuality('default');
-        } else {
-            window.ytPlayer.setPlaybackQuality(level);
-        }
-    } catch(e) {}
-
-    // ปิดเมนูแล้วอัปเดต label
-    const menu = document.getElementById('qualityMenu');
-    if (menu) menu.style.display = 'none';
-    window.updateQualityButtonLabel(level);
-};
-
-window.updateQualityButtonLabel = function(level) {
-    const labelEl = document.getElementById('btnQualityLabel');
-    if (!labelEl) return;
-
-    let short = 'Auto';
-    if (level && level !== 'auto' && level !== 'default') {
-        const def = window.QUALITY_DEFS.find(d => d.key === level);
-        short = def ? def.short : level;
-        if (!short) short = level;
-    }
-    labelEl.innerText = short;
-};
-
-// YouTube เปลี่ยนคุณภาพจริง (เช่น DRM / buffering) → อัปเดต label ตามจริง
-window.onPlayerPlaybackQualityChange = function(event) {
-    const q = event && event.data ? event.data : 'auto';
-    window.updateQualityButtonLabel(q);
-    window.populateQualityMenu();
-};
-
-// ปิดเมนูเมื่อคลิกนอกปุ่ม
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('qualityMenu');
-    const btn = document.getElementById('btnQuality');
-    if (!menu) return;
-    if (menu.style.display === 'block' && btn && !btn.contains(e.target) && !menu.contains(e.target)) {
-        menu.style.display = 'none';
-    }
-});
