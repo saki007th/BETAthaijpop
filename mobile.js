@@ -28,7 +28,7 @@ async function fetchMobileSongs() {
         window.mobileSongs = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            window.mobileSongs.push({ id: doc.id, title: data.title, artist: data.artist, audioPath: data.audioPath });
+            window.mobileSongs.push({ id: doc.id, title: data.title, artist: data.artist, audioPath: data.audioPath, plays: data.plays || 0 });
         });
         
         renderLibrary();
@@ -64,7 +64,7 @@ function renderLibrary(query = '') {
             <div class="song-item" onclick="playMobileSong(${realIndex})">
                 <img src="${thumbUrl}" onerror="this.src=''">
                 <div class="song-info">
-                    <div class="song-title">${song.title}</div>
+                    <div class="song-title">${song.title} <span class="song-views">👁 ${song.plays || 0}</span></div>
                     <div class="song-artist">🎤 ${song.artist || '-'}</div>
                 </div>
             </div>
