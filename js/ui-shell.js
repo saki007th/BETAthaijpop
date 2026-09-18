@@ -64,6 +64,7 @@ window.wm = {
         }
         const npUi = window.npImmersiveUi;
         if (npUi) { if (isImmersive) npUi.show(); else npUi.reset(); }
+        if (window.applyLangToggles) window.applyLangToggles();
         return isImmersive;
     },
 
