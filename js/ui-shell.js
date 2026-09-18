@@ -64,7 +64,10 @@ window.wm = {
         }
         const npUi = window.npImmersiveUi;
         if (npUi) { if (isImmersive) npUi.show(); else npUi.reset(); }
+        if (!isImmersive && window.syncLyricToPlayback) window.syncLyricToPlayback();
         if (window.applyLangToggles) window.applyLangToggles();
+        if (window.updateLyricDisplay) window.updateLyricDisplay();
+        if (!isImmersive && window.forceLyricScroll) window.forceLyricScroll();
         return isImmersive;
     },
 

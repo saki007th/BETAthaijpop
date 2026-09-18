@@ -593,17 +593,53 @@ window.updateLyricDisplay = function() {
     const container = document.getElementById('lyricsContainer'); if (!container) return;
     container.querySelectorAll('.lyric-line').forEach(line => line.classList.remove('active'));
 
-    if (window.currentLyricIndex >= 0 && window.currentLyricIndex < window.currentLyricsArray.length) {
-        const activeLine = document.getElementById(`lyric-line-${window.currentLyricIndex}`);
+    const npView = document.getElementById('nowPlayingView');
+    const immersive = npView && npView.classList.contains('immersive');
+
+    let idx = window.currentLyricIndex;
+    if (immersive && (idx < 0 || idx >= window.currentLyricsArray.length) && window.currentLyricsArray.length > 0) {
+        idx = 0;
+    }
+
+    if (idx >= 0 && idx < window.currentLyricsArray.length) {
+        const activeLine = document.getElementById(`lyric-line-${idx}`);
         if (activeLine) {
             activeLine.classList.add('active');
-            const npView = document.getElementById('nowPlayingView');
-            if (!npView || !npView.classList.contains('immersive')) {
+            if (!immersive) {
                 activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
             }
         }
     }
     window.syncTimestampEditorUI();
+};
+
+// คำนวณท่อนที่กำลังร้องจากเวลาปัจจุบัน ใช้ตอนสลับโหมด เพื่อให้เนื้อเพลงติดตามการเล่นเสมอ
+window.syncLyricToPlayback = function() {
+    if (!window.ytPlayer || typeof window.ytPlayer.getCurrentTime !== 'function') return;
+    const currentSong = window.songs.find(s => s.id === window.currentSongId);
+    if (!currentSong) return;
+    const t = window.ytPlayer.getCurrentTime();
+    if (typeof t !== 'number' || t <= 0) return;
+    const activeTimestamps = window.getActiveTimestamps(currentSong);
+    let idx = -1;
+    for (let i = 0; i < activeTimestamps.length; i++) {
+        if (activeTimestamps[i] != null && t >= activeTimestamps[i]) idx = i;
+    }
+    if (idx >= 0 && idx !== window.currentLyricIndex) {
+        window.currentLyricIndex = idx;
+        window.updateLyricDisplay();
+    }
+};
+
+// บังคับเลื่อนแผงเนื้อเพลงไปยังท่อนที่ highlight อยู่ (ใช้เมื่อออกจากโหมด Immsersive
+// เพราะระหว่างอยู่ในโหมดนั้นแผงจะไม่เลื่อนตามเลย)
+window.forceLyricScroll = function() {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            const activeLine = document.querySelector('#lyricsContainer .lyric-line.active');
+            if (activeLine) activeLine.scrollIntoView({ behavior: "auto", block: "center" });
+        });
+    });
 };
 
 // 🟢 ระบบหักลบความหน่วง (Calibrate) ทำงานตรงฟังก์ชันนี้
