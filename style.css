@@ -934,6 +934,8 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     padding:10px 20px; border-radius:16px;
     background:rgba(10,10,14,.62); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
     border:1px solid rgba(255,255,255,.08); box-shadow:0 10px 30px rgba(0,0,0,.5);
+    transition:transform .4s cubic-bezier(.22,.61,.36,1), opacity .35s ease;
+    will-change:transform, opacity;
 }
 .now-playing-view.immersive .np-track-meta{ gap:10px; min-width:0; flex-wrap:nowrap; overflow:hidden; }
 .now-playing-view.immersive .np-track-thumb{ width:38px; height:38px; border-radius:9px; flex-shrink:0; }
@@ -954,6 +956,7 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     flex:none; max-width:100%; width:100%;
     display:flex; align-items:center; justify-content:center;
     overflow:visible; padding:0; pointer-events:none;
+    transition:bottom .4s cubic-bezier(.22,.61,.36,1), opacity .35s ease;
 }
 .now-playing-view.immersive #versionContainer{ display:none !important; }
 .now-playing-view.immersive .lyrics-container{
@@ -977,3 +980,13 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     -webkit-text-fill-color:transparent; text-shadow:none;
 }
 .now-playing-view.immersive .lyric-line.active .reading-text{ opacity:1; }
+
+/* auto-hide state: transport bar (song title + controls) slides away and the
+   current lyric line drops down into its place */
+.now-playing-view.immersive.np-ui-hidden .np-controls-block{
+    opacity:0; pointer-events:none;
+    transform:translateX(-50%) translateY(140%);
+}
+.now-playing-view.immersive.np-ui-hidden .np-lyrics-panel{
+    bottom:28px;
+}
