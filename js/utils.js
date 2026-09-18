@@ -70,8 +70,14 @@ window.copyShareLink = function(songTitle, buttonElement) {
 };
 
 // ==========================================
-// 🎨 ระบบสกัดสีจากรูปปก (ใช้ทาบพื้นหลังหน้ากำลังเล่น)
+// 🎨 ระบบย้อมสีประทับจากปกอัลบั้ม (ambience)
+// - สอดสีเด่นของปกเข้าไปย้อม sidebar / content / player bar / หน้าเล่นเพลง
+// - cache สีแยกตาม videoId เพื่อให้ pause→resume เอาสีคืนได้ทันที
 // ==========================================
+const WINBOX_DEFAULT = { r: 28, g: 28, b: 30 };
+window._liveWinBox = null;        // สีที่กำลังใช้งานอยู่ (ของเพลงที่กำลังเล่น)
+window._winBoxCache = {};         // cache สีต่อ videoId
+
 window.setWinBoxColor = function(r, g, b) {
     document.documentElement.style.setProperty('--wb-bg-r', r);
     document.documentElement.style.setProperty('--wb-bg-g', g);
@@ -79,39 +85,89 @@ window.setWinBoxColor = function(r, g, b) {
 };
 
 window.resetWinBoxColor = function() {
-    window.setWinBoxColor(28, 28, 30);
+    window.setWinBoxColor(WINBOX_DEFAULT.r, WINBOX_DEFAULT.g, WINBOX_DEFAULT.b);
 };
 
-window.extractDominantColor = function(imgUrl) {
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.src = imgUrl;
-    img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = img.width; canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+// ติดตั้งสีปัจจุบัน (จำไว้แล้วย้อมทันที)
+window.activateWinBoxColor = function(r, g, b) {
+    window._liveWinBox = { r, g, b };
+    window.setWinBoxColor(r, g, b);
+};
 
-        const imageData = ctx.getImageData(0, Math.floor(img.height * 0.1), img.width, Math.floor(img.height * 0.8));
-        const data = imageData.data;
+// เอาสีของเพลงที่กำลังเล่นคืนมา (ตอน pause → play)
+window.restoreWinBoxColor = function() {
+    if (window._liveWinBox) {
+        window.setWinBoxColor(window._liveWinBox.r, window._liveWinBox.g, window._liveWinBox.b);
+    } else {
+        window.resetWinBoxColor();
+    }
+};
 
-        let r = 0, g = 0, b = 0, count = 0;
+// ยุติ ambience (หยุด/ไม่มีเพลง → กลับเป็นสีพื้นหลังปกติ)
+window.clearAmbience = function() {
+    window._liveWinBox = null;
+    window.resetWinBoxColor();
+};
 
-        for (let i = 0; i < data.length; i += 16) {
-            if ((data[i] < 30 && data[i+1] < 30 && data[i+2] < 30) || (data[i] > 230 && data[i+1] > 230 && data[i+2] > 230)) continue;
-            r += data[i]; g += data[i+1]; b += data[i+2];
-            count++;
-        }
+// ใช้สีจาก cache ทันทีถ้ามี (กันภาพกระตุกตอนสลับเพลง) มิฉะนั้นค่อยสกัดใหม่
+window.applyAmbience = function(thumbUrl, videoId) {
+    if (!thumbUrl) { window.clearAmbience(); return; }
+    if (videoId && window._winBoxCache[videoId]) {
+        const c = window._winBoxCache[videoId];
+        window.activateWinBoxColor(c.r, c.g, c.b);
+        return;
+    }
+    window.extractDominantColor(thumbUrl, videoId);
+};
 
-        if (count > 0) {
-            const darkenFactor = 0.35;
-            r = Math.floor((r / count) * darkenFactor);
-            g = Math.floor((g / count) * darkenFactor);
-            b = Math.floor((b / count) * darkenFactor);
-            window.setWinBoxColor(r, g, b);
-        } else {
-            window.resetWinBoxColor();
-        }
+// โหลดรูปสำหรับสกัดสี: ลอง crossOrigin ตรงก่อน ถ้าโดน CORS บล็อก ลองผ่าน proxy ที่รองรับ CORS
+function loadImageExtraction(urls, onDone) {
+    const tryNext = function(i) {
+        if (i >= urls.length) { onDone(null); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() { onDone(img); };
+        img.onerror = function() { tryNext(i + 1); };
+        img.src = urls[i];
     };
-    img.onerror = function() { window.resetWinBoxColor(); };
+    tryNext(0);
+}
+
+window.extractDominantColor = function(imgUrl, videoId) {
+    if (!imgUrl) { window.clearAmbience(); return; }
+    const proxied = 'https://images.weserv.nl/?url=' + encodeURIComponent(imgUrl) + '&w=480&output=jpg';
+    loadImageExtraction([imgUrl, proxied], function(img) {
+        if (!img) { window.clearAmbience(); return; }
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width; canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, Math.floor(img.height * 0.1), img.width, Math.floor(img.height * 0.8));
+            const data = imageData.data;
+
+            let r = 0, g = 0, b = 0, count = 0;
+
+            for (let i = 0; i < data.length; i += 16) {
+                const R = data[i], G = data[i + 1], B = data[i + 2];
+                if ((R < 40 && G < 40 && B < 40) || (R > 225 && G > 225 && B > 225)) continue;
+                r += R; g += G; b += B;
+                count++;
+            }
+
+            if (count > 0) {
+                const factor = 0.55;
+                const cr = Math.floor((r / count) * factor);
+                const cg = Math.floor((g / count) * factor);
+                const cb = Math.floor((b / count) * factor);
+                if (videoId) window._winBoxCache[videoId] = { r: cr, g: cg, b: cb };
+                window.activateWinBoxColor(cr, cg, cb);
+            } else {
+                window.clearAmbience();
+            }
+        } catch (e) {
+            window.clearAmbience();
+        }
+    });
 };

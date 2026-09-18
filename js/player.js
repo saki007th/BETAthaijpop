@@ -252,7 +252,7 @@ function createBadgeElement(label, artistName, index) {
         if (index >= 0 && song.covers && song.covers[index]) targetVideoPath = song.covers[index].audioPath;
 
         const videoId = window.extractYouTubeID(targetVideoPath);
-        if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') { window.ytPlayer.loadVideoById(videoId); window.updateVideoQuality(); }
+        if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') { window.ytPlayer.loadVideoById(videoId); window.updateVideoQuality(); if (videoId) window.applyAmbience(`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`, videoId); }
 
         window.currentLyricIndex = -1;
         window.renderTimestampEditor();
@@ -287,11 +287,11 @@ window.playSong = function(id) {
         if (ytId) {
             const thumbUrl = `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
             liveAct.style.setProperty('--live-bg', `url('${thumbUrl}')`);
-            window.extractDominantColor(thumbUrl);
+            window.applyAmbience(thumbUrl, ytId);
             if (npThumb) npThumb.style.backgroundImage = `url('${thumbUrl}')`;
         } else {
             liveAct.style.removeProperty('--live-bg');
-            window.resetWinBoxColor();
+            window.clearAmbience();
             if (npThumb) npThumb.style.backgroundImage = '';
         }
 
@@ -704,12 +704,14 @@ window.onPlayerStateChange = function(event) {
         if (liveAct) liveAct.classList.remove('paused');
         window.startEqBars();
         window.pingYTQuality();
+        window.restoreWinBoxColor();
     }
     if (event.data === 2) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (liveAct) liveAct.classList.add('paused');
         window.stopEqBars();
+        window.resetWinBoxColor();
     }
 
     if (event.data === 0) {
@@ -748,6 +750,7 @@ window.onPlayerStateChange = function(event) {
                 if (syncPanel) syncPanel.style.display = 'none';
 
                 window.currentSongId = null;
+                window.clearAmbience();
             }
         }
     }
