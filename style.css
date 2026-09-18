@@ -37,11 +37,6 @@
     --lyric-font-size:1.15em;
 }
 
-/* ให้สีที่ย้อมตามปกอัลบั้มเปลี่ยนแบบนุ่มนวลได้ในเบราว์เซอร์ที่รองรับ @property */
-@property --wb-bg-r{ syntax:'<number>'; inherits:true; initial-value:28; }
-@property --wb-bg-g{ syntax:'<number>'; inherits:true; initial-value:28; }
-@property --wb-bg-b{ syntax:'<number>'; inherits:true; initial-value:30; }
-
 *{ box-sizing:border-box; }
 
 html, body{
@@ -97,7 +92,6 @@ a{ color:inherit; }
     border-right:1px solid var(--border-soft);
     display:flex; flex-direction:column;
     padding:18px 12px;
-    transition:background .8s ease;
 }
 .sidebar-brand{
     font-size:14px; font-weight:600; padding:6px 10px 18px; color:var(--text-1);
@@ -197,10 +191,10 @@ a{ color:inherit; }
     flex:1; min-width:0; display:flex; flex-direction:column;
     background:
         radial-gradient(130% 95% at 100% 0%, rgba(var(--wb-bg-r),var(--wb-bg-g),var(--wb-bg-b),.55), transparent 60%),
-        var(--bg-content);
+var(--bg-content);
     position:relative;
-    transition:background .8s ease;
 }
+
 .content-view{ display:none; flex-direction:column; height:100%; min-height:0; }
 .content-view.active{ display:flex; }
 
@@ -407,7 +401,7 @@ a{ color:inherit; }
     backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
     border-top:1px solid var(--border-strong);
     cursor:pointer;
-    transform:translateY(0); transition:transform .35s var(--ease), background .8s ease;
+    transform:translateY(0); transition:transform .35s var(--ease);
 }
 .player-bar.hidden{ transform:translateY(120%); pointer-events:none; }
 
@@ -461,7 +455,7 @@ a{ color:inherit; }
       linear-gradient(180deg, rgba(var(--wb-bg-r),var(--wb-bg-g),var(--wb-bg-b),.25), transparent 42%),
       #000;
     display:flex; flex-direction:column;
-    transform:translateY(100%); transition:transform .4s cubic-bezier(.25,1,.5,1), background .8s ease;
+    transform:translateY(100%); transition:transform .4s cubic-bezier(.25,1,.5,1);
 }
 .now-playing-view.active{ transform:translateY(0); }
 
@@ -761,7 +755,7 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
         var(--bg-surface);
     border-left:1px solid var(--border-strong);
     z-index:700; display:flex; flex-direction:column;
-    transform:translateX(105%); transition:transform .3s var(--ease), background .8s ease;
+    transform:translateX(105%); transition:transform .3s var(--ease);
     box-shadow:-20px 0 50px rgba(0,0,0,.5);
 }
 .queue-panel.active{ transform:translateX(0); }
