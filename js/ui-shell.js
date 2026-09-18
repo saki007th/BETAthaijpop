@@ -62,6 +62,8 @@ window.wm = {
             const sp = document.getElementById('syncPanel'); if (sp) sp.style.display = 'none';
             const qp = document.getElementById('npQueuePanel'); if (qp) qp.style.display = 'none';
         }
+        const npUi = window.npImmersiveUi;
+        if (npUi) { if (isImmersive) npUi.show(); else npUi.reset(); }
         return isImmersive;
     },
 
@@ -150,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (view) view.classList.add('immersive');
         const icon = document.querySelector('#btnImmersive i');
         if (icon) icon.className = 'fa-solid fa-compress';
+        if (window.npImmersiveUi) window.npImmersiveUi.show();
     }
 });
 
@@ -159,3 +162,64 @@ document.addEventListener('click', function(e) {
         document.querySelectorAll('.ts-dropdown-menu.show').forEach(m => m.classList.remove('show'));
     }
 });
+
+// ==========================================
+// Immersive auto-hide controls
+// In immersive mode the transport bar (song title + buttons + controls)
+// fades away after a moment of mouse inactivity and the current lyric "sub"
+// slides down into its place. Moving the mouse brings both back to normal.
+// ==========================================
+(function () {
+    const HIDE_DELAY = 3000;
+    let hideTimer = null;
+    let hidden = false;
+
+    function view() { return document.getElementById('nowPlayingView'); }
+    function isImmersive() { const v = view(); return !!v && v.classList.contains('immersive'); }
+
+    function cancel() {
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    }
+
+    function hide() {
+        const v = view();
+        if (!v || !isImmersive()) return;
+        const block = v.querySelector('.np-controls-block');
+        // keep the bar visible while the pointer is actually on top of it
+        if (block && block.matches(':hover')) { schedule(); return; }
+        v.classList.add('np-ui-hidden');
+        hidden = true;
+    }
+
+    function schedule() {
+        cancel();
+        if (!isImmersive()) return;
+        hideTimer = setTimeout(hide, HIDE_DELAY);
+    }
+
+    function show() {
+        const v = view();
+        if (!v) return;
+        if (hidden) { v.classList.remove('np-ui-hidden'); hidden = false; }
+        schedule();
+    }
+
+    function reset() {
+        cancel();
+        const v = view();
+        if (v) v.classList.remove('np-ui-hidden');
+        hidden = false;
+    }
+
+    window.npImmersiveUi = { show, reset };
+
+    document.addEventListener('mousemove', function (e) {
+        if (!isImmersive()) return;
+        const v = view();
+        if (v && v.contains(e.target)) show();
+    }, { passive: true });
+
+    document.addEventListener('touchstart', function () {
+        if (isImmersive()) show();
+    }, { passive: true });
+})();
