@@ -77,27 +77,61 @@ window.copyShareLink = function(songTitle, buttonElement) {
 const WINBOX_DEFAULT = { r: 28, g: 28, b: 30 };
 window._liveWinBox = null;        // สีที่กำลังใช้งานอยู่ (ของเพลงที่กำลังเล่น)
 window._winBoxCache = {};         // cache สีต่อ videoId
+window._isPlaying = false;        // สถานะกำลังเล่น (สำหรับตอนสีเปลี่ยน)
+window._tintRaf = null;           // handle ของ animation frame
 
 window.setWinBoxColor = function(r, g, b) {
-    document.documentElement.style.setProperty('--wb-bg-r', r);
-    document.documentElement.style.setProperty('--wb-bg-g', g);
-    document.documentElement.style.setProperty('--wb-bg-b', b);
+    const root = document.documentElement;
+    root.style.setProperty('--wb-bg-r', r);
+    root.style.setProperty('--wb-bg-g', g);
+    root.style.setProperty('--wb-bg-b', b);
 };
+
+// อ่านสีที่แสดงอยู่ปัจจุบัน
+function readTintColor() {
+    const root = getComputedStyle(document.documentElement);
+    const r = parseInt(root.getPropertyValue('--wb-bg-r')) || WINBOX_DEFAULT.r;
+    const g = parseInt(root.getPropertyValue('--wb-bg-g')) || WINBOX_DEFAULT.g;
+    const b = parseInt(root.getPropertyValue('--wb-bg-b')) || WINBOX_DEFAULT.b;
+    return { r, g, b };
+}
+
+// ค่อยๆ เลื่อนสีจากค่าปัจจุบันไปยังเป้าหมาย (ทำงานทุกเบราว์เซอร์ ไม่ต้องพึ่ง gradient transition)
+window._tweenWinBox = function(toR, toG, toB, dur) {
+    if (window._tintRaf) { cancelAnimationFrame(window._tintRaf); window._tintRaf = null; }
+    const from = readTintColor();
+    if (from.r === toR && from.g === toG && from.b === toB) return;
+    const start = performance.now();
+    const step = function(now) {
+        const t = Math.min(1, (now - start) / dur);
+        const e = 1 - Math.pow(1 - t, 3);
+        window.setWinBoxColor(
+            Math.round(from.r + (toR - from.r) * e),
+            Math.round(from.g + (toG - from.g) * e),
+            Math.round(from.b + (toB - from.b) * e)
+        );
+        if (t < 1) window._tintRaf = requestAnimationFrame(step);
+        else window._tintRaf = null;
+    };
+    window._tintRaf = requestAnimationFrame(step);
+};
+
+const TINT_DURATION = 500;
 
 window.resetWinBoxColor = function() {
-    window.setWinBoxColor(WINBOX_DEFAULT.r, WINBOX_DEFAULT.g, WINBOX_DEFAULT.b);
+    window._tweenWinBox(WINBOX_DEFAULT.r, WINBOX_DEFAULT.g, WINBOX_DEFAULT.b, TINT_DURATION);
 };
 
-// ติดตั้งสีปัจจุบัน (จำไว้แล้วย้อมทันที)
+// ติดตั้งสีปัจจุบัน (จำไว้แล้วย้อมจางๆ เข้า)
 window.activateWinBoxColor = function(r, g, b) {
     window._liveWinBox = { r, g, b };
-    window.setWinBoxColor(r, g, b);
+    if (window._isPlaying !== false) window._tweenWinBox(r, g, b, TINT_DURATION);
 };
 
 // เอาสีของเพลงที่กำลังเล่นคืนมา (ตอน pause → play)
 window.restoreWinBoxColor = function() {
     if (window._liveWinBox) {
-        window.setWinBoxColor(window._liveWinBox.r, window._liveWinBox.g, window._liveWinBox.b);
+        window._tweenWinBox(window._liveWinBox.r, window._liveWinBox.g, window._liveWinBox.b, TINT_DURATION);
     } else {
         window.resetWinBoxColor();
     }

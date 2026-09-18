@@ -267,6 +267,7 @@ function createBadgeElement(label, artistName, index) {
 // ==========================================
 window.playSong = function(id) {
     window.currentSongId = id;
+    window._isPlaying = true;
     const song = window.songs.find(s => s.id === id); if (!song) return;
     if (window.startListeningStats) window.startListeningStats(id);
 
@@ -704,6 +705,7 @@ window.onPlayerStateChange = function(event) {
         if (liveAct) liveAct.classList.remove('paused');
         window.startEqBars();
         window.pingYTQuality();
+        window._isPlaying = true;
         window.restoreWinBoxColor();
     }
     if (event.data === 2) {
@@ -711,6 +713,7 @@ window.onPlayerStateChange = function(event) {
         if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (liveAct) liveAct.classList.add('paused');
         window.stopEqBars();
+        window._isPlaying = false;
         window.resetWinBoxColor();
     }
 
@@ -750,6 +753,7 @@ window.onPlayerStateChange = function(event) {
                 if (syncPanel) syncPanel.style.display = 'none';
 
                 window.currentSongId = null;
+                window._isPlaying = false;
                 window.clearAmbience();
             }
         }
