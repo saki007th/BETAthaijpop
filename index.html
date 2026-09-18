@@ -175,11 +175,18 @@
                         <h3>📝 ขนาดตัวอักษรเนื้อเพลง</h3>
                         <input type="range" id="sliderFontSize" min="0.8" max="2.5" step="0.1" value="1.15" oninput="setLyricFontSize(this.value)" style="margin-bottom:30px;">
 
-                        <h3>🈯️ แสดง/ซ่อนภาษา</h3>
-                        <div id="lyricLangToggles" style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <label class="lang-toggle"><input type="checkbox" checked onchange="toggleLang(0)"> 🇯🇵 ญี่ปุ่น</label>
-                            <label class="lang-toggle"><input type="checkbox" checked onchange="toggleLang(1)"> 🔤 โรมาจิ</label>
-                            <label class="lang-toggle"><input type="checkbox" checked onchange="toggleLang(2)"> 🇹🇭 ไทย</label>
+                        <h3>🈯️ แสดง/ซ่อนภาษา (โหมดปกติ)</h3>
+                        <div id="lyricLangTogglesNormal" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:25px;">
+                            <label class="lang-toggle"><input type="checkbox" data-lang="0" checked onchange="toggleLang(0, this, 'normal')"> 🇯🇵 ญี่ปุ่น</label>
+                            <label class="lang-toggle"><input type="checkbox" data-lang="1" checked onchange="toggleLang(1, this, 'normal')"> 🔤 โรมาจิ</label>
+                            <label class="lang-toggle"><input type="checkbox" data-lang="2" checked onchange="toggleLang(2, this, 'normal')"> 🇹🇭 ไทย</label>
+                        </div>
+
+                        <h3>🈯️ แสดง/ซ่อนภาษา (โหมด Immersive)</h3>
+                        <div id="lyricLangTogglesImmersive" style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <label class="lang-toggle"><input type="checkbox" data-lang="0" checked onchange="toggleLang(0, this, 'immersive')"> 🇯🇵 ญี่ปุ่น</label>
+                            <label class="lang-toggle"><input type="checkbox" data-lang="1" onchange="toggleLang(1, this, 'immersive')"> 🔤 โรมาจิ</label>
+                            <label class="lang-toggle"><input type="checkbox" data-lang="2" checked onchange="toggleLang(2, this, 'immersive')"> 🇹🇭 ไทย</label>
                         </div>
                     </div>
                 </div>
