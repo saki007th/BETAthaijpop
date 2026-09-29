@@ -308,7 +308,8 @@ window.applyVinylMode = function() {
     const frame = document.getElementById('npMediaFrame');
     if (!stage || !frame) return;
 
-    const on = window.isVinylSong() && !window._vinylForceVideo;
+    const isVinyl = window.isVinylSong();
+    const on = isVinyl && !window._vinylForceVideo;
     stage.classList.toggle('active', on);
     stage.classList.toggle('force-video', !!window._vinylForceVideo);
     frame.classList.toggle('vinyl-mode', on);
