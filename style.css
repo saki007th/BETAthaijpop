@@ -713,44 +713,13 @@ label.mv-toggle b{ color:var(--text-1); }
 .lyrics-container{ width:100%; max-width:640px; text-align:center; padding:20px 0 60px; }
 .lyric-line{
     font-size:var(--lyric-font-size); color:var(--text-3);
-    padding:14px; margin-bottom:8px; border-radius:var(--r-s);
+    padding:10px 14px; margin-bottom:4px; border-radius:var(--r-s);
     cursor:pointer; transition:all .25s var(--ease); line-height:1.5;
-    /* ขยายตัวหนังสือด้วย transform ไม่ใช่ font-size
-       → กล่องยังคงความสูงเท่าเดิม ตำแหน่งบรรทัดถัดไปจึงไม่ขยับ
-       (ถ้าใช้ font-size ตอน scroll จะวัดตำแหน่งผิดช่วง 250ms) */
-    transform:scale(1); transform-origin:center center;
 }
 .lyric-line:hover{ background:var(--bg-elevated); }
 .lyric-line.active{
-    transform:scale(1.15);
+    font-size:calc(var(--lyric-font-size) + 0.35em);
     color:var(--text-1); font-weight:600;
-}
-
-/* ---- Word-level karaoke (js/karaoke.js) ----
-   สีไหลตามความคืบหน้าของคำ โดย JS เขียนแค่ --kw-p (0..1) ต่อเฟรม
-   ไม่มี layout/reflow และไม่แตะ DOM ซ้ำซ้อน */
-.kw{
-    --kw-p:0;
-    --kw-lit:var(--text-1);
-    --kw-dim:var(--text-3);
-    background:linear-gradient(90deg,
-        var(--kw-lit) calc(var(--kw-p) * 100%),
-        var(--kw-dim) calc(var(--kw-p) * 100%));
-    -webkit-background-clip:text; background-clip:text;
-    -webkit-text-fill-color:transparent; color:transparent;
-    /* ไม่มี transition — ความคืบหน้าต้องไหลตามเฟรมจริง ไม่ใช่หน่วงตามเวลา */
-}
-/* คำที่ร้องไปแล้ว/กำลังร้อง = สว่างเต็ม, ที่ยังไม่ถึง = จาง */
-.lyric-line.active .kw{ --kw-lit:#fff; --kw-dim:rgba(255,255,255,.32); }
-/* บรรทัดที่ยังไม่ active ไม่ต้องไล่สี */
-.lyric-line:not(.active) .kw{
-    background:none; -webkit-text-fill-color:currentColor; color:inherit;
-}
-/* อ่านสีตามกลุ่มคำแม่ (ภาษาแรก) เพื่อให้เข้ากับสีเดิม */
-.reading-text .kw{ --kw-dim:rgba(255,255,255,.22); }
-/* โหมด immersive: ไม่ไล่สี (บรรทัดเดียว พื้นหลังเข้ม) */
-.now-playing-view.immersive .lyric-line.active .kw{
-    --kw-lit:#ffd60a; --kw-dim:rgba(255,255,255,.55);
 }
 .singer-badges{ display:flex; gap:8px; margin-bottom:8px; justify-content:center; flex-wrap:wrap; }
 .singer-badge{ font-size:.65em; background:var(--bg-elevated); padding:4px 12px; border-radius:var(--r-pill); }
@@ -1095,11 +1064,9 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     .profile-bar{ justify-content:center; padding:6px; }
     .profile-avatar{ width:34px; height:34px; }
     .profile-menu{ width:220px; }
-    /* เดิม .np-body เป็น overflow-y:auto ทำให้ scrollIntoView ของเนื้อเพลงลากวิดีโอ/แถบควบคุมตาม
-       เปลี่ยนเป็น overflow:hidden แล้วให้ .np-lyrics-panel เป็นตัวเลื่อนเดียว */
-    .np-body{ flex-direction:column; overflow:hidden; justify-content:flex-start; padding:0 24px 20px; }
-    .np-media{ width:100%; max-width:none; align-self:stretch; flex:0 0 auto; }
-    .np-lyrics-panel{ flex:1 1 auto; min-height:0; flex-basis:auto; max-width:none; overflow-y:auto; }
+    .np-body{ flex-direction:column; overflow-y:auto; justify-content:flex-start; padding:0 24px 20px; }
+    .np-media{ width:100%; max-width:none; align-self:stretch; }
+    .np-lyrics-panel{ flex-basis:auto; max-width:none; }
     .sync-panel{ flex:1 0 auto; max-width:none; align-self:stretch; }
 }
 
@@ -1177,7 +1144,6 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 .now-playing-view.immersive .lyric-line.active{
     display:block !important; opacity:1; visibility:visible;
     font-size:var(--lyric-font-size);
-    transform:none;
     background:rgba(0,0,0,.42); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
     border:1px solid rgba(255,255,255,.07); border-radius:10px;
     padding:6px 18px; color:#fff; font-weight:600; line-height:1.4; overflow:hidden;

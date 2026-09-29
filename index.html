@@ -199,14 +199,6 @@
                             </label>
                         </div>
 
-                        <h3>🎤 Word-level Karaoke</h3>
-                        <div style="margin-bottom:25px;">
-                            <label class="lang-toggle" style="display:inline-flex;">
-                                <input type="checkbox" id="toggleKaraokeChk" checked onchange="toggleKaraoke(this)"> ไฮไลต์ทีละคำตามเสียงร้อง
-                            </label>
-                            <div style="color:#888; font-size:.8em; margin-top:6px;">เฉพาะเพลงที่มีข้อมูล word timing (เพลงอื่นแสดงแบบปกติ)</div>
-                        </div>
-
                         <h3>📝 ขนาดตัวอักษรเนื้อเพลง</h3>
                         <input type="range" id="sliderFontSize" min="0.8" max="2.5" step="0.1" value="1.15" oninput="setLyricFontSize(this.value)" style="margin-bottom:30px;">
 
@@ -345,12 +337,8 @@
                         <div class="sync-hotkeys-hint">
                             ⌨️ <b>Space</b> จับจังหวะ · <b>←/↑</b> ย้อน · <b>→/↓</b> ถัดไป · <b>Esc</b> ปิดแผง
                         </div>
-                        <div class="sync-hotkeys-hint">
-                            🎤 <b>W</b> โหมดจับเวลาทีละคำ · <b>Space</b> จับคำถัดไป · <b>Esc</b> ออก
-                        </div>
                         <div id="timestampList" class="timestamp-list"></div>
                         <button id="btnResetSync" class="btn-secondary" onclick="resetSync()" style="margin-top:15px; width:100%;">🔄 ล้างเวลาซิงค์เริ่มใหม่</button>
-                        <div id="wordTimingTools" style="margin-top:10px;"></div>
                     </div>
                 </div>
             </div>
@@ -437,8 +425,6 @@
     <script type="module" src="js/library.js"></script>
 <script type="module" src="js/artists.js"></script>
     <script type="module" src="js/player.js"></script>
-    <!-- ต้องโหลดหลัง player.js (wrap ฟังก์ชันของระบบเดิม) -->
-    <script type="module" src="js/karaoke.js"></script>
     <script type="module" src="js/sync-hotkeys.js"></script>
     <script type="module" src="js/singerColors.js"></script>
     <script type="module" src="js/userdata.js"></script>

@@ -5,8 +5,6 @@ import { db, doc, updateDoc } from './config.js';
 
 window.currentLyricsArray = [];
 window.currentLyricIndex = -1;
-// true = ผู้ใช้กำลังจับจังหวะเอง (ลูกศร/คลิก) → ลูป 100ms ต้องไม่เขียนทับ currentLyricIndex
-window.lyricManualOverride = false;
 window.editingSongId = null;
 window.currentSongId = null;
 window.ytPlayer = null;
@@ -141,17 +139,6 @@ window.getActiveTimestamps = function(song) {
         if (coverTs && coverTs.some(t => t != null)) return coverTs;
     }
     return song.timestamps || [];
-};
-
-// 🆕 wordTimes: เวลาเริ่มของแต่ละคำ (ไม่เก็บเวลาจบ — คำนวณจากคำถัดไป/ท่อนถัดไปแทน)
-// รูปแบบ: wordTimes[i] = { t: [วินาที, ...], mode: 'auto' | 'tap' } | null
-window.getActiveWordTimes = function(song) {
-    if (!song) return [];
-    if (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]) {
-        const coverWt = song.covers[window.currentCoverIndex].wordTimes;
-        if (coverWt && coverWt.some(w => w && Array.isArray(w.t) && w.t.length)) return coverWt;
-    }
-    return song.wordTimes || [];
 };
 
 window.getActiveSingers = function(song) {
@@ -376,12 +363,11 @@ window.playSong = function(id) {
         liveAct.classList.remove('hidden'); liveAct.classList.remove('paused');
     }
 
-    window.currentLyricsArray = String(song.lyrics || '').split(/\n\s*\n/); window.currentLyricIndex = -1;
+    window.currentLyricsArray = song.lyrics.split(/\n\s*\n/); window.currentLyricIndex = -1;
 
     window.wm.openPlayer(song.title); window.wm.openLyrics(song.title);
     window.wm.updateSyncTitle(song.title);
 
-    if (window.initLyricFollowLock) window.initLyricFollowLock();
     window.renderTimestampEditor(); window.renderLyricsToContainer(); window.updateLyricDisplay();
 
     const videoId = window.extractYouTubeID(song.audioPath); const bgEl = document.getElementById('dynamic-bg');
@@ -429,10 +415,6 @@ window.playSong = function(id) {
             if (npFill) npFill.style.width = percent + '%';
         }
 
-        // โหมดจับจังหวะด้วยมือ: ให้ลูกศร/คลิกคุม currentLyricIndex ได้ ไม่ถูกลูป 100ms
-        // เขียนทับกลับทันที (ทำให้แถบไฮไลต์ใน sync panel "เด้ง" ตลอด)
-        if (window.lyricManualOverride) return;
-
         let correctIndex = -1;
         for (let i = 0; i < activeTimestamps.length; i++) {
             if (activeTimestamps[i] != null && currentTime >= activeTimestamps[i]) correctIndex = i;
@@ -444,41 +426,33 @@ window.playSong = function(id) {
 };
 
 window.saveTimestampsToFirebase = async function(updateLyricsText = false) {
-    // คืน Promise เสมอ (แม้ไม่ใช่แอดมิน/ไม่มีเพลง) เพื่อให้ผู้เรียกใช้ .then()/await ได้ปลอดภัย
-    if (!window.isAdmin) return false;
+    if (!window.isAdmin) return;
     const song = window.songs.find(s => s.id === window.currentSongId);
-    if (!song) return false;
+    if (!song) return;
 
     if (updateLyricsText) song.lyrics = window.currentLyricsArray.join('\n\n');
     const count = window.currentLyricsArray.length;
 
     let isCover = (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]);
 
-        if (isCover) {
-            if (!song.covers[window.currentCoverIndex].timestamps || song.covers[window.currentCoverIndex].timestamps.length === 0) {
-                song.covers[window.currentCoverIndex].timestamps = [...(song.timestamps || [])];
-            }
-            if (!song.covers[window.currentCoverIndex].singers || song.covers[window.currentCoverIndex].singers.length === 0) {
-                song.covers[window.currentCoverIndex].singers = [...(song.singers || [])];
-            }
-            if (!song.covers[window.currentCoverIndex].wordTimes || song.covers[window.currentCoverIndex].wordTimes.length === 0) {
-                song.covers[window.currentCoverIndex].wordTimes = [...(song.wordTimes || [])];
-            }
+    if (isCover) {
+        if (!song.covers[window.currentCoverIndex].timestamps || song.covers[window.currentCoverIndex].timestamps.length === 0) {
+            song.covers[window.currentCoverIndex].timestamps = [...(song.timestamps || [])];
         }
+        if (!song.covers[window.currentCoverIndex].singers || song.covers[window.currentCoverIndex].singers.length === 0) {
+            song.covers[window.currentCoverIndex].singers = [...(song.singers || [])];
+        }
+    }
 
     let currentTs = isCover ? (song.covers[window.currentCoverIndex].timestamps || []) : (song.timestamps || []);
     let currentSg = isCover ? (song.covers[window.currentCoverIndex].singers || []) : (song.singers || []);
-    let currentWt = isCover ? (song.covers[window.currentCoverIndex].wordTimes || []) : (song.wordTimes || []);
 
     const safeTs = Array.from({ length: count }, (_, i) => currentTs[i] != null ? currentTs[i] : null);
     const safeSg = Array.from({ length: count }, (_, i) => currentSg[i] != null ? currentSg[i] : "");
-    // wordTimes เก็บ null ไว้ถ้าท่อนนั้นยังไม่ได้ทำ word timing (คงข้อมูลเดิมที่มีอยู่)
-    const safeWt = Array.from({ length: count }, (_, i) => currentWt[i] !== undefined ? currentWt[i] : null);
 
     const payload = {
         timestamps: song.timestamps || [],
         singers: song.singers || [],
-        wordTimes: song.wordTimes || [],
         covers: song.covers || []
     };
     if (updateLyricsText) payload.lyrics = song.lyrics;
@@ -486,20 +460,16 @@ window.saveTimestampsToFirebase = async function(updateLyricsText = false) {
     if (isCover) {
         song.covers[window.currentCoverIndex].timestamps = safeTs;
         song.covers[window.currentCoverIndex].singers = safeSg;
-        song.covers[window.currentCoverIndex].wordTimes = safeWt;
         payload.covers = song.covers;
     } else {
         song.timestamps = safeTs;
         song.singers = safeSg;
-        song.wordTimes = safeWt;
         payload.timestamps = safeTs;
         payload.singers = safeSg;
-        payload.wordTimes = safeWt;
     }
 
     await updateDoc(doc(db, "songs", window.currentSongId), payload);
     if (updateLyricsText) { window.renderLyricsToContainer(); window.updateLyricDisplay(); }
-    return true;
 };
 
 window.renderTimestampEditor = function() {
@@ -638,58 +608,6 @@ window.renderTimestampEditor = function() {
         const btnAddEnd = document.createElement('button'); btnAddEnd.innerText = '➕ เพิ่มท่อนใหม่ต่อท้ายสุด'; btnAddEnd.style.background = 'rgba(255, 255, 255, 0.1)'; btnAddEnd.style.padding = "8px"; btnAddEnd.style.color = "#fff"; btnAddEnd.style.border = "none"; btnAddEnd.style.borderRadius = "8px"; btnAddEnd.style.width = "100%"; btnAddEnd.style.cursor = "pointer";
         btnAddEnd.onclick = () => window.addLyricLine(window.currentLyricsArray.length - 1); container.appendChild(btnAddEnd);
     }
-    window.renderWordTimingTools();
-};
-
-// 🆕 เครื่องมือ word-level karaoke (ทำงานกับ js/karaoke.js)
-window.renderWordTimingTools = function() {
-    const box = document.getElementById('wordTimingTools'); if (!box) return;
-    box.innerHTML = '';
-    if (!window.isAdmin) return;
-
-    const hint = document.createElement('div');
-    hint.style.cssText = 'font-size:.78em; color:#aaa; line-height:1.5; margin:10px 0 8px;';
-    hint.innerHTML = '🎤 <b>Word-level karaoke</b> — ไฮไลต์ทีละคำตามเสียงร้อง<br>ต้องซิงค์เวลาท่อน (Space) ให้เสร็จก่อน แล้วกดสร้างอัตโนมัติ';
-    box.appendChild(hint);
-
-    const btnAuto = document.createElement('button');
-    btnAuto.className = 'btn-primary';
-    btnAuto.style.cssText = 'width:100%; background:rgba(175,82,222,.2); color:#af52de; border:1px solid rgba(175,82,222,.4); font-weight:bold;';
-    btnAuto.innerText = '🎬 สร้าง Word Timing อัตโนมัติ (ทั้งเพลง)';
-    btnAuto.onclick = async function () {
-        if (!confirm('สร้าง word timing อัตโนมัติจากเวลาท่อนที่ซิงค์ไว้แล้ว?\n(ท่อนที่ยังไม่ได้ซิงค์เวลาจะถูกข้าม)')) return;
-        btnAuto.disabled = true; btnAuto.innerText = 'กำลังสร้าง...';
-        try {
-            const made = window.karaokeGenerateForCurrent();
-            if (!made) { alert('ยังไม่มีท่อนไหนซิงค์เวลาไว้เลย — กด Space จับจังหวะก่อน'); return; }
-            await window.saveTimestampsToFirebase();
-            window.karaoke.reset();
-            alert('สร้าง word timing แล้ว ' + made + ' ท่อน');
-        } catch (e) {
-            console.error(e); alert('บันทึกไม่สำเร็จ');
-        } finally {
-            btnAuto.disabled = false; btnAuto.innerText = '🎬 สร้าง Word Timing อัตโนมัติ (ทั้งเพลง)';
-        }
-    };
-    box.appendChild(btnAuto);
-
-    const btnClear = document.createElement('button');
-    btnClear.className = 'btn-secondary';
-    btnClear.style.cssText = 'width:100%; margin-top:8px; background:rgba(255,59,48,.12); color:#ff3b30; border:1px solid rgba(255,59,48,.35);';
-    btnClear.innerText = '🗑️ ล้าง Word Timing ของเวอร์ชันนี้';
-    btnClear.onclick = async function () {
-        if (!confirm('ล้าง word timing ทั้งหมดของเวอร์ชันที่กำลังเล่นอยู่?\n(เวลาท่อนหลักจะไม่ถูกแตะ)')) return;
-        const song = (window.songs || []).find(s => s.id === window.currentSongId); if (!song) return;
-        const isCover = (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]);
-        const target = isCover ? song.covers[window.currentCoverIndex] : song;
-        target.wordTimes = [];
-        try {
-            await window.saveTimestampsToFirebase();
-            window.karaoke.reset();
-            window.renderTimestampEditor();
-        } catch (e) { console.error(e); alert('ล้างไม่สำเร็จ'); }
-    };
-    box.appendChild(btnClear);
 };
 
 window.addLyricLine = function(index) {
@@ -699,13 +617,11 @@ window.addLyricLine = function(index) {
     window.currentLyricsArray.splice(insertAt, 0, "ท่อนใหม่...");
     if (!song.timestamps) song.timestamps = []; song.timestamps.splice(insertAt, 0, null);
     if (!song.singers) song.singers = []; song.singers.splice(insertAt, 0, "");
-    if (!song.wordTimes) song.wordTimes = []; song.wordTimes.splice(insertAt, 0, null);
 
     if (song.covers) {
         song.covers.forEach(c => {
             if (c.timestamps) c.timestamps.splice(insertAt, 0, null);
             if (c.singers) c.singers.splice(insertAt, 0, "");
-            if (c.wordTimes) c.wordTimes.splice(insertAt, 0, null);
         });
     }
     window.saveTimestampsToFirebase(true).then(() => { window.renderTimestampEditor(); });
@@ -717,13 +633,11 @@ window.deleteLyricLine = function(index) {
     window.currentLyricsArray.splice(index, 1);
     if (song.timestamps) song.timestamps.splice(index, 1);
     if (song.singers) song.singers.splice(index, 1);
-    if (song.wordTimes) song.wordTimes.splice(index, 1);
 
     if (song.covers) {
         song.covers.forEach(c => {
             if (c.timestamps) c.timestamps.splice(index, 1);
             if (c.singers) c.singers.splice(index, 1);
-            if (c.wordTimes) c.wordTimes.splice(index, 1);
         });
     }
     window.saveTimestampsToFirebase(true).then(() => { window.renderTimestampEditor(); });
@@ -737,59 +651,6 @@ window.syncTimestampEditorUI = function() {
             else { row.style.background = 'rgba(255, 255, 255, 0.05)'; row.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }
         }
     });
-};
-
-// ==========================================
-// 🆕 Follow Lock — ถ้าผู้ใช้เลื่อนเอง ให้หยุดเลื่อนอัตโนมัติชั่วครู่
-// (ไม่มีระบบนี้ ผู้ใช้จะถูก "ดึงกลับ" ทุกครั้งที่เปลี่ยนท่อน)
-// ==========================================
-window.lyricFollowLockedUntil = 0;
-window.LYRIC_FOLLOW_PAUSE_MS = 3000;
-
-window.initLyricFollowLock = function() {
-    const panel = document.getElementById('content-lyrics');
-    if (!panel || panel._followLockBound) return;
-    panel._followLockBound = true;
-
-    const lock = () => { window.lyricFollowLockedUntil = Date.now() + window.LYRIC_FOLLOW_PAUSE_MS; };
-    panel.addEventListener('wheel', lock, { passive: true });
-    panel.addEventListener('touchmove', lock, { passive: true });
-    panel.addEventListener('keydown', (e) => {
-        if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) lock();
-    });
-};
-
-window.isLyricFollowLocked = function() {
-    return Date.now() < window.lyricFollowLockedUntil;
-};
-
-// เลื่อนแผงเนื้อเพลงให้บรรทัดที่ระบุอยู่กลางจอ โดยเลื่อน "เฉพาะ" .np-lyrics-panel
-// (scrollIntoView เดิมจะไปเลื่อนทุก ancestor ที่ scroll ได้ ทำให้วิดีโอ/แถบควบคุมเลื่อนตามไปด้วย)
-window._lyricSettleTimer = null;
-window.scrollLyricToLine = function(el, behavior = 'smooth') {
-    const panel = document.getElementById('content-lyrics');
-    if (!panel || !el) return;
-
-    // ผู้ใช้กำลังเลื่อนเองอยู่ → ไม่ดึงกลับ (ยกเว้นการกดจับจังหวะ ซึ่งต้องเห็นผลทันที)
-    if (behavior === 'smooth' && window.isLyricFollowLocked && window.isLyricFollowLocked()) return;
-
-    const computeTarget = () => {
-        const pr = panel.getBoundingClientRect();
-        const lr = el.getBoundingClientRect();
-        const delta = (lr.top - pr.top) - (panel.clientHeight - lr.height) / 2;
-        return Math.max(0, panel.scrollTop + delta);
-    };
-
-    panel.scrollTo({ top: computeTarget(), behavior });
-
-    // settle pass: .lyric-sub / .active มี transition ทำให้ความสูงบรรทัดเปลี่ยนหลัง scroll
-    // เช็คซ้ำหลัง transition จบ แล้วแก้เฉพาะถ้าเพี้ยนเกิน 4px
-    clearTimeout(window._lyricSettleTimer);
-    window._lyricSettleTimer = setTimeout(() => {
-        if (!el.isConnected || !el.classList.contains('active')) return;
-        const target = computeTarget();
-        if (Math.abs(target - panel.scrollTop) > 4) panel.scrollTo({ top: target, behavior: 'auto' });
-    }, 360);
 };
 
 window.updateLyricDisplay = function() {
@@ -808,7 +669,9 @@ window.updateLyricDisplay = function() {
         const activeLine = document.getElementById(`lyric-line-${idx}`);
         if (activeLine) {
             activeLine.classList.add('active');
-            if (!immersive) window.scrollLyricToLine(activeLine, 'smooth');
+            if (!immersive) {
+                activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
         }
     }
     window.syncTimestampEditorUI();
@@ -838,7 +701,7 @@ window.forceLyricScroll = function() {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             const activeLine = document.querySelector('#lyricsContainer .lyric-line.active');
-            if (activeLine) window.scrollLyricToLine(activeLine, 'auto');
+            if (activeLine) activeLine.scrollIntoView({ behavior: "auto", block: "center" });
         });
     });
 };
@@ -848,7 +711,6 @@ window.nextLyric = function(isAuto = false) {
     if (window.currentLyricIndex < window.currentLyricsArray.length) {
         window.currentLyricIndex++;
         window.updateLyricDisplay();
-        if (!isAuto) window.lyricManualOverride = true;
 
         if (!isAuto && window.isAdmin && window.currentSongId && window.ytPlayer) {
             const song = window.songs.find(s => s.id === window.currentSongId);
@@ -882,7 +744,6 @@ window.nextLyric = function(isAuto = false) {
 
 window.prevLyric = function() {
     if (window.currentLyricIndex > -1) {
-        window.lyricManualOverride = true;
         if (window.isAdmin && window.currentSongId) {
             const song = window.songs.find(s => s.id === window.currentSongId);
             if (song) {
@@ -918,15 +779,12 @@ window.resetSync = function() {
             if (isCover) {
                 song.covers[window.currentCoverIndex].timestamps = [];
                 song.covers[window.currentCoverIndex].singers = [];
-                song.covers[window.currentCoverIndex].wordTimes = [];
             } else {
                 song.timestamps = [];
                 song.singers = [];
-                song.wordTimes = [];
             }
             window.saveTimestampsToFirebase();
             window.currentLyricIndex = -1;
-            window.lyricManualOverride = false;
             window.renderTimestampEditor();
             window.updateLyricDisplay();
         }

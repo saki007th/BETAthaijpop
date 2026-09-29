@@ -73,20 +73,6 @@ window.toggleLang = function(langIndex, el, mode) {
     if (window.getLangMode() === mode) window.applyLangToggles();
 };
 
-// 🆕 เปิด/ปิด word-level karaoke
-window.isKaraokeEnabled = function() {
-    return !(window.karaoke && window.karaoke.isDisabled());
-};
-window.toggleKaraoke = function(el) {
-    if (!window.karaoke) return;
-    const disabled = window.karaoke.toggle();
-    if (el) el.checked = !disabled;
-};
-window.syncKaraokeCheckbox = function() {
-    const chk = document.getElementById('toggleKaraokeChk');
-    if (chk) chk.checked = window.isKaraokeEnabled();
-};
-
 window.loadCustomSettings = function() {
     const fs = localStorage.getItem('ws_fontsize');
     const shuffle = localStorage.getItem('ws_shuffle');
@@ -104,7 +90,6 @@ window.loadCustomSettings = function() {
 
     window.syncLangCheckboxes();
     window.applyLangToggles();
-    window.syncKaraokeCheckbox();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
