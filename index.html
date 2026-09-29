@@ -37,6 +37,9 @@
                 <button class="nav-item" data-view="library" onclick="wm.openLibrary()">
                     <i class="fa-solid fa-record-vinyl"></i><span>คลังเพลง</span>
                 </button>
+                <button class="nav-item" data-view="artists" onclick="wm.openArtists()">
+                    <i class="fa-solid fa-microphone-lines"></i><span>ศิลปิน</span>
+                </button>
                 <button class="nav-item" onclick="openQueuePanel()" title="คิวเพลง">
                     <i class="fa-solid fa-list-ol"></i><span>คิวเพลง</span>
                     <span id="queueNavCount" class="nav-badge" style="display:none;"></span>
@@ -155,8 +158,32 @@
                     </div>
                 </header>
                 <div class="content-body">
-                    <div id="artistChips" class="chip-row"></div>
+                    <div id="artistFilterBanner" class="artist-filter-banner" style="display:none;">
+                        <i class="fa-solid fa-filter"></i>
+                        <span>กำลังดูเฉพาะเพลงของ <b id="artistFilterName">-</b></span>
+                        <button class="artist-filter-clear" onclick="clearArtistFilter()" title="ดูเพลงทั้งหมด">✕ ดูทั้งหมด</button>
+                    </div>
                     <div id="songList" class="song-list"></div>
+                </div>
+            </section>
+
+            <!-- ---- Artists view ---- -->
+            <section id="view-artists" class="content-view">
+                <header class="content-header">
+                    <h1 class="content-title">ศิลปิน</h1>
+                    <div class="header-actions">
+                        <input type="text" id="artistSearch" class="search-input" placeholder="🔍 ค้นหาชื่อศิลปิน..." oninput="filterArtistList()">
+                        <select id="artistSortSelect" class="sort-select" onchange="setArtistSort(this.value)" title="เรียงลำดับ">
+                            <option value="name" selected>เรียงตามตัวอักษร</option>
+                            <option value="songs">จำนวนเพลงมาก → น้อย</option>
+                            <option value="plays">ยอดฟังมาก → น้อย</option>
+                            <option value="newest">เพลงใหม่ → เก่า</option>
+                        </select>
+                        <span id="artistCount" class="artist-count"></span>
+                    </div>
+                </header>
+                <div class="content-body">
+                    <div id="artistGrid" class="artist-grid"></div>
                 </div>
             </section>
 
@@ -382,6 +409,7 @@
     <script type="module" src="js/settings.js"></script>
     <script type="module" src="js/home.js"></script>
     <script type="module" src="js/library.js"></script>
+<script type="module" src="js/artists.js"></script>
     <script type="module" src="js/player.js"></script>
     <script type="module" src="js/singerColors.js"></script>
     <script type="module" src="js/userdata.js"></script>

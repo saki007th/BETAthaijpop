@@ -218,7 +218,7 @@ var(--bg-content);
 .section-title:first-child{ margin-top:0; }
 
 /* ==========================================================
-   3. Search + chips
+   3. Search + artist filter banner
    ========================================================== */
 .search-input{
     display:flex; align-items:center; gap:8px;
@@ -229,14 +229,61 @@ var(--bg-content);
 .search-input::placeholder{ color:var(--text-3); }
 .search-input:focus{ outline:none; border-color:var(--accent); background:var(--bg-elevated-hover); }
 
-.chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.chip{
-    background:var(--bg-elevated); color:var(--text-2); border:1px solid transparent;
-    padding:6px 16px; border-radius:var(--r-pill); font-size:12.5px; cursor:pointer;
-    transition:all .18s var(--ease);
+.artist-filter-banner{
+    display:flex; align-items:center; gap:10px;
+    background:var(--accent-wash); border:1px solid var(--accent);
+    color:var(--text-1); font-size:13px;
+    padding:10px 14px; border-radius:var(--r-m); margin-bottom:16px;
 }
-.chip:hover{ background:var(--bg-elevated-hover); }
-.chip.active{ background:var(--accent); color:#fff; }
+.artist-filter-banner i{ color:var(--accent); }
+.artist-filter-banner span{ flex:1; }
+.artist-filter-banner b{ color:var(--accent); }
+.artist-filter-clear{
+    background:var(--bg-elevated); color:var(--text-2); border:none;
+    padding:6px 14px; border-radius:var(--r-pill); font-size:12.5px;
+    cursor:pointer; transition:.18s var(--ease); white-space:nowrap;
+}
+.artist-filter-clear:hover{ background:var(--bg-elevated-hover); color:var(--text-1); }
+
+/* ==========================================================
+   3b. Artists view — การ์ดนักร้อง
+   ========================================================== */
+.artist-count{ font-size:12.5px; color:var(--text-3); white-space:nowrap; }
+.artist-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px;
+}
+.artist-card{
+    display:flex; align-items:center; gap:12px;
+    background:linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border:1px solid var(--border-soft); border-radius:var(--r-m);
+    padding:12px; cursor:pointer;
+    transition:transform .15s var(--ease), box-shadow .15s var(--ease), border-color .15s var(--ease);
+}
+.artist-card:hover{
+    transform:translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,.35);
+    border-color:var(--border-strong);
+}
+.artist-card-avatar{
+    position:relative; width:52px; height:52px; flex-shrink:0;
+    border-radius:50%; background-size:cover; background-position:center;
+    background-color:var(--bg-surface-2); box-shadow:0 8px 20px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.artist-card-avatar::after{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg, rgba(0,0,0,.25), rgba(0,0,0,.55));
+}
+.artist-card-initial{
+    position:relative; z-index:1; font-size:22px; font-weight:700;
+    text-shadow:0 1px 4px rgba(0,0,0,.7);
+}
+.artist-card-info{ flex:1; min-width:0; }
+.artist-card-name{
+    font-size:14px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.artist-card-meta{ font-size:11.5px; color:var(--text-3); margin-top:3px; }
+.artist-empty{ color:var(--text-3); text-align:center; padding:40px 0; grid-column:1/-1; }
 
 /* ==========================================================
    4. Song list (Library view) — 4-column card grid
@@ -882,12 +929,18 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
    ========================================================== */
 @media (max-width: 1240px){
     .song-list{ grid-template-columns:repeat(3,1fr); }
+    .artist-grid{ grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); }
 }
 @media (max-width: 880px){
     .song-list{ grid-template-columns:repeat(2,1fr); }
+    .artist-grid{ grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; }
+    .artist-card{ padding:10px; }
+    .artist-card-avatar{ width:42px; height:42px; }
+    .artist-card-initial{ font-size:18px; }
 }
 @media (max-width: 560px){
     .song-list{ grid-template-columns:1fr; }
+    .artist-grid{ grid-template-columns:1fr; }
 }
 @media (max-width: 1240px){
     .np-body{ gap:16px; padding:0 24px 20px; }
