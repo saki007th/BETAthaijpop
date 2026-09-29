@@ -49,6 +49,7 @@ export async function fetchSongs() {
                 title: data.title,
                 artist: data.artist,
                 audioPath: data.audioPath,
+                hasMv: data.hasMv !== false,
                 lyrics: data.lyrics,
                 timestamps: data.timestamps || [],
                 singers: data.singers || [],
@@ -265,6 +266,7 @@ window.openAddView = function() {
     if (!window.isAdmin) return;
     window.editingSongId = null;
     document.getElementById('inputTitle').value = ''; document.getElementById('inputArtist').value = ''; document.getElementById('inputAudio').value = ''; document.getElementById('inputLyrics').value = '';
+    document.getElementById('inputHasMv').checked = true;
     window.currentCoversDraft = []; window.renderCoverInputs();
     window.wm.openAdd('✨ เพิ่มเพลงใหม่');
 };
@@ -274,6 +276,7 @@ window.editSong = function(id) {
     const song = window.songs.find(s => s.id === id); if (!song) return;
     window.editingSongId = id;
     document.getElementById('inputTitle').value = song.title; document.getElementById('inputArtist').value = song.artist || ''; document.getElementById('inputAudio').value = song.audioPath; document.getElementById('inputLyrics').value = song.lyrics;
+    document.getElementById('inputHasMv').checked = song.hasMv !== false;
     window.currentCoversDraft = song.covers ? JSON.parse(JSON.stringify(song.covers)) : []; window.renderCoverInputs();
     window.wm.openAdd('✏️ แก้ไขเพลง');
 };
@@ -281,6 +284,7 @@ window.editSong = function(id) {
 window.saveSong = async function() {
     if (!window.isAdmin) return;
     const title = document.getElementById('inputTitle').value.trim(); const artist = document.getElementById('inputArtist').value.trim(); const audioPath = document.getElementById('inputAudio').value.trim(); const lyrics = document.getElementById('inputLyrics').value.trim();
+    const hasMv = document.getElementById('inputHasMv').checked;
     const btnSave = document.getElementById('btnSave');
 
     if (!title || !lyrics || !window.extractYouTubeID(audioPath)) { alert("ข้อมูลไม่ครบ หรือลิงก์ผิด"); return; }
@@ -290,9 +294,9 @@ window.saveSong = async function() {
 
     try {
         if (window.editingSongId) {
-            await updateDoc(doc(db, "songs", window.editingSongId), { title, artist, audioPath, lyrics, covers: validCovers });
+            await updateDoc(doc(db, "songs", window.editingSongId), { title, artist, audioPath, lyrics, hasMv, covers: validCovers });
         } else {
-            await addDoc(songsCollection, { title, artist, audioPath, lyrics, timestamps: [], singers: [], covers: validCovers, createdAt: Date.now(), plays: 0, seconds: 0 });
+            await addDoc(songsCollection, { title, artist, audioPath, lyrics, hasMv, timestamps: [], singers: [], covers: validCovers, createdAt: Date.now(), plays: 0, seconds: 0 });
         }
         await fetchSongs();
         window.closeAddModal();

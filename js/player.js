@@ -252,7 +252,8 @@ function createBadgeElement(label, artistName, index) {
         if (index >= 0 && song.covers && song.covers[index]) targetVideoPath = song.covers[index].audioPath;
 
         const videoId = window.extractYouTubeID(targetVideoPath);
-        if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') { window.ytPlayer.loadVideoById(videoId); window.updateVideoQuality(); if (videoId) window.applyAmbience(`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`, videoId); }
+        if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') { window.ytPlayer.loadVideoById(videoId); window.updateVideoQuality(); }
+        window.applyTrackArtwork(videoId);
 
         window.currentLyricIndex = -1;
         window.renderTimestampEditor();
@@ -263,11 +264,83 @@ function createBadgeElement(label, artistName, index) {
 }
 
 // ==========================================
+// 🎨 ภาพปกประจำเพลง (ใช้ร่วมกันทุกจุด) + 💿 โหมดแผ่นไวนิล
+// ==========================================
+window.isVinylSong = function() {
+    const song = window.songs && window.songs.find(s => s.id === window.currentSongId);
+    return !!(song && song.hasMv === false);
+};
+
+window.applyTrackArtwork = function(videoId) {
+    const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
+    const liveAct = document.getElementById('liveActivity');
+    const liveThumb = document.getElementById('liveThumb');
+    const npThumb = document.getElementById('npTrackThumb');
+    const npVinylLabel = document.getElementById('npVinylLabel');
+
+    if (liveAct) {
+        if (thumbUrl) liveAct.style.setProperty('--live-bg', `url('${thumbUrl}')`);
+        else liveAct.style.removeProperty('--live-bg');
+    }
+    if (npThumb) {
+        if (thumbUrl) npThumb.style.backgroundImage = `url('${thumbUrl}')`;
+        else npThumb.style.backgroundImage = '';
+    }
+    [liveThumb, npThumb].forEach(el => {
+        if (!el) return;
+        if (thumbUrl) el.style.setProperty('--disc-cover', `url('${thumbUrl}')`);
+        else el.style.removeProperty('--disc-cover');
+    });
+    if (npVinylLabel) {
+        if (thumbUrl) npVinylLabel.style.setProperty('--disc-cover', `url('${thumbUrl}')`);
+        else npVinylLabel.style.removeProperty('--disc-cover');
+        npVinylLabel.classList.toggle('has-cover', !!thumbUrl);
+    }
+
+    window.applyVinylMode();
+
+    if (thumbUrl) window.applyAmbience(thumbUrl, videoId);
+    else window.clearAmbience();
+};
+
+window.applyVinylMode = function() {
+    const stage = document.getElementById('npVinylStage');
+    const frame = document.getElementById('npMediaFrame');
+    if (!stage || !frame) return;
+
+    const on = window.isVinylSong() && !window._vinylForceVideo;
+    stage.classList.toggle('active', on);
+    stage.classList.toggle('force-video', !!window._vinylForceVideo);
+    frame.classList.toggle('vinyl-mode', on);
+
+    window.setVinylSpinning(window._isPlaying);
+
+    const q = document.getElementById('npVideoQuality');
+    if (q) q.style.display = on ? 'none' : '';
+};
+
+window.toggleVinylView = function() {
+    if (!window.isVinylSong()) return;
+    window._vinylForceVideo = !window._vinylForceVideo;
+    window.applyVinylMode();
+};
+
+window.setVinylSpinning = function(playing) {
+    const stage = document.getElementById('npVinylStage');
+    if (stage) stage.classList.toggle('spinning', !!playing);
+    ['liveThumb', 'npTrackThumb'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('is-playing', !!playing);
+    });
+};
+
+// ==========================================
 // ▶️ เล่นเพลง
 // ==========================================
 window.playSong = function(id) {
     window.currentSongId = id;
     window._isPlaying = true;
+    window._vinylForceVideo = false;
     const song = window.songs.find(s => s.id === id); if (!song) return;
     if (window.startListeningStats) window.startListeningStats(id);
 
@@ -284,17 +357,7 @@ window.playSong = function(id) {
         document.getElementById('npTrackArtist').innerText = '🎤 ' + (song.artist || '-');
 
         const ytId = window.extractYouTubeID(song.audioPath);
-        const npThumb = document.getElementById('npTrackThumb');
-        if (ytId) {
-            const thumbUrl = `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
-            liveAct.style.setProperty('--live-bg', `url('${thumbUrl}')`);
-            window.applyAmbience(thumbUrl, ytId);
-            if (npThumb) npThumb.style.backgroundImage = `url('${thumbUrl}')`;
-        } else {
-            liveAct.style.removeProperty('--live-bg');
-            window.clearAmbience();
-            if (npThumb) npThumb.style.backgroundImage = '';
-        }
+        window.applyTrackArtwork(ytId);
 
         liveAct.classList.remove('hidden'); liveAct.classList.remove('paused');
     }
@@ -739,6 +802,7 @@ window.onPlayerStateChange = function(event) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         if (liveAct) liveAct.classList.remove('paused');
+        window.setVinylSpinning(true);
         window.startEqBars();
         window.pingYTQuality();
         window._isPlaying = true;
@@ -748,6 +812,7 @@ window.onPlayerStateChange = function(event) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (npPlayBtn) npPlayBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
         if (liveAct) liveAct.classList.add('paused');
+        window.setVinylSpinning(false);
         window.stopEqBars();
         window._isPlaying = false;
         window.resetWinBoxColor();
@@ -755,6 +820,7 @@ window.onPlayerStateChange = function(event) {
 
     if (event.data === 0) {
         window.stopEqBars();
+        window.setVinylSpinning(false);
         if (window.endListeningStats) window.endListeningStats();
 
         if (!window.songs || window.songs.length === 0) return;
