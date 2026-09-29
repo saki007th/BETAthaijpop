@@ -50,9 +50,10 @@ export async function fetchSongs() {
                 artist: data.artist,
                 audioPath: data.audioPath,
                 hasMv: data.hasMv !== false,
-                lyrics: data.lyrics,
+                lyrics: data.lyrics || '',
                 timestamps: data.timestamps || [],
                 singers: data.singers || [],
+                wordTimes: data.wordTimes || [],
                 covers: data.covers || [],
                 createdAt: data.createdAt,
                 plays: data.plays || 0,
@@ -296,7 +297,7 @@ window.saveSong = async function() {
         if (window.editingSongId) {
             await updateDoc(doc(db, "songs", window.editingSongId), { title, artist, audioPath, lyrics, hasMv, covers: validCovers });
         } else {
-            await addDoc(songsCollection, { title, artist, audioPath, lyrics, hasMv, timestamps: [], singers: [], covers: validCovers, createdAt: Date.now(), plays: 0, seconds: 0 });
+            await addDoc(songsCollection, { title, artist, audioPath, lyrics, hasMv, timestamps: [], singers: [], wordTimes: [], covers: validCovers, createdAt: Date.now(), plays: 0, seconds: 0 });
         }
         await fetchSongs();
         window.closeAddModal();

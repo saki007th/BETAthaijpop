@@ -60,6 +60,25 @@ document.addEventListener('keydown', (e) => {
         document.activeElement.blur();
     }
 
+    // โหมดจับเวลาทีละคำ (word refine) — ดักก่อนปุ่มอื่นทั้งหมด
+    if (window.karaokeRefine && window.karaokeRefine.isActive()) {
+        if (e.code === 'KeyW') { e.preventDefault(); window.karaokeRefine.stop(); return; }
+        if (e.code === 'Space' || e.code === 'ArrowRight') {
+            e.preventDefault(); window.karaokeRefine.tapCurrentTime(); return;
+        }
+        if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+            e.preventDefault(); window.karaokeRefine.move(e.code === 'ArrowDown' ? 1 : -1); return;
+        }
+        if (e.code === 'Escape') { e.preventDefault(); window.karaokeRefine.stop(); return; }
+    }
+
+    // เข้าโหมดจับเวลาทีละคำ
+    if (e.code === 'KeyW') {
+        e.preventDefault();
+        window.karaokeRefine.start();
+        return;
+    }
+
     switch (e.code) {
         case 'Space':
         case 'ArrowRight':
