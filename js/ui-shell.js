@@ -25,6 +25,11 @@ window.wm = {
         if (window.renderSongList) window.renderSongList();
     },
 
+    openArtists() {
+        this.showView('artists');
+        if (window.renderArtistList) window.renderArtistList();
+    },
+
     openSettings() {
         this.showView('settings');
     },

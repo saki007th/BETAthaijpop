@@ -71,6 +71,7 @@ export async function fetchSongs() {
 
         if (window.checkNewSongsNotification) window.checkNewSongsNotification();
         if (window.updateArtistSuggestions) window.updateArtistSuggestions();
+        if (window.renderArtistList) window.renderArtistList();
         if (document.getElementById('view-library').classList.contains('active')) window.renderSongList();
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -93,27 +94,35 @@ window.fetchSongs = fetchSongs;
 
 window.filterByArtist = function(artistName) {
     window.currentFilter = artistName;
+    window.updateArtistFilterBanner();
     window.renderSongList(document.getElementById('searchInput').value.toLowerCase(), artistName);
 };
 window.filterSongs = function() {
     window.renderSongList(document.getElementById('searchInput').value.toLowerCase(), window.currentFilter);
 };
+window.clearArtistFilter = function() {
+    window.filterByArtist('All');
+};
 
-window.renderSongList = function(query = '', artistFilter = 'All') {
+window.updateArtistFilterBanner = function() {
+    const banner = document.getElementById('artistFilterBanner');
+    const nameEl = document.getElementById('artistFilterName');
+    if (!banner || !nameEl) return;
+    if (window.currentFilter && window.currentFilter !== 'All') {
+        nameEl.textContent = window.currentFilter;
+        banner.style.display = 'flex';
+    } else {
+        banner.style.display = 'none';
+    }
+};
+
+window.renderSongList = function(query = '', artistFilter = window.currentFilter || 'All') {
     const listContainer = document.getElementById('songList');
-    const chipContainer = document.getElementById('artistChips');
     if (!listContainer) return;
     listContainer.innerHTML = '';
 
-    if (chipContainer) {
-        let artistSet = new Set();
-        window.songs.forEach(s => window.getSingersList(s.artist).forEach(n => artistSet.add(n)));
-
-        const sortedArtists = Array.from(artistSet).sort((a, b) => a.localeCompare(b, 'th'));
-        const artists = ['All', ...sortedArtists];
-
-        chipContainer.innerHTML = artists.map(a => `<button class="chip ${artistFilter === a ? 'active' : ''}" onclick="filterByArtist('${a}')">${a === 'All' ? 'ทั้งหมด' : a}</button>`).join('');
-    }
+    window.currentFilter = artistFilter;
+    window.updateArtistFilterBanner();
 
     const filtered = window.songs.filter(song => {
         const q = query.toLowerCase(); const artist = song.artist || '';

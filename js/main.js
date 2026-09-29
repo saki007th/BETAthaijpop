@@ -109,6 +109,7 @@ onAuthStateChanged(auth, async (user) => {
     if (window.loadStats) await window.loadStats();
 
     if (document.getElementById('view-library').classList.contains('active') && window.renderSongList) window.renderSongList();
+    if (document.getElementById('view-artists').classList.contains('active') && window.renderArtistList) window.renderArtistList();
     if (window.currentSongId && window.renderTimestampEditor) window.renderTimestampEditor();
 
     await initializeSingerColors(db);
