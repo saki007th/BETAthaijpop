@@ -466,7 +466,7 @@ var(--bg-content);
 }
 .player-left{ display:flex; align-items:center; gap:12px; width:280px; min-width:0; }
 .live-thumb{
-    width:44px; height:44px; border-radius:var(--r-s); flex-shrink:0;
+    width:44px; height:44px; border-radius:var(--r-s); flex-shrink:0; position:relative; overflow:hidden;
     background:var(--live-bg, var(--bg-surface-2)) center/cover no-repeat, var(--bg-surface-2);
 }
 .live-info{ min-width:0; }
@@ -530,13 +530,14 @@ var(--bg-content);
 .np-media-frame{
     width:100%; aspect-ratio:16/9; border-radius:var(--r-l); overflow:hidden;
     background:#000; box-shadow:0 30px 60px rgba(0,0,0,.5); flex-shrink:0;
+    position:relative;
 }
 
 /* title / artist / scrub / transport controls under the video */
 .np-controls-block{ margin-top:22px; }
 .np-track-meta{ display:flex; align-items:center; gap:14px; min-width:0; }
 .np-track-thumb{
-    width:56px; height:56px; border-radius:10px; flex-shrink:0;
+    width:56px; height:56px; border-radius:10px; flex-shrink:0; position:relative; overflow:hidden;
     background:var(--bg-surface-2) center/cover no-repeat;
     box-shadow:0 8px 20px rgba(0,0,0,.45);
 }
@@ -578,6 +579,96 @@ var(--bg-content);
 .np-controls-row{ display:flex; align-items:center; justify-content:center; gap:30px; }
 .np-ctrl-btn{ background:none; border:none; color:var(--text-1); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .np-play-btn{ width:48px; height:48px; border-radius:50%; background:var(--text-1); color:#000; font-size:16px; }
+
+/* ==========================================================
+   💿 แผ่นไวนิล — แสดงแทนวิดีโอสำหรับเพลงที่ไม่มี MV (song.hasMv === false)
+   ความเร็ว 33⅓ RPM = 1.8 วินาทีต่อรอบ
+   ========================================================== */
+.np-vinyl-stage{
+    position:absolute; inset:0; z-index:2;
+    display:none; align-items:center; justify-content:center;
+    cursor:pointer; overflow:hidden;
+    background:radial-gradient(ellipse at 50% 118%, rgba(var(--wb-bg-r),var(--wb-bg-g),var(--wb-bg-b),.4), transparent 60%), #0a0a0c;
+}
+.np-vinyl-stage.active{ display:flex; }
+.np-vinyl-stage:hover .np-vinyl-hint{ color:var(--text-1); }
+.np-vinyl-stage.force-video .np-vinyl-hint{ opacity:0; }
+
+.np-vinyl-disc{
+    position:relative; z-index:1;
+    width:min(72%, 42vh); aspect-ratio:1/1; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:
+        repeating-radial-gradient(circle at 50% 50%, #0d0d10 0 2px, #050507 2px 4px),
+        radial-gradient(circle at 50% 50%, #1a1a1f 0%, #08080a 72%);
+    box-shadow:0 0 0 1px rgba(255,255,255,.09), 0 26px 64px rgba(0,0,0,.72), inset 0 0 44px rgba(0,0,0,.92);
+    animation:vinylSpin 1.8s linear infinite;
+    animation-play-state:paused;
+    will-change:transform;
+}
+.np-vinyl-stage.spinning .np-vinyl-disc{ animation-play-state:running; }
+/* แสงสะท้อนบนผิวแผ่น (อยู่นอกตัวหมุน ไม่หมุนตาม) */
+.np-vinyl-disc::after{
+    content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:conic-gradient(from 200deg, rgba(255,255,255,.15), transparent 24%, transparent 76%, rgba(255,255,255,.09));
+}
+.np-vinyl-label{
+    position:relative; z-index:1; width:36%; aspect-ratio:1/1; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:var(--accent);
+    font-size:clamp(14px, 3.4vh, 26px);
+    background:var(--disc-cover, none) center/cover no-repeat, #1d1d24;
+    box-shadow:0 0 0 3px #0a0a0c, inset 0 0 12px rgba(0,0,0,.6);
+}
+.np-vinyl-label i{ filter:drop-shadow(0 1px 3px rgba(0,0,0,.85)); }
+.np-vinyl-label.has-cover i{ display:none; }
+.np-vinyl-spindle{
+    position:absolute; z-index:2; width:2.6%; aspect-ratio:1/1; border-radius:50%;
+    background:#0a0a0c; box-shadow:inset 0 0 3px rgba(0,0,0,.9);
+}
+.np-vinyl-hint{
+    position:absolute; left:0; right:0; bottom:16px; z-index:3;
+    text-align:center; font-size:12px; color:var(--text-3);
+    pointer-events:none; transition:opacity .25s, color .2s;
+}
+@keyframes vinylSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+
+/* ซ่อน iframe YouTube ตอนแสดงแผ่น (เสียงยังเล่นต่อ) */
+.np-media-frame.vinyl-mode #content-player{ display:none; }
+
+/* 🪩 แผ่นหมุนเล็กใน thumb (แถบล่าง + ข้างชื่อเพลง) */
+.mini-disc{ display:none; position:absolute; inset:0; border-radius:50%; }
+.vinyl-thumb .mini-disc{
+    display:block; border-radius:50%;
+    background:
+        repeating-radial-gradient(circle at 50% 50%, #0d0d10 0 1px, #050507 1px 2px),
+        radial-gradient(circle at 50% 50%, #1a1a1f 0%, #08080a 74%);
+    box-shadow:inset 0 0 8px rgba(0,0,0,.9);
+    animation:vinylSpin 1.8s linear infinite;
+    animation-play-state:paused;
+}
+.vinyl-thumb.is-playing .mini-disc{ animation-play-state:running; }
+.vinyl-thumb .mini-disc::before{
+    content:''; position:absolute; inset:33%; border-radius:50%;
+    background:var(--disc-cover, none) center/cover no-repeat, var(--accent);
+    box-shadow:0 0 0 1px rgba(255,255,255,.14);
+}
+.vinyl-thumb .mini-disc::after{
+    content:''; position:absolute; left:50%; top:50%; width:9%; aspect-ratio:1/1;
+    transform:translate(-50%,-50%); border-radius:50%; background:#0a0a0c;
+}
+
+/* 🎛️ ช่องติ๊ก "ไม่มี MV" ในฟอร์มเพิ่ม/แก้เพลง */
+label.mv-toggle{
+    display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+    padding:10px 12px; margin-bottom:14px; border-radius:var(--r-s);
+    background:var(--bg-surface-2); font-weight:400; line-height:1.5;
+}
+label.mv-toggle:hover{ background:var(--bg-elevated); }
+label.mv-toggle input{
+    width:16px; height:16px; flex-shrink:0; margin:2px 0 0; padding:0;
+    accent-color:var(--accent); cursor:pointer; box-sizing:border-box;
+}
+label.mv-toggle b{ color:var(--text-1); }
 
 .np-lyrics-panel{
     flex:1 1 480px; min-width:0; max-width:600px; overflow-y:auto; padding:10px 10px 40px;
@@ -997,6 +1088,9 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
     width:100%; height:100%; aspect-ratio:auto; border-radius:0;
     box-shadow:none; background:#000;
 }
+/* โหมด immersive: ขยายแผ่นให้เต็มจอ + ยก hint ไม่ให้โดนแถบควบคุมล่าง */
+.now-playing-view.immersive .np-vinyl-disc{ width:min(58%, 74vh); }
+.now-playing-view.immersive .np-vinyl-hint{ bottom:96px; }
 
 /* compact transport bar overlaying the bottom of the video */
 .now-playing-view.immersive .np-controls-block{

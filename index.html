@@ -235,7 +235,7 @@
         <div id="playerProgressBarBg" class="player-progress-bg"></div>
         <div class="player-bar-inner">
             <div class="player-left">
-                <div class="live-thumb"></div>
+                <div class="live-thumb" id="liveThumb"><div class="mini-disc"></div></div>
                 <div class="live-info">
                     <div id="liveTitle" class="live-title">-</div>
                     <div id="liveArtist" class="live-artist">-</div>
@@ -278,15 +278,22 @@
         </div>
         <div class="np-body">
             <div class="np-media">
-                <div class="np-media-frame">
+                <div class="np-media-frame" id="npMediaFrame">
                     <div id="content-player" style="width:100%; height:100%; background:#000;">
                         <div id="youtubePlayer" style="width:100%; height:100%;"></div>
+                    </div>
+                    <div class="np-vinyl-stage" id="npVinylStage" onclick="window.toggleVinylView()" title="คลิกที่แผ่นเพื่อดูวิดีโอ">
+                        <div class="np-vinyl-disc">
+                            <div class="np-vinyl-label" id="npVinylLabel"><i class="fa-solid fa-music"></i></div>
+                            <div class="np-vinyl-spindle"></div>
+                        </div>
+                        <div class="np-vinyl-hint">💿 คลิกที่แผ่นเพื่อดูวิดีโอ</div>
                     </div>
                 </div>
 
                 <div class="np-controls-block">
                     <div class="np-track-meta">
-                        <div class="np-track-thumb" id="npTrackThumb"></div>
+                        <div class="np-track-thumb" id="npTrackThumb"><div class="mini-disc"></div></div>
                         <div class="np-track-info">
                             <div id="npTrackTitle" class="np-track-title">-</div>
                             <div id="npTrackArtist" class="np-track-artist">-</div>
@@ -379,6 +386,10 @@
                 <datalist id="artistList"></datalist>
                 <label>ลิงก์ YouTube:</label>
                 <input type="text" id="inputAudio" placeholder="วางลิงก์วิดีโอ YouTube ที่นี่">
+                <label class="mv-toggle">
+                    <input type="checkbox" id="inputHasMv" checked>
+                    <span>เพลงนี้มี MV — <b>ปิดออก</b> ถ้าวิดีโอเป็นภาพนิ่ง/ไม่มีภาพ แอปจะแสดง <b>แผ่นไวนิลหมุน</b> แทน</span>
+                </label>
                 <label>เนื้อเพลง:</label>
                 <textarea id="inputLyrics" placeholder="ท่อนที่ 1 ญี่ปุ่น&#10;ท่อนที่ 1 โรมาจิ&#10;ท่อนที่ 1 ไทย&#10;&#10;ท่อนที่ 2..."></textarea>
 
