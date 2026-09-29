@@ -324,8 +324,11 @@
                 <div class="sync-panel-body">
                     <div id="content-admin-sync">
                         <div class="sticky-sync-bar" id="lyricControlBtnGroup">
-                            <button class="btn-secondary" onclick="prevLyric()">⏮ ย้อน (ลบเวลา)</button>
-                            <button class="btn-primary" onclick="nextLyric()" style="background:#ffcc00; color:#000;">⏭ ถัดไป (จับจังหวะ)</button>
+                            <button class="btn-secondary" onclick="prevLyric(); this.blur();">⏮ ย้อน (ลบเวลา)</button>
+                            <button class="btn-primary" onclick="nextLyric(); this.blur();" style="background:#ffcc00; color:#000;">⏭ ถัดไป (จับจังหวะ)</button>
+                        </div>
+                        <div class="sync-hotkeys-hint">
+                            ⌨️ <b>Space</b> จับจังหวะ · <b>←/↑</b> ย้อน · <b>→/↓</b> ถัดไป · <b>Esc</b> ปิดแผง
                         </div>
                         <div id="timestampList" class="timestamp-list"></div>
                         <button id="btnResetSync" class="btn-secondary" onclick="resetSync()" style="margin-top:15px; width:100%;">🔄 ล้างเวลาซิงค์เริ่มใหม่</button>
@@ -411,6 +414,7 @@
     <script type="module" src="js/library.js"></script>
 <script type="module" src="js/artists.js"></script>
     <script type="module" src="js/player.js"></script>
+    <script type="module" src="js/sync-hotkeys.js"></script>
     <script type="module" src="js/singerColors.js"></script>
     <script type="module" src="js/userdata.js"></script>
     <script type="module" src="js/stats.js"></script>

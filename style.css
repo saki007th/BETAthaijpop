@@ -670,6 +670,12 @@ var(--bg-content);
     display:flex; gap:10px;
 }
 .sticky-sync-bar button{ flex:1; }
+.sync-hotkeys-hint{
+    margin-top:10px; padding:7px 10px; border-radius:8px;
+    background:rgba(10,132,255,.12); border:1px solid rgba(10,132,255,.3);
+    color:var(--text-2); font-size:.8em; text-align:center; line-height:1.6;
+}
+.sync-hotkeys-hint b{ color:var(--accent); }
 .timestamp-list{ padding-top:12px; }
 .ts-dropdown-toggle{
     background:rgba(255,204,0,.15) !important; border:1px solid rgba(255,204,0,.4) !important; color:var(--edit) !important;
