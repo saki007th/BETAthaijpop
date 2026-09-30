@@ -5,19 +5,33 @@
 //
 // ⚙️ การปล่อยเวอร์ชันใหม่ (แก้ 3 จุดให้ตรงกันทุกครั้ง)
 //   1) changelog.json  — เพิ่ม object ใหม่ไว้หัว array (version ต้องมากกว่าของเดิม)
-//   2) js/version.js   — APP_VERSION / APP_BUILD
+//   2) js/version.js   — REAL_VERSION / REAL_BUILD
 //   3) index.html      — <meta name="app-build">
+//
+// 🧪 ทดสอบระบบโดยไม่ต้อง deploy: เปิดด้วย ?sim=18.2.0
+//    แอปจะ "เข้าใจว่าตัวเองเป็นเวอร์ชันนั้น" → banner + ปุ่มอัปเดตโผล่ทันที
+//    กดอัปเดตแล้วพารามิเตอร์ sim จะหายไปเอง เวอร์ชันจึงเด้งกลับเป็นตัวจริง
 // ==========================================
 
-export const APP_VERSION = '18.2.1';
-export const APP_BUILD = '20260930-1';
+const REAL_VERSION = '18.2.1';
+const REAL_BUILD = '20260930-1';
+
+const simParam = new URL(window.location.href).searchParams.get('sim');
+export const SIMULATED = !!simParam;
+export const APP_VERSION = SIMULATED ? simParam : REAL_VERSION;
+export const APP_BUILD = SIMULATED ? ('sim-' + simParam) : REAL_BUILD;
 
 const CHANGELOG_URL = 'changelog.json';
-const CHECK_INTERVAL_MS = 10 * 60 * 1000;
+// ไล่ระยะห่างขึ้นทีละขั้น: เร็วตอนเพิ่งเปิดแอป แล้วค่อยๆ ห่างไป ไม่โหลดเซิร์ฟเวอร์เปล่า
+const CHECK_STEPS_MS = [30e3, 60e3, 120e3, 300e3];
 const DISMISSED_KEY = 'ws_version_dismissed';
+const DISMISS_TTL_MS = 30 * 60 * 1000;   // กดปิด banner แล้วให้กลับมาอีกครั้งหลัง 30 นาที
 
 let latest = null;
 let history = [];
+let lastCheckAt = 0;
+let pollStep = 0;
+let pollTimer = null;
 
 // ---------- เทียบเวอร์ชัน (semver แบบย่อ เช่น 18.2 หรือ 18.2.1) ----------
 function parseVersion(v) {
@@ -43,15 +57,23 @@ window.isUpdateAvailable = function(manifest) {
 };
 
 window.getAppVersion = function() {
-    return { version: APP_VERSION, build: APP_BUILD };
+    return { version: APP_VERSION, build: APP_BUILD, simulated: SIMULATED };
 };
 
-function dismissedBuild() {
-    try { return localStorage.getItem(DISMISSED_KEY) || ''; } catch (e) { return ''; }
+// banner ที่กดปิดไปจะกลับมาโผล่อีกครั้งหลังผ่านไป DISMISS_TTL_MS
+function isDismissed(build) {
+    try {
+        const raw = localStorage.getItem(DISMISSED_KEY) || '';
+        if (!raw) return false;
+        const parts = raw.split('|');
+        if (parts[0] !== build) return false;
+        if (!parts[1]) return true;
+        return Date.now() - Number(parts[1]) < DISMISS_TTL_MS;
+    } catch (e) { return false; }
 }
 
 function setDismissedBuild(build) {
-    try { localStorage.setItem(DISMISSED_KEY, build); } catch (e) {}
+    try { localStorage.setItem(DISMISSED_KEY, build + '|' + Date.now()); } catch (e) {}
 }
 
 // ---------- ดึง changelog (กัน cache ทุกครั้ง) ----------
@@ -104,6 +126,7 @@ window.applyAppUpdate = async function() {
     const build = latest && (latest.build || latest.version);
     if (build) url.searchParams.set('v', build);
     url.searchParams.set('__r', Date.now().toString(36));
+    url.searchParams.delete('sim');   // ออกจากโหมดทดสอบ → กลับไปเวอร์ชันจริง
     window.location.replace(url.toString());
 };
 
@@ -120,7 +143,7 @@ window.openUpdateSheet = function() {
            <button class="btn-secondary" onclick="window.closeSheet()">ปิด</button>`;
     wrap.innerHTML = `
         <div class="update-sheet-meta">
-            <div><b>เวอร์ชันปัจจุบัน</b><span>v${APP_VERSION}</span></div>
+            <div><b>เวอร์ชันปัจจุบัน</b><span>v${APP_VERSION}${SIMULATED ? ' (ทดสอบ)' : ''}</span></div>
             <div><b>เวอร์ชันล่าสุด</b><span class="update-sheet-latest">v${escapeHtml(m.version || '-')}</span></div>
             <div><b>วันที่ปล่อย</b><span>${escapeHtml(m.releasedAt || '-')}</span></div>
         </div>
@@ -161,7 +184,7 @@ window.openChangelogSheet = function() {
                 </div>`;
         }).join('');
         wrap.innerHTML = `
-            <div class="changelog-current">เวอร์ชันที่กำลังใช้: <b>v${APP_VERSION}</b> (build ${APP_BUILD})</div>
+            <div class="changelog-current">เวอร์ชันที่กำลังใช้: <b>v${APP_VERSION}</b>${SIMULATED ? ' <i>(โหมดทดสอบ ?sim=' + escapeHtml(APP_VERSION) + ')</i>' : ' (build ' + APP_BUILD + ')'}</div>
             ${items}`;
     }
     window.openSheet('📜 ประวัติการอัปเดต', wrap, () => { if (window.wm) window.wm.clWin = null; });
@@ -191,6 +214,13 @@ function metaBuild() {
 function renderStaleNote() {
     const note = document.getElementById('versionNote');
     if (!note) return;
+    if (SIMULATED) {
+        note.className = 'version-note sim';
+        note.style.display = 'block';
+        note.innerHTML = `🧪 <b>โหมดทดสอบ</b> — กำลังแสดงตัวเป็นเวอร์ชัน <b>v${escapeHtml(APP_VERSION)}</b> (ไฟล์จริงคือ v${escapeHtml(REAL_VERSION)}) กดปุ่มอัปเดตเพื่อกลับไปเวอร์ชันจริง · <a href="${window.location.pathname}" style="color:var(--accent);">ออกจากโหมดทดสอบ</a>`;
+        return;
+    }
+    note.className = 'version-note';
     const htmlBuild = metaBuild();
     if (!htmlBuild || htmlBuild === APP_BUILD) { note.style.display = 'none'; return; }
     note.style.display = 'block';
@@ -206,7 +236,14 @@ function renderVersionInfo() {
     const outdated = window.isUpdateAvailable(latest);
     if (goBtn) goBtn.style.display = outdated ? '' : 'none';
     renderStaleNote();
-    if (cur) cur.innerText = 'v' + APP_VERSION + ' (build ' + APP_BUILD + ')';
+    if (cur) cur.innerText = 'v' + APP_VERSION + (SIMULATED ? ' (โหมดทดสอบ)' : ' (build ' + APP_BUILD + ')');
+    const lc = document.getElementById('versionLastCheck');
+    if (lc) {
+        lc.innerText = lastCheckAt
+            ? new Date(lastCheckAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              + ' · พบ ' + history.length + ' เวอร์ชัน'
+            : '-';
+    }
     if (!lat || !st) return;
 
     if (!latest) { lat.innerText = 'ยังไม่ได้ตรวจ'; st.innerText = '⏳ กำลังรอการตรวจสอบ'; st.className = 'version-status'; return; }
@@ -230,11 +267,12 @@ window.checkAppVersion = async function(options) {
     try {
         history = await fetchChangelog();
         latest = history[0] || null;
+        lastCheckAt = Date.now();
         const hasUpdate = window.isUpdateAvailable(latest);
         renderVersionInfo();
         if (hasUpdate) {
             const buildKey = latest.build || latest.version || '';
-            if (latest.mandatory || dismissedBuild() !== buildKey) showUpdateBanner(latest);
+            if (latest.mandatory || !isDismissed(buildKey)) showUpdateBanner(latest);
         } else {
             window.hideUpdateBanner();
         }
@@ -250,12 +288,41 @@ window.checkAppVersion = async function(options) {
     }
 };
 
+// ---------- ตัวจับเวลา: ไล่ระยะ 30s → 5 นาที, ไม่ยิงตอนแท็บถูกซ่อน ----------
+function scheduleNextCheck() {
+    clearTimeout(pollTimer);
+    if (document.hidden) return;
+    const delay = CHECK_STEPS_MS[Math.min(pollStep, CHECK_STEPS_MS.length - 1)];
+    pollStep = Math.min(pollStep + 1, CHECK_STEPS_MS.length - 1);
+    pollTimer = setTimeout(runAutoCheck, delay);
+}
+
+async function runAutoCheck() {
+    if (document.hidden) return;
+    await window.checkAppVersion({ silent: true });
+    scheduleNextCheck();
+}
+
+function pokeCheck() {
+    clearTimeout(pollTimer);
+    // กันยิงถี่เกินไปถ้ามี event ที่ยิงบ่อย ๆ (เช่นสลับไปมาหน้าต่างแรง ๆ)
+    if (Date.now() - lastCheckAt < 30e3) {
+        scheduleNextCheck();
+        return;
+    }
+    pollStep = 0;
+    runAutoCheck();
+}
+
 // ---------- เริ่มระบบอัตโนมัติ ----------
 document.addEventListener('DOMContentLoaded', () => {
     renderVersionInfo();
-    window.checkAppVersion({ silent: true });
-    setInterval(() => window.checkAppVersion({ silent: true }), CHECK_INTERVAL_MS);
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) window.checkAppVersion({ silent: true });
+    pokeCheck();
+    // กลับมาที่แท็บ / โฟกัสหน้าต่าง / กลับมาออนไลน์ / เปิดจาก bfcache
+    ['visibilitychange', 'focus', 'online', 'pageshow'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            if (evt === 'visibilitychange' && document.hidden) { clearTimeout(pollTimer); return; }
+            pokeCheck();
+        });
     });
 });
