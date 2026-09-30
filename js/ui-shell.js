@@ -110,109 +110,44 @@ window.closeAddModal = function() {
 };
 
 // ==========================================
-// แถบนำทางด้านข้าง — พับ/กางได้ 3 โหมด
-//   'auto' (ค่าเริ่มต้น) = เหลือแถบไอคอน แล้วกางเองเมื่อเมาส์ชี้เข้ามา (ลอยทับเนื้อหา)
-//   '0'                = กางเต็มตลอด
-//   '1'                = พับไว้ตลอด ไม่กางเอง
-// - คลาสทั้งหมดวางไว้บน <html> เพื่อให้ inline script ใน <head>
+// แถบนำทางด้านข้าง — พับ/กางด้วยปุ่มแฮมเบอร์เกอร์ในหัวแถบ
+// - คลาส .sidebar-collapsed วางไว้บน <html> เพื่อให้ inline script ใน <head>
 //   กั้นสถานะไว้ได้ก่อนหน้าจอวาดครั้งแรก (ไม่แว็บกลับเป็นแถบเต็ม)
 // - บันทึกสถานะไว้ใน localStorage เหมือนที่ตั้งค่าอื่น ๆ
 // ==========================================
-const SIDEBAR_MODE_KEY = 'ws_sidebar_collapsed';
-const SIDEBAR_DEFAULT_MODE = 'auto';
-
-window.getSidebarMode = function() {
-    let v = null;
-    try { v = localStorage.getItem(SIDEBAR_MODE_KEY); } catch (e) {}
-    return (v === '0' || v === '1') ? v : SIDEBAR_DEFAULT_MODE;
-};
+const SIDEBAR_COLLAPSED_KEY = 'ws_sidebar_collapsed';
 
 window.isSidebarCollapsed = function() {
-    return window.getSidebarMode() !== '0';
+    try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'; }
+    catch (e) { return false; }
 };
 
 window.applySidebarCollapsed = function() {
-    const mode = window.getSidebarMode();
-    const root = document.documentElement;
-    root.classList.toggle('sidebar-collapsed', mode !== '0');
-    root.classList.toggle('sidebar-auto', mode === 'auto');
-    if (mode !== 'auto') root.classList.remove('sidebar-hover');
+    const collapsed = window.isSidebarCollapsed();
+    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
 
-    const grip = document.getElementById('sidebarGrip');
-    if (grip) {
-        const icon = grip.querySelector('i');
-        const faces = {
-            auto: ['fa-solid fa-arrow-left-right', 'กางอัตโนมัติเมื่อชี้เมาส์ — คลิกเพื่อกางตลอด'],
-            '0': ['fa-solid fa-angles-left', 'กางอยู่ตลอด — คลิกเพื่อพับแถบ'],
-            '1': ['fa-solid fa-angles-right', 'พับอยู่ตลอด — คลิกเพื่อกางแถบ']
-        };
-        const [cls, tip] = faces[mode] || faces.auto;
-        if (icon) icon.className = cls;
-        grip.title = tip;
+    const btn = document.getElementById('sidebarToggle');
+    if (btn) {
+        btn.title = collapsed ? 'กางแถบด้านข้าง' : 'พับแถบด้านข้าง';
+        btn.setAttribute('aria-label', btn.title);
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     }
 
     const chk = document.getElementById('toggleSidebarCollapsed');
-    if (chk) chk.checked = mode !== '0';
-    const hoverChk = document.getElementById('toggleSidebarHover');
-    if (hoverChk) hoverChk.checked = mode === 'auto';
-};
-
-window.setSidebarMode = function(mode) {
-    if (mode !== '0' && mode !== '1' && mode !== 'auto') mode = SIDEBAR_DEFAULT_MODE;
-    try { localStorage.setItem(SIDEBAR_MODE_KEY, mode); } catch (e) {}
-    window.applySidebarCollapsed();
-    return mode;
+    if (chk) chk.checked = collapsed;
 };
 
 window.setSidebarCollapsed = function(collapsed) {
-    return window.setSidebarMode(collapsed ? '1' : '0');
-};
-
-window.setSidebarHoverExpand = function(on) {
-    return window.setSidebarMode(on ? 'auto' : '1');
+    collapsed = !!collapsed;
+    try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0'); }
+    catch (e) {}
+    window.applySidebarCollapsed();
+    return collapsed;
 };
 
 window.toggleSidebar = function() {
-    const order = ['auto', '0', '1'];
-    return window.setSidebarMode(order[(order.indexOf(window.getSidebarMode()) + 1) % order.length]);
+    return window.setSidebarCollapsed(!window.isSidebarCollapsed());
 };
-
-// ชี้เมาส์เข้าแถบ = กางทันที (หน่วงนิดเดียวกันเมาส์ที่วิ่งผ่านตอนไปหาเมาส์ปกติ)
-// ยาเข้าไปจับปุ่มล็อกข้าง ๆ ให้กางก่อน ไม่งั้นค้างไว้หลังเมาส์ออก
-(function wireSidebarHover() {
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
-    let enterTimer = null, leaveTimer = null;
-
-    const clear = () => {
-        if (enterTimer) { clearTimeout(enterTimer); enterTimer = null; }
-        if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
-    };
-
-    sidebar.addEventListener('mouseenter', () => {
-        if (window.getSidebarMode() !== 'auto') return;
-        clear();
-        enterTimer = setTimeout(() => {
-            enterTimer = null;
-            if (window.getSidebarMode() === 'auto') {
-                document.documentElement.classList.add('sidebar-hover');
-            }
-        }, 70);
-    });
-
-    sidebar.addEventListener('mouseleave', () => {
-        clear();
-        leaveTimer = setTimeout(() => {
-            leaveTimer = null;
-            document.documentElement.classList.remove('sidebar-hover');
-        }, 160);
-    });
-
-    // สลับโหมดจากปุ่มแล้วตัวจับเวลาค้างไว้ไม่ได้ ไม่งั้นจะกางค้างทั้งที่ออกจากแถบแล้ว
-    document.addEventListener('click', (e) => {
-        if (e.target.closest && e.target.closest('#sidebarGrip')) clear();
-    });
-})();
 
 // ---------- Generic backdrop-driven sheet helper (used by both the fixed
 // Add/Edit sheet above, and the dynamically-filled generic sheet below) ----------
