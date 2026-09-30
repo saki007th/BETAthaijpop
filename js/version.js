@@ -4,8 +4,8 @@
 // แล้วแจ้งเตือนผ่าน banner + หน้าตั้งค่า พร้อมปุ่มอัปเดตที่ล้างแคชให้เอง
 // ==========================================
 
-export const APP_VERSION = '18.2.0';
-export const APP_BUILD = '20260908-1';
+export const APP_VERSION = '18.2.1';
+export const APP_BUILD = '20260930-1';
 
 const MANIFEST_URL = 'version.json';
 const CHECK_INTERVAL_MS = 10 * 60 * 1000;
