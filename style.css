@@ -154,7 +154,7 @@ html.sidebar-collapsed .profile-chevron{ display:none; }
 html.sidebar-collapsed .profile-bar{ justify-content:center; padding:6px; }
 html.sidebar-collapsed .profile-avatar{ width:34px; height:34px; }
 html.sidebar-collapsed .profile-version{ font-size:0; gap:0; }
-html.sidebar-collapsed .profile-menu{ left:auto; width:220px; }
+html.sidebar-collapsed .profile-menu{ right:auto; left:0; width:220px; }
 
 .sidebar-spacer{ flex:1; }
 .sidebar-footer{ position:relative; display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-soft); }
