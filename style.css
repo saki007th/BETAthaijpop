@@ -95,7 +95,9 @@ a{ color:inherit; }
     border-right:1px solid var(--border-soft);
     display:flex; flex-direction:column;
     padding:18px 12px;
-    position:relative;
+    /* ต้องอยู่เหนือ .main-content (position:relative) ไม่งั้นเมนูโปรไฟล์ที่ล้นออกนอกแถบ
+       ตอนพับจะถูกเนื้อหาข้าง ๆ ทับแล้วดูเหมือนถูกตัดทางขวา */
+    position:relative; z-index:3;
     transition:width .22s var(--ease), padding .22s var(--ease);
 }
 .sidebar-head{
