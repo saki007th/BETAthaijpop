@@ -120,43 +120,58 @@ a{ color:inherit; }
 .nav-divider{ height:1px; background:var(--border-soft); margin:12px 6px; }
 .nav-section-label{ font-size:10.5px; color:var(--text-3); padding:6px 10px 4px; }
 
-/* ---------- ปุ่มพับ/กางแถบด้านข้าง ---------- */
-.sidebar-toggle{
+/* ---------- แถบจับเล็ก ๆ ที่ขอบแถบ (คลิกเพื่อสลับโหมด) ---------- */
+.sidebar-grip{
     position:absolute; z-index:6;
-    top:50%; right:-11px; transform:translateY(-50%);
-    width:22px; height:44px;
+    top:50%; right:-13px; transform:translateY(-50%);
+    width:26px; height:54px; padding:0;
     display:flex; align-items:center; justify-content:center;
-    border:none; border-radius:var(--r-pill);
-    background:var(--bg-elevated); color:var(--text-2);
-    border:1px solid var(--border-soft);
-    box-shadow:0 4px 14px rgba(0,0,0,.35);
-    cursor:pointer; font-size:11px; padding:0;
-    transition:background .15s var(--ease), color .15s var(--ease), transform .15s var(--ease);
+    border:1px solid var(--border-soft); border-radius:14px;
+    background:var(--bg-surface); color:var(--text-3);
+    box-shadow:0 6px 20px rgba(0,0,0,.4);
+    cursor:pointer; font-size:12px;
+    opacity:.45;
+    transition:opacity .18s var(--ease), background .18s var(--ease),
+               color .18s var(--ease), transform .18s var(--ease);
 }
-.sidebar-toggle:hover{ background:var(--bg-elevated-hover); color:var(--text-1); }
-.sidebar-toggle:active{ transform:translateY(-50%) scale(.94); }
+.sidebar-grip:hover{ opacity:1; background:var(--bg-elevated-hover); color:var(--text-1); }
+.sidebar:hover .sidebar-grip{ opacity:.95; }
+.sidebar-grip:active{ transform:translateY(-50%) scale(.94); }
 
-/* ---------- สถานะพับ (คลาส .sidebar-collapsed อยู่บน <html>) ---------- */
-html.sidebar-collapsed .sidebar{ width:64px; padding-left:8px; padding-right:8px; }
-html.sidebar-collapsed .sidebar-brand{ justify-content:center; padding-left:0; padding-right:0; }
-html.sidebar-collapsed .sidebar-brand-text{ display:none; }
-html.sidebar-collapsed .sidebar-brand-mark{ display:flex; }
-html.sidebar-collapsed .nav-item{ justify-content:center; padding:9px 6px; }
-html.sidebar-collapsed .nav-item span:not(.nav-badge){ display:none; }
-html.sidebar-collapsed .nav-badge{
+/* ---------- สถานะพับ (คลาส .sidebar-collapsed อยู่บน <html>)
+       :not(.sidebar-hover) = โหมดกางอัตโนมัติตอนเมาส์ยังไม่ชี้เข้ามา ---------- */
+html.sidebar-collapsed:not(.sidebar-hover) .sidebar{ width:64px; padding-left:8px; padding-right:8px; }
+html.sidebar-collapsed:not(.sidebar-hover) .sidebar-brand{ justify-content:center; padding-left:0; padding-right:0; }
+html.sidebar-collapsed:not(.sidebar-hover) .sidebar-brand-text{ display:none; }
+html.sidebar-collapsed:not(.sidebar-hover) .sidebar-brand-mark{ display:flex; }
+html.sidebar-collapsed:not(.sidebar-hover) .nav-item{ justify-content:center; padding:9px 6px; }
+html.sidebar-collapsed:not(.sidebar-hover) .nav-item span:not(.nav-badge){ display:none; }
+html.sidebar-collapsed:not(.sidebar-hover) .nav-badge{
     position:absolute; top:2px; right:3px; margin-left:0;
     min-width:15px; height:15px; padding:0 3px; font-size:9px;
 }
-html.sidebar-collapsed .nav-divider{ margin-left:4px; margin-right:4px; }
-html.sidebar-collapsed .nav-section-label{ display:none; }
-html.sidebar-collapsed .sidebar-footer button{ justify-content:center; padding:8px 6px; }
-html.sidebar-collapsed .sidebar-footer button span{ display:none; }
-html.sidebar-collapsed .profile-info,
-html.sidebar-collapsed .profile-chevron{ display:none; }
-html.sidebar-collapsed .profile-bar{ justify-content:center; padding:6px; }
-html.sidebar-collapsed .profile-avatar{ width:34px; height:34px; }
-html.sidebar-collapsed .profile-version{ font-size:0; gap:0; }
-html.sidebar-collapsed .profile-menu{ left:auto; width:220px; }
+html.sidebar-collapsed:not(.sidebar-hover) .nav-divider{ margin-left:4px; margin-right:4px; }
+html.sidebar-collapsed:not(.sidebar-hover) .nav-section-label{ display:none; }
+html.sidebar-collapsed:not(.sidebar-hover) .sidebar-footer button{ justify-content:center; padding:8px 6px; }
+html.sidebar-collapsed:not(.sidebar-hover) .sidebar-footer button span{ display:none; }
+html.sidebar-collapsed:not(.sidebar-hover) .profile-info,
+html.sidebar-collapsed:not(.sidebar-hover) .profile-chevron{ display:none; }
+html.sidebar-collapsed:not(.sidebar-hover) .profile-bar{ justify-content:center; padding:6px; }
+html.sidebar-collapsed:not(.sidebar-hover) .profile-avatar{ width:34px; height:34px; }
+html.sidebar-collapsed:not(.sidebar-hover) .profile-version{ font-size:0; gap:0; }
+html.sidebar-collapsed:not(.sidebar-hover) .profile-menu{ left:auto; width:220px; }
+
+/* ---------- โหมด "กางอัตโนมัติเมื่อชี้เมาส์"
+       แถบลอยทับเนื้อหา (ไม่ดันเลย์เอาต์ของหน้าหลัก) แล้วกางตอนเมาส์ชี้เข้ามา ---------- */
+html.sidebar-auto #app-shell{ padding-left:64px; }
+html.sidebar-auto .sidebar{
+    position:absolute; left:0; top:0; bottom:0; z-index:5;
+}
+html.sidebar-auto.sidebar-hover .sidebar{
+    width:220px; padding-left:12px; padding-right:12px;
+    border-right-color:var(--border-strong);
+    box-shadow:22px 0 46px rgba(0,0,0,.45);
+}
 
 .sidebar-spacer{ flex:1; }
 .sidebar-footer{ position:relative; display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-soft); }
@@ -1215,7 +1230,7 @@ body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
     #app-shell:has(~ .player-bar:not(.hidden)) .sidebar{ padding-bottom:calc(16px + 64px); }
     #app-shell:has(~ .player-bar:not(.hidden)) .content-body{ padding-bottom:calc(28px + 64px); }
     .sidebar-brand{ display:none; }
-    .sidebar-toggle{ display:none; }
+    .sidebar-grip{ display:none; }
     .nav-item span{ display:none; }
     .nav-section-label{ display:none; }
     .sidebar-footer button span{ display:none; }

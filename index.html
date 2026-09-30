@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261102-1">
+    <meta name="app-build" content="20261102-2">
     <title>Ultimate JP Mix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <meta property="og:type" content="website">
@@ -21,10 +21,13 @@
     <script>
         // กั้นแถบนำทางไว้ตามสถานะที่บันทึกไว้ก่อน CSS วาดหน้าจอครั้งแรก
         // (ป้องกันแถบกะพริบกางเต็มสักครู่ตอนเปิดหน้าเว็บ)
+        // 'auto' = แถบไอคอนที่กางเองเมื่อชี้เมาส์, '0' = กางเต็ม, '1' = พับตลอด
         try {
-            if (localStorage.getItem('ws_sidebar_collapsed') === '1') {
-                document.documentElement.classList.add('sidebar-collapsed');
-            }
+            var sbMode = localStorage.getItem('ws_sidebar_collapsed');
+            if (sbMode !== '0' && sbMode !== '1') sbMode = 'auto';
+            var sbRoot = document.documentElement.classList;
+            if (sbMode !== '0') sbRoot.add('sidebar-collapsed');
+            if (sbMode === 'auto') sbRoot.add('sidebar-auto');
         } catch (e) {}
     </script>
 </head>
@@ -39,8 +42,8 @@
     <div id="app-shell">
         <!-- ================= Sidebar ================= -->
         <aside class="sidebar">
-            <button id="sidebarToggle" class="sidebar-toggle" onclick="toggleSidebar()" title="พับแถบด้านข้าง" aria-label="พับแถบด้านข้าง">
-                <i class="fa-solid fa-angles-left"></i>
+            <button id="sidebarGrip" class="sidebar-grip" onclick="toggleSidebar()" title="พับแถบด้านข้าง" aria-label="พับ/กางแถบด้านข้าง">
+                <i class="fa-solid fa-arrow-left-right"></i>
             </button>
 
             <div class="sidebar-brand">
@@ -221,9 +224,12 @@
                         <input type="range" id="sliderFontSize" min="0.8" max="2.5" step="0.1" value="1.15" oninput="setLyricFontSize(this.value)" style="margin-bottom:30px;">
 
                         <h3>📂 แถบนำทางด้านข้าง</h3>
-                        <div style="margin-bottom:25px;">
+                        <div style="margin-bottom:25px; display:flex; flex-direction:column; gap:10px;">
                             <label class="lang-toggle" style="display:inline-flex;">
                                 <input type="checkbox" id="toggleSidebarCollapsed" onchange="setSidebarCollapsed(this.checked)"> พับแถบนำทางให้เหลือแต่ไอคอน
+                            </label>
+                            <label class="lang-toggle" style="display:inline-flex;">
+                                <input type="checkbox" id="toggleSidebarHover" onchange="setSidebarHoverExpand(this.checked)"> กางอัตโนมัติเมื่อเลื่อนเมาส์มาที่แถบ
                             </label>
                         </div>
 
