@@ -146,6 +146,18 @@ a{ color:inherit; }
     font-size:10.5px; color:var(--text-3); margin-top:1px;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
+.profile-version{
+    display:inline-flex; align-items:center; gap:5px; width:fit-content;
+    font-size:10px; color:var(--text-3); margin-top:2px; cursor:pointer;
+    transition:color .15s var(--ease);
+}
+.profile-version:hover{ color:var(--text-1); }
+.profile-version::before{
+    content:''; width:5px; height:5px; border-radius:50%;
+    background:var(--text-3); flex-shrink:0;
+}
+.profile-version.has-update{ color:var(--warning); font-weight:600; }
+.profile-version.has-update::before{ background:var(--warning); animation:pulseBadge 2s infinite; }
 .profile-admin-tag{
     display:inline-block; margin-top:3px;
     font-size:9px; font-weight:600; color:var(--edit);
