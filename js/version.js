@@ -1,17 +1,23 @@
 // ==========================================
 // version.js - ระบบตรวจเวอร์ชันแอป
-// เทียบเวอร์ชันที่ deploy ล่าสุด (version.json) กับเวอร์ชันที่กำลังใช้อยู่
-// แล้วแจ้งเตือนผ่าน banner + หน้าตั้งค่า พร้อมปุ่มอัปเดตที่ล้างแคชให้เอง
+// อ่าน changelog.json (array เก่า→ใหม่) แล้วเอาอันดับแรกมาเป็น "เวอร์ชันล่าสุด"
+// แจ้งเตือนผ่าน banner + หน้าตั้งค่า พร้อมปุ่มอัปเดตที่ล้างแคชให้เอง
+//
+// ⚙️ การปล่อยเวอร์ชันใหม่ (แก้ 3 จุดให้ตรงกันทุกครั้ง)
+//   1) changelog.json  — เพิ่ม object ใหม่ไว้หัว array (version ต้องมากกว่าของเดิม)
+//   2) js/version.js   — APP_VERSION / APP_BUILD
+//   3) index.html      — <meta name="app-build">
 // ==========================================
 
 export const APP_VERSION = '18.2.1';
 export const APP_BUILD = '20260930-1';
 
-const MANIFEST_URL = 'version.json';
+const CHANGELOG_URL = 'changelog.json';
 const CHECK_INTERVAL_MS = 10 * 60 * 1000;
 const DISMISSED_KEY = 'ws_version_dismissed';
 
 let latest = null;
+let history = [];
 
 // ---------- เทียบเวอร์ชัน (semver แบบย่อ เช่น 18.2 หรือ 18.2.1) ----------
 function parseVersion(v) {
@@ -48,11 +54,13 @@ function setDismissedBuild(build) {
     try { localStorage.setItem(DISMISSED_KEY, build); } catch (e) {}
 }
 
-// ---------- ดึง manifest ล่าสุด (กัน cache ทุกครั้ง) ----------
-async function fetchManifest() {
-    const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`, { cache: 'no-store' });
+// ---------- ดึง changelog (กัน cache ทุกครั้ง) ----------
+async function fetchChangelog() {
+    const res = await fetch(`${CHANGELOG_URL}?t=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
+    const list = await res.json();
+    if (!Array.isArray(list)) throw new Error('changelog.json ต้องเป็น array');
+    return list;
 }
 
 // ---------- Banner แจ้งเตือนเวอร์ชันใหม่ ----------
@@ -129,6 +137,37 @@ function escapeHtml(str) {
     })[ch]);
 }
 
+// ---------- ประวัติการอัปเดตทั้งหมด ----------
+window.openChangelogSheet = function() {
+    const wrap = document.createElement('div');
+    if (!history.length) {
+        wrap.innerHTML = '<div style="color:var(--text-3); text-align:center; padding:24px 0;">ยังไม่มีประวัติการอัปเดต</div>';
+    } else {
+        const items = history.map(rel => {
+            const cmp = window.compareVersions(rel.version, APP_VERSION);
+            const tag = cmp === 0
+                ? '<span class="changelog-tag current">เวอร์ชันที่ใช้อยู่</span>'
+                : (cmp > 0 ? '<span class="changelog-tag newer">ใหม่กว่า</span>' : '');
+            const notes = (rel.notes || '').split('\n')
+                .map(t => `<div>${escapeHtml(t)}</div>`).join('');
+            return `
+                <div class="changelog-item${cmp === 0 ? ' current' : ''}">
+                    <div class="changelog-head">
+                        <span class="changelog-ver">v${escapeHtml(rel.version)}</span>
+                        <span class="changelog-date">${escapeHtml(rel.releasedAt || '-')}</span>
+                        ${tag}
+                    </div>
+                    <div class="changelog-notes">${notes}</div>
+                </div>`;
+        }).join('');
+        wrap.innerHTML = `
+            <div class="changelog-current">เวอร์ชันที่กำลังใช้: <b>v${APP_VERSION}</b> (build ${APP_BUILD})</div>
+            ${items}`;
+    }
+    window.openSheet('📜 ประวัติการอัปเดต', wrap, () => { if (window.wm) window.wm.clWin = null; });
+    if (window.wm) window.wm.clWin = { close: () => window.closeSheet() };
+};
+
 // ---------- เวอร์ชันใต้ชื่อโปรไฟล์ (sidebar) ----------
 function renderSidebarVersion() {
     const el = document.getElementById('profileVersion');
@@ -137,8 +176,8 @@ function renderSidebarVersion() {
     el.innerText = 'v' + APP_VERSION;
     el.classList.toggle('has-update', outdated);
     el.title = outdated
-        ? 'มีเวอร์ชันใหม่ v' + latest.version + ' — คลิกเพื่อดูรายละเอียด'
-        : 'เวอร์ชันแอป v' + APP_VERSION;
+        ? 'มีเวอร์ชันใหม่ v' + latest.version + ' — คลิกเพื่อดูประวัติการอัปเดต'
+        : 'เวอร์ชันแอป v' + APP_VERSION + ' — คลิกเพื่อดูประวัติการอัปเดต';
 }
 
 // ---------- ส่วน "เกี่ยวกับ" ในหน้าตั้งค่า ----------
@@ -189,7 +228,8 @@ window.checkAppVersion = async function(options) {
     if (btn && !opts.silent) { btn.disabled = true; btn.innerText = '⏳ กำลังตรวจสอบ...'; }
 
     try {
-        latest = await fetchManifest();
+        history = await fetchChangelog();
+        latest = history[0] || null;
         const hasUpdate = window.isUpdateAvailable(latest);
         renderVersionInfo();
         if (hasUpdate) {
