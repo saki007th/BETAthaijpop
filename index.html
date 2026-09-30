@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261102-2">
+    <meta name="app-build" content="20261102-3">
     <title>Ultimate JP Mix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <meta property="og:type" content="website">
@@ -21,13 +21,10 @@
     <script>
         // กั้นแถบนำทางไว้ตามสถานะที่บันทึกไว้ก่อน CSS วาดหน้าจอครั้งแรก
         // (ป้องกันแถบกะพริบกางเต็มสักครู่ตอนเปิดหน้าเว็บ)
-        // 'auto' = แถบไอคอนที่กางเองเมื่อชี้เมาส์, '0' = กางเต็ม, '1' = พับตลอด
         try {
-            var sbMode = localStorage.getItem('ws_sidebar_collapsed');
-            if (sbMode !== '0' && sbMode !== '1') sbMode = 'auto';
-            var sbRoot = document.documentElement.classList;
-            if (sbMode !== '0') sbRoot.add('sidebar-collapsed');
-            if (sbMode === 'auto') sbRoot.add('sidebar-auto');
+            if (localStorage.getItem('ws_sidebar_collapsed') === '1') {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
         } catch (e) {}
     </script>
 </head>
@@ -42,13 +39,15 @@
     <div id="app-shell">
         <!-- ================= Sidebar ================= -->
         <aside class="sidebar">
-            <button id="sidebarGrip" class="sidebar-grip" onclick="toggleSidebar()" title="พับแถบด้านข้าง" aria-label="พับ/กางแถบด้านข้าง">
-                <i class="fa-solid fa-arrow-left-right"></i>
-            </button>
-
-            <div class="sidebar-brand">
-                <span class="sidebar-brand-mark"><i class="fa-solid fa-music"></i></span>
-                <span class="sidebar-brand-text">Ultimate JP Mix</span>
+            <div class="sidebar-head">
+                <div class="sidebar-brand">
+                    <span class="sidebar-brand-mark"><i class="fa-solid fa-music"></i></span>
+                    <span class="sidebar-brand-text">Ultimate JP Mix</span>
+                </div>
+                <button id="sidebarToggle" class="sidebar-toggle" onclick="toggleSidebar()"
+                        title="พับแถบด้านข้าง" aria-label="พับแถบด้านข้าง" aria-expanded="true">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
             </div>
             <nav class="sidebar-nav">
                 <button class="nav-item active" data-view="home" onclick="wm.showView('home')" title="หน้าแรก">
@@ -224,12 +223,9 @@
                         <input type="range" id="sliderFontSize" min="0.8" max="2.5" step="0.1" value="1.15" oninput="setLyricFontSize(this.value)" style="margin-bottom:30px;">
 
                         <h3>📂 แถบนำทางด้านข้าง</h3>
-                        <div style="margin-bottom:25px; display:flex; flex-direction:column; gap:10px;">
+                        <div style="margin-bottom:25px;">
                             <label class="lang-toggle" style="display:inline-flex;">
                                 <input type="checkbox" id="toggleSidebarCollapsed" onchange="setSidebarCollapsed(this.checked)"> พับแถบนำทางให้เหลือแต่ไอคอน
-                            </label>
-                            <label class="lang-toggle" style="display:inline-flex;">
-                                <input type="checkbox" id="toggleSidebarHover" onchange="setSidebarHoverExpand(this.checked)"> กางอัตโนมัติเมื่อเลื่อนเมาส์มาที่แถบ
                             </label>
                         </div>
 
