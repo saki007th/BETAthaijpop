@@ -80,10 +80,12 @@ window.dismissUpdateBanner = function() {
     window.hideUpdateBanner();
 };
 
-// ---------- ปุ่มอัปเดต: ล้าง Cache Storage แล้วโหลดหน้าใหม่แบบมี stamp ----------
+// ---------- ปุ่มอัปเดต: ล้าง Cache Storage แล้วโหลดหน้าใหม่แบบกัน cache ทุกชั้น ----------
+// stamp 3 ชั้น: URL ของ document + build id ใน <meta> + __r token สุ่ม
+// ทำให้แน่ใจว่าได้ไฟล์ชุดล่าสุดจริง ไม่ต้องรอ cache หมดอายุ
 window.applyAppUpdate = async function() {
-    const btn = document.getElementById('btnUpdateNow');
-    if (btn) { btn.disabled = true; btn.innerText = 'กำลังอัปเดต...'; }
+    document.querySelectorAll('#btnUpdateNow, #btnUpdateDetails, #btnUpdateGo')
+        .forEach(b => { b.disabled = true; });
     try {
         if (window.caches && window.caches.keys) {
             const keys = await caches.keys();
@@ -91,26 +93,31 @@ window.applyAppUpdate = async function() {
         }
     } catch (e) {}
     const url = new URL(window.location.href);
-    url.searchParams.set('v', (latest && (latest.build || latest.version)) || Date.now().toString());
+    const build = latest && (latest.build || latest.version);
+    if (build) url.searchParams.set('v', build);
+    url.searchParams.set('__r', Date.now().toString(36));
     window.location.replace(url.toString());
 };
 
 // ---------- หน้ารายละเอียดการอัปเดต ----------
 window.openUpdateSheet = function() {
     const m = latest || {};
+    const outdated = window.isUpdateAvailable(latest);
     const wrap = document.createElement('div');
     const notes = (m.notes || 'ไม่มีรายละเอียดเพิ่มเติม').split('\n');
+    const footer = outdated
+        ? `<button id="btnUpdateGo" class="btn-primary" style="flex:1;" onclick="window.applyAppUpdate()">🔄 อัปเดตทันที</button>
+           <button class="btn-secondary" onclick="window.closeSheet()">ปิด</button>`
+        : `<div class="update-sheet-ok">✅ คุณใช้เวอร์ชันล่าสุดแล้ว</div>
+           <button class="btn-secondary" onclick="window.closeSheet()">ปิด</button>`;
     wrap.innerHTML = `
         <div class="update-sheet-meta">
             <div><b>เวอร์ชันปัจจุบัน</b><span>v${APP_VERSION}</span></div>
-            <div><b>เวอร์ชันล่าสุด</b><span class="update-sheet-latest">v${m.version || '-'}</span></div>
+            <div><b>เวอร์ชันล่าสุด</b><span class="update-sheet-latest">v${escapeHtml(m.version || '-')}</span></div>
             <div><b>วันที่ปล่อย</b><span>${escapeHtml(m.releasedAt || '-')}</span></div>
         </div>
         <div class="update-sheet-notes">${notes.map(t => `<div>${escapeHtml(t)}</div>`).join('')}</div>
-        <div style="display:flex; gap:10px; margin-top:18px;">
-            <button class="btn-primary" style="flex:1;" onclick="window.applyAppUpdate()">🔄 อัปเดตทันที</button>
-            <button class="btn-secondary" onclick="window.closeSheet()">ปิด</button>
-        </div>
+        <div style="display:flex; gap:10px; margin-top:18px;">${footer}</div>
     `;
     window.openSheet('🔄 อัปเดตเลย', wrap, () => { if (window.wm) window.wm.updateWin = null; });
     if (window.wm) window.wm.updateWin = { close: () => window.closeSheet() };
@@ -135,16 +142,36 @@ function renderSidebarVersion() {
 }
 
 // ---------- ส่วน "เกี่ยวกับ" ในหน้าตั้งค่า ----------
+// build id ใน <meta> ของ HTML ที่เพิ่งโหลด ถ้าไม่ตรงกับ APP_BUILD แปลว่า
+// index.html ใหม่แต่ JS เก่า = เจอ cache — ต้องกดอัปเดตซ้ำอีกครั้ง
+function metaBuild() {
+    const m = document.querySelector('meta[name="app-build"]');
+    return m ? m.content : '';
+}
+
+function renderStaleNote() {
+    const note = document.getElementById('versionNote');
+    if (!note) return;
+    const htmlBuild = metaBuild();
+    if (!htmlBuild || htmlBuild === APP_BUILD) { note.style.display = 'none'; return; }
+    note.style.display = 'block';
+    note.innerHTML = `⚠️ <b>แคชเก่า</b> — HTML เป็น build <b>${escapeHtml(htmlBuild)}</b> แต่โค้ดที่รันอยู่เป็น build <b>${escapeHtml(APP_BUILD)}</b> (build ล่าสุดคือ <b>${escapeHtml((latest && latest.build) || htmlBuild)}</b>) กดปุ่มอัปเดตอีกครั้งเพื่อโหลดโค้ดชุดใหม่`;
+}
+
 function renderVersionInfo() {
     renderSidebarVersion();
     const cur = document.getElementById('versionCurrent');
     const lat = document.getElementById('versionLatest');
     const st = document.getElementById('versionStatus');
+    const goBtn = document.getElementById('btnUpdateDetails');
+    const outdated = window.isUpdateAvailable(latest);
+    if (goBtn) goBtn.style.display = outdated ? '' : 'none';
+    renderStaleNote();
     if (cur) cur.innerText = 'v' + APP_VERSION + ' (build ' + APP_BUILD + ')';
     if (!lat || !st) return;
 
     if (!latest) { lat.innerText = 'ยังไม่ได้ตรวจ'; st.innerText = '⏳ กำลังรอการตรวจสอบ'; st.className = 'version-status'; return; }
-    if (window.isUpdateAvailable(latest)) {
+    if (outdated) {
         lat.innerText = 'v' + latest.version + (latest.releasedAt ? ' (' + latest.releasedAt + ')' : '');
         st.innerText = '🆕 มีเวอร์ชันใหม่ให้อัปเดต';
         st.className = 'version-status outdated';
