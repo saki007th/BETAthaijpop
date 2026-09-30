@@ -122,8 +122,21 @@ function escapeHtml(str) {
     })[ch]);
 }
 
+// ---------- เวอร์ชันใต้ชื่อโปรไฟล์ (sidebar) ----------
+function renderSidebarVersion() {
+    const el = document.getElementById('profileVersion');
+    if (!el) return;
+    const outdated = window.isUpdateAvailable(latest);
+    el.innerText = 'v' + APP_VERSION;
+    el.classList.toggle('has-update', outdated);
+    el.title = outdated
+        ? 'มีเวอร์ชันใหม่ v' + latest.version + ' — คลิกเพื่อดูรายละเอียด'
+        : 'เวอร์ชันแอป v' + APP_VERSION;
+}
+
 // ---------- ส่วน "เกี่ยวกับ" ในหน้าตั้งค่า ----------
 function renderVersionInfo() {
+    renderSidebarVersion();
     const cur = document.getElementById('versionCurrent');
     const lat = document.getElementById('versionLatest');
     const st = document.getElementById('versionStatus');
