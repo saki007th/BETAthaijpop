@@ -232,9 +232,10 @@
                                 <span class="version-label">สถานะ</span>
                                 <span class="version-status" id="versionStatus">⏳ กำลังรอการตรวจสอบ</span>
                             </div>
+                            <div class="version-note" id="versionNote" style="display:none;"></div>
                             <div class="version-actions">
                                 <button id="btnCheckVersion" class="btn-secondary" onclick="checkAppVersion()"><i class="fa-solid fa-arrows-rotate"></i> ตรวจสอบเวอร์ชัน</button>
-                                <button class="btn-primary" onclick="openUpdateSheet()"><i class="fa-solid fa-circle-info"></i> รายละเอียดการอัปเดต</button>
+                                <button id="btnUpdateDetails" class="btn-primary" style="display:none;" onclick="openUpdateSheet()"><i class="fa-solid fa-download"></i> อัปเดตทันที</button>
                             </div>
                         </div>
                     </div>
@@ -468,18 +469,19 @@
     <script type="module" src="js/stats.js"></script>
     <script type="module" src="js/main.js"></script>
 
-    <!-- stamp ทุกไฟล์ในเครื่องด้วย build id เพื่อไม่ให้เจอของเก่าใน cache ตอน deploy ใหม่
+    <!-- stamp ทุกไฟล์ในเครื่องด้วย build id (+ __r token ตอนกดอัปเดต) เพื่อไม่ให้เจอของเก่าใน cache
          (วางไว้ท้ายสุด เพราะ module/defer จะถูกโหลดหลัง parser จบ แก้ src ทันเวลานั้น) -->
     <script>
         (function () {
             var meta = document.querySelector('meta[name="app-build"]');
-            var v = meta ? meta.content : '';
-            if (!v) return;
+            if (!meta || !meta.content) return;
+            var token = new URL(window.location.href).searchParams.get('__r') || '';
+            var stamp = encodeURIComponent(meta.content + (token ? '.' + token : ''));
             document.querySelectorAll('script[src], link[rel="stylesheet"][href]').forEach(function (el) {
                 var attr = el.getAttribute('src') ? 'src' : 'href';
                 var raw = el.getAttribute(attr);
                 if (!raw || /^(https?:)?\/\//.test(raw) || raw.indexOf('?') !== -1) return;
-                el.setAttribute(attr, raw + '?v=' + encodeURIComponent(v));
+                el.setAttribute(attr, raw + '?v=' + stamp);
             });
         })();
     </script>
