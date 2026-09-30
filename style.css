@@ -147,8 +147,8 @@ a{ color:inherit; }
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .profile-version{
-    display:inline-flex; align-items:center; gap:5px; width:fit-content;
-    font-size:10px; color:var(--text-3); margin-top:2px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:10px; color:var(--text-3); padding:3px 0 1px; cursor:pointer;
     transition:color .15s var(--ease);
 }
 .profile-version:hover{ color:var(--text-1); }
