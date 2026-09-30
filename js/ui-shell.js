@@ -109,6 +109,46 @@ window.closeAddModal = function() {
     window.closeSheetEl(document.getElementById('modalAdd'));
 };
 
+// ==========================================
+// แถบนำทางด้านข้างแบบพับได้
+// - คลาส .sidebar-collapsed วางไว้บน <html> เพื่อให้ inline script ใน <head>
+//   กั้นสถานะไว้ได้ก่อนหน้าจอวาดครั้งแรก (ไม่แว็บกลับเป็นแถบเต็ม)
+// - บันทึกสถานะไว้ใน localStorage เหมือนที่ตั้งค่าอื่น ๆ
+// ==========================================
+const SIDEBAR_COLLAPSED_KEY = 'ws_sidebar_collapsed';
+
+window.isSidebarCollapsed = function() {
+    try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'; }
+    catch (e) { return false; }
+};
+
+window.applySidebarCollapsed = function() {
+    const collapsed = window.isSidebarCollapsed();
+    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
+
+    const btn = document.getElementById('sidebarToggle');
+    if (btn) {
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = collapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left';
+        btn.title = collapsed ? 'กางแถบด้านข้าง' : 'พับแถบด้านข้าง';
+    }
+
+    const chk = document.getElementById('toggleSidebarCollapsed');
+    if (chk) chk.checked = collapsed;
+};
+
+window.setSidebarCollapsed = function(collapsed) {
+    collapsed = !!collapsed;
+    try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0'); }
+    catch (e) {}
+    window.applySidebarCollapsed();
+    return collapsed;
+};
+
+window.toggleSidebar = function() {
+    return window.setSidebarCollapsed(!window.isSidebarCollapsed());
+};
+
 // ---------- Generic backdrop-driven sheet helper (used by both the fixed
 // Add/Edit sheet above, and the dynamically-filled generic sheet below) ----------
 window.openSheetEl = function(sheetEl) {
@@ -145,6 +185,8 @@ window.closeSheet = function() {
 
 // click-to-seek on the Now Playing progress bar
 document.addEventListener('DOMContentLoaded', () => {
+    window.applySidebarCollapsed();
+
     const scrub = document.getElementById('npScrub');
     if (scrub) {
         scrub.addEventListener('click', (e) => {
