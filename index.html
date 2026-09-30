@@ -4,6 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-build" content="20260908-1">
     <title>Ultimate JP Mix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <meta property="og:type" content="website">
@@ -215,6 +216,26 @@
                             <label class="lang-toggle"><input type="checkbox" data-lang="1" onchange="toggleLang(1, this, 'immersive')"> 🔤 โรมาจิ</label>
                             <label class="lang-toggle"><input type="checkbox" data-lang="2" checked onchange="toggleLang(2, this, 'immersive')"> 🇹🇭 ไทย</label>
                         </div>
+
+                        <h3>🔄 เวอร์ชันแอป</h3>
+                        <div class="version-panel">
+                            <div class="version-row">
+                                <span class="version-label">เวอร์ชันที่ใช้อยู่</span>
+                                <span class="version-value" id="versionCurrent">-</span>
+                            </div>
+                            <div class="version-row">
+                                <span class="version-label">เวอร์ชันล่าสุด</span>
+                                <span class="version-value" id="versionLatest">-</span>
+                            </div>
+                            <div class="version-row">
+                                <span class="version-label">สถานะ</span>
+                                <span class="version-status" id="versionStatus">⏳ กำลังรอการตรวจสอบ</span>
+                            </div>
+                            <div class="version-actions">
+                                <button id="btnCheckVersion" class="btn-secondary" onclick="checkAppVersion()"><i class="fa-solid fa-arrows-rotate"></i> ตรวจสอบเวอร์ชัน</button>
+                                <button class="btn-primary" onclick="openUpdateSheet()"><i class="fa-solid fa-circle-info"></i> รายละเอียดการอัปเดต</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -414,13 +435,28 @@
         <div class="modal-body" id="genericModalBody" style="max-height:70vh;"></div>
     </div>
 
+    <!-- ================= Banner แจ้งเตือนเวอร์ชันใหม่ ================= -->
+    <div id="updateBanner" class="update-banner">
+        <div class="update-banner-text">
+            <i class="fa-solid fa-arrow-up-right-dots"></i>
+            <span>มีเวอร์ชันใหม่ <b id="updateBannerVersion">-</b> พร้อมใช้งาน</span>
+            <span id="updateBannerBadge" class="update-banner-badge" style="display:none;">บังคับอัปเดต</span>
+        </div>
+        <div class="update-banner-actions">
+            <button id="btnUpdateNow" class="btn-primary" onclick="applyAppUpdate()">อัปเดตทันที</button>
+            <button class="btn-secondary" onclick="openUpdateSheet()">รายละเอียด</button>
+            <button class="update-banner-close" onclick="dismissUpdateBanner()" title="ปิด"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
     <!-- ================= Scripts ================= -->
-    <script src="pip.js"></script>
-    <script src="notify.js"></script>
+    <script defer src="pip.js"></script>
+    <script defer src="notify.js"></script>
     <script type="module" src="js/config.js"></script>
     <script type="module" src="js/utils.js"></script>
     <script type="module" src="js/ui-shell.js"></script>
     <script type="module" src="js/settings.js"></script>
+    <script type="module" src="js/version.js"></script>
     <script type="module" src="js/home.js"></script>
     <script type="module" src="js/library.js"></script>
 <script type="module" src="js/artists.js"></script>
@@ -430,6 +466,22 @@
     <script type="module" src="js/userdata.js"></script>
     <script type="module" src="js/stats.js"></script>
     <script type="module" src="js/main.js"></script>
+
+    <!-- stamp ทุกไฟล์ในเครื่องด้วย build id เพื่อไม่ให้เจอของเก่าใน cache ตอน deploy ใหม่
+         (วางไว้ท้ายสุด เพราะ module/defer จะถูกโหลดหลัง parser จบ แก้ src ทันเวลานั้น) -->
+    <script>
+        (function () {
+            var meta = document.querySelector('meta[name="app-build"]');
+            var v = meta ? meta.content : '';
+            if (!v) return;
+            document.querySelectorAll('script[src], link[rel="stylesheet"][href]').forEach(function (el) {
+                var attr = el.getAttribute('src') ? 'src' : 'href';
+                var raw = el.getAttribute(attr);
+                if (!raw || /^(https?:)?\/\//.test(raw) || raw.indexOf('?') !== -1) return;
+                el.setAttribute(attr, raw + '?v=' + encodeURIComponent(v));
+            });
+        })();
+    </script>
 
 </body>
 </html>

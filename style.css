@@ -1030,6 +1030,70 @@ label{ font-size:.85em; color:var(--text-2); display:block; margin-bottom:5px; f
 }
 
 /* ==========================================================
+    13.8 ระบบเช็คเวอร์ชัน (update banner + ส่วนเวอร์ชันในหน้าตั้งค่า)
+   ========================================================== */
+.update-banner{
+    position:fixed; right:20px; bottom:20px; z-index:700;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    max-width:min(520px, calc(100vw - 40px));
+    padding:14px 16px; background:var(--bg-surface);
+    border:1px solid var(--accent); border-radius:var(--r-l);
+    box-shadow:0 18px 50px rgba(0,0,0,.55);
+    opacity:0; transform:translateY(16px) scale(.98); pointer-events:none;
+    transition:opacity .3s var(--ease), transform .3s var(--ease);
+}
+.update-banner.show{ opacity:1; transform:none; pointer-events:auto; }
+body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
+
+.update-banner-text{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    font-size:13.5px; color:var(--text-1);
+}
+.update-banner-text i{ color:var(--accent); }
+.update-banner-badge{
+    background:rgba(255,69,58,.18); color:var(--danger);
+    border:1px solid rgba(255,69,58,.5); border-radius:var(--r-pill);
+    padding:2px 10px; font-size:11px; font-weight:600;
+}
+.update-banner-actions{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+.update-banner-actions .btn-primary,
+.update-banner-actions .btn-secondary{ padding:8px 14px; font-size:12.5px; }
+.update-banner-actions .btn-primary:disabled{ opacity:.6; cursor:default; }
+.update-banner-close{
+    background:transparent; border:none; color:var(--text-3); cursor:pointer;
+    font-size:15px; padding:4px 2px; line-height:1;
+}
+.update-banner-close:hover{ color:var(--text-1); }
+
+.version-panel{
+    background:var(--bg-elevated); border:1px solid var(--border-soft);
+    border-radius:var(--r-m); padding:6px 16px 16px;
+}
+.version-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:11px 0; border-bottom:1px solid var(--border-soft);
+}
+.version-row:last-of-type{ border-bottom:none; }
+.version-label{ font-size:13px; color:var(--text-2); font-weight:500; }
+.version-value{ font-size:13px; color:var(--text-1); font-weight:600; text-align:right; }
+.version-status{ font-size:13px; font-weight:600; text-align:right; }
+.version-status.uptodate{ color:var(--success); }
+.version-status.outdated{ color:var(--warning); }
+.version-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.version-actions .btn-primary,
+.version-actions .btn-secondary{ padding:9px 16px; font-size:13px; }
+
+.update-sheet-meta{ display:flex; flex-direction:column; gap:8px; }
+.update-sheet-meta > div{ display:flex; justify-content:space-between; gap:12px; font-size:13.5px; }
+.update-sheet-meta b{ color:var(--text-2); font-weight:500; }
+.update-sheet-latest{ color:var(--warning); font-weight:700; }
+.update-sheet-notes{
+    margin-top:16px; padding:14px; background:var(--bg-elevated);
+    border:1px solid var(--border-soft); border-radius:var(--r-s);
+    font-size:13px; color:var(--text-2); line-height:1.7; white-space:pre-wrap;
+}
+
+/* ==========================================================
     14. Responsive fallback (narrow desktop / tablet width)
    ========================================================== */
 @media (max-width: 1240px){
