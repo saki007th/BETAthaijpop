@@ -1096,6 +1096,10 @@ body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
     color:var(--warning); background:rgba(255,159,10,.12);
     border:1px solid rgba(255,159,10,.35); border-radius:var(--r-s);
 }
+.version-note.sim{
+    color:var(--accent); background:var(--accent-wash);
+    border-color:rgba(10,132,255,.4);
+}
 .version-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
 .version-actions .btn-primary,
 .version-actions .btn-secondary{ padding:9px 16px; font-size:13px; }
