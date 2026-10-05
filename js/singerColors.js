@@ -145,4 +145,36 @@ export async function openSingerColorManager(db) {
     };
 }
 
+// 🟢 ฟังก์ชันผสานสีจากนักร้องหลายคน (สำหรับใช้ร่วมกับ background color)
+window.blendColors = function(colors) {
+    if (!colors || colors.length === 0) return '#0a0a0c';
+    if (colors.length === 1) return colors[0];
+    
+    let r = 0, g = 0, b = 0, count = 0;
+    for (const c of colors) {
+        let hex = c.replace('#', '');
+        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+        r += parseInt(hex.substring(0, 2), 16);
+        g += parseInt(hex.substring(2, 4), 16);
+        b += parseInt(hex.substring(4, 6), 16);
+        count++;
+    }
+    r = Math.round(r / count);
+    g = Math.round(g / count);
+    b = Math.round(b / count);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
+// 🟢 ฟังก์ชันดึงสีพื้นหลังจากนักร้องในเพลง
+window.getSingerBackgroundColor = function(song) {
+    const singers = window.getActiveSingers(song);
+    if (!singers || singers.length === 0) return null; // ใช้สีเดิม
+    
+    const colors = singers.map(name => {
+        return (window.SINGER_COLORS && window.SINGER_COLORS[name]) ? window.SINGER_COLORS[name] : '#0a84ff';
+    });
+    
+    return window.blendColors(colors);
+};
+
 window.openSingerColorManager = openSingerColorManager;
