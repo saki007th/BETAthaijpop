@@ -249,6 +249,11 @@ window.togglePiPMode = async function() {
                     if (pipHeader) pipHeader.style.removeProperty('--pip-header-bg'); 
                     pipWindow.document.body.style.removeProperty('--pip-bg-image');
                     
+                    // 🟢 รีเฟรชการแสดงภาษาโหมด Pip หากมีการเปลี่ยนแปลง
+                    if (typeof window.syncLangCheckboxes === 'function') {
+                        try { window.syncLangCheckboxes(); } catch (e) {}
+                    }
+                    
                     titleText.innerText = '🎲 โหมดสุ่มเพลง';
                     artistText.innerText = 'คลิกเลือกเพลงจากรายการด้านล่าง';
                     
@@ -311,6 +316,11 @@ window.togglePiPMode = async function() {
             if (lastTrackKey !== currentKey) {
                 lastTrackKey = currentKey;
                 pipWindow.lastLyricIndex = -1; 
+                
+                // 🟢 รีเฟรชสถานะภาษาของ PiP ตามการตั้งค่า
+                if (typeof window.syncLangCheckboxes === 'function') {
+                    try { window.syncLangCheckboxes(); } catch (e) {}
+                }
                 
                 pipWindow.document.getElementById('current-lyric-text').innerHTML = '<span style="color:#ccc !important; text-shadow:none;">🎵 กำลังรอเนื้อเพลง...</span>';
                 
@@ -381,6 +391,15 @@ window.togglePiPMode = async function() {
 
                 if (activeLine) {
                     lyricBox.innerHTML = activeLine.innerHTML;
+                    // 🟢 ประยุกต์การซ่อน/แสดงภาษาโหมด Pip ตามการตั้งค่า
+                    if (typeof window.getLangState === 'function') {
+                        const pipState = window.getLangState('pip');
+                        pipState.forEach((show, i) => {
+                            if (!show) {
+                                lyricBox.querySelectorAll(`.lang-${i}`).forEach(el => el.style.display = 'none');
+                            }
+                        });
+                    }
                 } else {
                     lyricBox.innerHTML = '<span style="color:#ccc !important; text-shadow:none;">🎵 กำลังรอเนื้อเพลง...</span>';
                 }

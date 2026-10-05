@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261102-4">
+    <meta name="app-build" content="20261103-1">
     <title>Ultimate JP Mix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <meta property="og:type" content="website">
@@ -237,10 +237,17 @@
                         </div>
 
                         <h3>🈯️ แสดง/ซ่อนภาษา (โหมด Immersive)</h3>
-                        <div id="lyricLangTogglesImmersive" style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <div id="lyricLangTogglesImmersive" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:25px;">
                             <label class="lang-toggle"><input type="checkbox" data-lang="0" checked onchange="toggleLang(0, this, 'immersive')"> 🇯🇵 ญี่ปุ่น</label>
                             <label class="lang-toggle"><input type="checkbox" data-lang="1" onchange="toggleLang(1, this, 'immersive')"> 🔤 โรมาจิ</label>
                             <label class="lang-toggle"><input type="checkbox" data-lang="2" checked onchange="toggleLang(2, this, 'immersive')"> 🇹🇭 ไทย</label>
+                        </div>
+
+                        <h3>🪟 แสดง/ซ่อนภาษา (โหมด PiP)</h3>
+                        <div id="lyricLangTogglesPiP" style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <label class="lang-toggle"><input type="checkbox" data-lang="0" checked onchange="toggleLang(0, this, 'pip')"> 🇯🇵 ญี่ปุ่น</label>
+                            <label class="lang-toggle"><input type="checkbox" data-lang="1" onchange="toggleLang(1, this, 'pip')"> 🔤 โรมาจิ</label>
+                            <label class="lang-toggle"><input type="checkbox" data-lang="2" checked onchange="toggleLang(2, this, 'pip')"> 🇹🇭 ไทย</label>
                         </div>
 
                         <h3>🔄 เวอร์ชันแอป</h3>
