@@ -345,6 +345,22 @@ window.playSong = function(id) {
     const song = window.songs.find(s => s.id === id); if (!song) return;
     if (window.startListeningStats) window.startListeningStats(id);
 
+    // 🟢 ตั้งค่าสีพื้นหลังตามนักร้องในเพลง
+    const activeSingers = window.getActiveSingers(song);
+    if (activeSingers && activeSingers.length > 0) {
+        const bgColor = window.getSingerBackgroundColor(song);
+        if (bgColor) {
+            document.documentElement.style.setProperty('--wb-bg-r', parseInt(bgColor.slice(1, 3), 16));
+            document.documentElement.style.setProperty('--wb-bg-g', parseInt(bgColor.slice(3, 5), 16));
+            document.documentElement.style.setProperty('--wb-bg-b', parseInt(bgColor.slice(5, 7), 16));
+        }
+    } else {
+        // ไม่มีนักร้อง → รีเซ็ตสีเดิม
+        document.documentElement.style.removeProperty('--wb-bg-r');
+        document.documentElement.style.removeProperty('--wb-bg-g');
+        document.documentElement.style.removeProperty('--wb-bg-b');
+    }
+
     window.currentCoverIndex = -1;
     window.renderVersionBadges();
 
