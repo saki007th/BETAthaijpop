@@ -51,31 +51,16 @@ window.applyLangToggles = function() {
     const container = document.getElementById('lyricsContainer');
     if (!container) return;
 
-    const lineCount = window.getLyricLineCount();
     const state = window.getLangState(window.getLangMode());
     
     container.classList.remove('hide-lang-0', 'hide-lang-1', 'hide-lang-2');
     
     state.forEach((show, i) => {
         if (!show) {
-            // ดึงบรรทัดที่ตรง index นี้มาตรวจสอบ
-            const lineElements = container.querySelectorAll(`.lang-${i}`);
-            
-            // เช็คว่าบรรทัดนั้นๆ มีคำแปลหรือไม่
-            // โดยการหา .lyric-sub span (appear when line has || separator = dual language)
-            const hasTranslationContent = Array.from(lineElements).some(el => 
-                el.querySelector('.lyric-sub') || el.classList.contains('dual-lyric')
-            );
-            
-            // ถ้าบรรทัดที่จะซ่อนมีคำแปล (เช่น เพลง 3 บรรทัดที่ index 2 เป็น Translation)
-            // ให้ข้ามไม่ซ่อน เพื่อไม่ให้คำแปลหายไป
-            // เงื่อนไข: 
-            // - index เป็น 2 (บรรทัดที่ 3) 
-            // - มีเพลงแค่ 3 บรรทัด (lineCount <= 3)
-            // - บรรทัดนั้นมีคำแปลจริงๆ
-            if (i === 2 && lineCount <= 3 && hasTranslationContent) {
-                // ซ่อนไม่ได้ - จะทำให้คำแปลหาย
-                return;
+            // บังคับให้ห้ามซ่อนบรรทัดสุดท้าย (index 2) เพื่อป้องกันไม่ให้คำแปลหาย
+            // ทำงานได้ทั้งเพลง 3 บรรทัดและ 4 บรรทัด
+            if (i === 2) {
+                return; // ข้ามไม่ให้ไปซ่อนบรรทัดนี้
             }
             
             if (i <= 2) {
