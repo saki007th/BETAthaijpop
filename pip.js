@@ -317,6 +317,46 @@ window.togglePiPMode = async function() {
                 lastTrackKey = currentKey;
                 pipWindow.lastLyricIndex = -1; 
                 
+                // 🟢 ใช้สีพื้นหลังจากนักร้องในท่อน
+                const song = window.songs.find(s => s.id === window.currentSongId);
+                if (song) {
+                    const bgColor = window.getSingerBackgroundColor(song);
+                    const pipHeader = pipWindow.document.getElementById('pip-header');
+                    const pipBody = pipWindow.document.body;
+                    
+                    if (!bgColor) {
+                        // ไม่มีนักร้อง → รีเซ็ตสีกลับเป็นสีเดิม
+                        if (pipHeader) {
+                            pipHeader.style.removeProperty('backgroundColor');
+                            pipHeader.style.removeProperty('backgroundImage');
+                        }
+                        if (pipBody) {
+                            pipBody.style.removeProperty('backgroundColor');
+                            pipBody.style.removeProperty('backgroundImage');
+                        }
+                    } else {
+                        // มีสีจากนักร้อง → ใช้สีนั้นเป็นพื้นหลัง
+                        if (pipHeader) {
+                            pipHeader.style.backgroundColor = bgColor;
+                            pipHeader.style.backgroundImage = `linear-gradient(to right, ${bgColor} 0%, rgba(10,10,12,0.9) 100%)`;
+                        }
+                        if (pipBody) {
+                            pipBody.style.backgroundColor = bgColor;
+                            pipBody.style.backgroundImage = `var(--pip-bg-image, none)`;
+                        }
+                    }
+                } else {
+                    // ไม่มีข้อมูลเพลง → รีเซ็ตสี
+                    if (pipHeader) {
+                        pipHeader.style.removeProperty('backgroundColor');
+                        pipHeader.style.removeProperty('backgroundImage');
+                    }
+                    if (pipBody) {
+                        pipBody.style.removeProperty('backgroundColor');
+                        pipBody.style.removeProperty('backgroundImage');
+                    }
+                }
+                
                 // 🟢 รีเฟรชสถานะภาษาของ PiP ตามการตั้งค่า
                 if (typeof window.syncLangCheckboxes === 'function') {
                     try { window.syncLangCheckboxes(); } catch (e) {}
@@ -450,6 +490,38 @@ window.togglePiPMode = async function() {
             }
 
         }, 150); 
+
+        // 🟢 ฟังก์ชันผสานสีจากนักร้องหลายคน
+        window.blendColors = function(colors) {
+            if (!colors || colors.length === 0) return '#0a0a0c';
+            if (colors.length === 1) return colors[0];
+            
+            let r = 0, g = 0, b = 0, count = 0;
+            for (const c of colors) {
+                let hex = c.replace('#', '');
+                if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+                r += parseInt(hex.substring(0, 2), 16);
+                g += parseInt(hex.substring(2, 4), 16);
+                b += parseInt(hex.substring(4, 6), 16);
+                count++;
+            }
+            r = Math.round(r / count);
+            g = Math.round(g / count);
+            b = Math.round(b / count);
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        };
+
+        // 🟢 ฟังก์ชันดึงสีพื้นหลังจากนักร้องในเพลง
+        window.getSingerBackgroundColor = function(song) {
+            const singers = window.getActiveSingers(song);
+            if (!singers || singers.length === 0) return null; // ใช้สีเดิม
+            
+            const colors = singers.map(name => {
+                return (window.SINGER_COLORS && window.SINGER_COLORS[name]) ? window.SINGER_COLORS[name] : '#0a84ff';
+            });
+            
+            return window.blendColors(colors);
+        };
 
         // 4. ล้างข้อมูลเมื่อปิดหน้าต่าง
         pipWindow.addEventListener('pagehide', () => {
