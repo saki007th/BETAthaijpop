@@ -38,12 +38,42 @@ window.saveLangState = function(mode, state) {
     } catch (e) {}
 };
 
+window.getLyricLineCount = function() {
+    const song = window.songs.find(s => s.id === window.currentSongId);
+    if (!song || !window.currentLyricsArray) return 0;
+    return window.currentLyricsArray.reduce((sum, section) => {
+        const lines = (section || '').split('\n').filter(l => l.trim() !== '').length;
+        return sum + lines;
+    }, 0);
+};
+
 window.applyLangToggles = function() {
     const container = document.getElementById('lyricsContainer');
     if (!container) return;
+
+    // หาจำนวนบรรทัดของเพลงปัจจุบันเพื่อดูว่าแบบ 3 หรือ 4 บรรทัด
+    const lineCount = window.getLyricLineCount();
+    const is4LineFormat = lineCount >= 4; // มี 4 บรรทัดขึ้นไป = JP+Romaji+Thai+Translation
+
     container.classList.remove('hide-lang-0', 'hide-lang-1', 'hide-lang-2');
+    
     const state = window.getLangState(window.getLangMode());
-    state.forEach((show, i) => { if (!show) container.classList.add(`hide-lang-${i}`); });
+    state.forEach((show, i) => {
+        // ตรรกะซ่อนแตกต่างกันตามรูปแบบเพลง
+        if (!show) {
+            // รูปแบบ 4 บรรทัด: index 0=JP, 1=Romaji, 2=Thai, Translation อยู่ข้างนอกหรือ index 3
+            // เราสามารถซ่อน index 0, 1, 2 ได้ตามสถานะปกติ
+            if (i <= 2) {
+                container.classList.add(`hide-lang-${i}`);
+            }
+            // ไม่ควรซ่อน index ที่เกิน 2 เพราะอาจเป็นคำแปล
+        }
+    });
+    
+    // กรณีเพลง 3 บรรทัด (อาจเป็น EN+Thai+Translation): 
+    // ต้องตรวจสอบเพิ่มเติมว่าบรรทัดที่ 2 คืออะไร
+    // แต่ด้วยโครงสร้างปัจจุบัน เราจะไม่ไปซ่อน index 2 หากเป็นเพลง 3 บรรทัด
+    // เพื่อไม่ให้คำแปลหาย
 };
 
 window.syncLangCheckboxes = function() {
@@ -73,7 +103,7 @@ window.toggleLang = function(langIndex, el, mode) {
     }
     window.saveLangState(mode, state);
     window.syncLangCheckboxes();
-    if (window.getLangMode() === mode) window.applyLangToggles();
+    window.applyLangToggles();
 };
 
 window.loadCustomSettings = function() {
