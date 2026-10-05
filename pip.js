@@ -317,45 +317,8 @@ window.togglePiPMode = async function() {
                 lastTrackKey = currentKey;
                 pipWindow.lastLyricIndex = -1; 
                 
-                // 🟢 ใช้สีพื้นหลังจากนักร้องในท่อน
-                const song = window.songs.find(s => s.id === window.currentSongId);
-                if (song) {
-                    const bgColor = window.getSingerBackgroundColor(song);
-                    const pipHeader = pipWindow.document.getElementById('pip-header');
-                    const pipBody = pipWindow.document.body;
-                    
-                    if (!bgColor) {
-                        // ไม่มีนักร้อง → รีเซ็ตสีกลับเป็นสีเดิม
-                        if (pipHeader) {
-                            pipHeader.style.removeProperty('backgroundColor');
-                            pipHeader.style.removeProperty('backgroundImage');
-                        }
-                        if (pipBody) {
-                            pipBody.style.removeProperty('backgroundColor');
-                            pipBody.style.removeProperty('backgroundImage');
-                        }
-                    } else {
-                        // มีสีจากนักร้อง → ใช้สีนั้นเป็นพื้นหลัง
-                        if (pipHeader) {
-                            pipHeader.style.backgroundColor = bgColor;
-                            pipHeader.style.backgroundImage = `linear-gradient(to right, ${bgColor} 0%, rgba(10,10,12,0.9) 100%)`;
-                        }
-                        if (pipBody) {
-                            pipBody.style.backgroundColor = bgColor;
-                            pipBody.style.backgroundImage = `var(--pip-bg-image, none)`;
-                        }
-                    }
-                } else {
-                    // ไม่มีข้อมูลเพลง → รีเซ็ตสี
-                    if (pipHeader) {
-                        pipHeader.style.removeProperty('backgroundColor');
-                        pipHeader.style.removeProperty('backgroundImage');
-                    }
-                    if (pipBody) {
-                        pipBody.style.removeProperty('backgroundColor');
-                        pipBody.style.removeProperty('backgroundImage');
-                    }
-                }
+                // 🟢 PiP ใช้สีพื้นหลังเดิมตามปกติ (ไม่เปลี่ยนตามนักร้อง)
+                // ให้ระบบจัดการสีเหมือนเดิม (ไม่มีการเปลี่ยนแปลงเพิ่มเติม)
                 
                 // 🟢 รีเฟรชสถานะภาษาของ PiP ตามการตั้งค่า
                 if (typeof window.syncLangCheckboxes === 'function') {
