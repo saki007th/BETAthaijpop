@@ -51,29 +51,38 @@ window.applyLangToggles = function() {
     const container = document.getElementById('lyricsContainer');
     if (!container) return;
 
-    // หาจำนวนบรรทัดของเพลงปัจจุบันเพื่อดูว่าแบบ 3 หรือ 4 บรรทัด
     const lineCount = window.getLyricLineCount();
-    const is4LineFormat = lineCount >= 4; // มี 4 บรรทัดขึ้นไป = JP+Romaji+Thai+Translation
-
+    const state = window.getLangState(window.getLangMode());
+    
     container.classList.remove('hide-lang-0', 'hide-lang-1', 'hide-lang-2');
     
-    const state = window.getLangState(window.getLangMode());
     state.forEach((show, i) => {
-        // ตรรกะซ่อนแตกต่างกันตามรูปแบบเพลง
         if (!show) {
-            // รูปแบบ 4 บรรทัด: index 0=JP, 1=Romaji, 2=Thai, Translation อยู่ข้างนอกหรือ index 3
-            // เราสามารถซ่อน index 0, 1, 2 ได้ตามสถานะปกติ
+            // ดึงบรรทัดที่ตรง index นี้มาตรวจสอบ
+            const lineElements = container.querySelectorAll(`.lang-${i}`);
+            
+            // เช็คว่าบรรทัดนั้นๆ มีคำแปลหรือไม่
+            // โดยการหา .lyric-sub span (appear when line has || separator = dual language)
+            const hasTranslationContent = Array.from(lineElements).some(el => 
+                el.querySelector('.lyric-sub') || el.classList.contains('dual-lyric')
+            );
+            
+            // ถ้าบรรทัดที่จะซ่อนมีคำแปล (เช่น เพลง 3 บรรทัดที่ index 2 เป็น Translation)
+            // ให้ข้ามไม่ซ่อน เพื่อไม่ให้คำแปลหายไป
+            // เงื่อนไข: 
+            // - index เป็น 2 (บรรทัดที่ 3) 
+            // - มีเพลงแค่ 3 บรรทัด (lineCount <= 3)
+            // - บรรทัดนั้นมีคำแปลจริงๆ
+            if (i === 2 && lineCount <= 3 && hasTranslationContent) {
+                // ซ่อนไม่ได้ - จะทำให้คำแปลหาย
+                return;
+            }
+            
             if (i <= 2) {
                 container.classList.add(`hide-lang-${i}`);
             }
-            // ไม่ควรซ่อน index ที่เกิน 2 เพราะอาจเป็นคำแปล
         }
     });
-    
-    // กรณีเพลง 3 บรรทัด (อาจเป็น EN+Thai+Translation): 
-    // ต้องตรวจสอบเพิ่มเติมว่าบรรทัดที่ 2 คืออะไร
-    // แต่ด้วยโครงสร้างปัจจุบัน เราจะไม่ไปซ่อน index 2 หากเป็นเพลง 3 บรรทัด
-    // เพื่อไม่ให้คำแปลหาย
 };
 
 window.syncLangCheckboxes = function() {
