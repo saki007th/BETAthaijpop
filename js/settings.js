@@ -7,11 +7,14 @@ window.setLyricFontSize = function(size) {
     localStorage.setItem('ws_fontsize', size);
 };
 
-// ค่าเริ่มต้น: โหมดปกติแสดงครบ 3 ภาษา, โหมด Immersive แสดงแค่ ญี่ปุ่น + ไทย
+// ค่าเริ่มต้น: โหมดปกติแสดงครบ 3 ภาษา, โหมด Immersive และโหมด Pip แสดงแค่ ญี่ปุ่น + ไทย
 window.DEFAULT_LANG_STATE = {
     normal: [true, true, true],
-    immersive: [true, false, true]
+    immersive: [true, false, true],
+    pip: [true, false, true]
 };
+
+window.LANG_MODES = ['normal', 'immersive', 'pip'];
 
 window.getLangMode = function() {
     const view = document.getElementById('nowPlayingView');
@@ -29,7 +32,7 @@ window.getLangState = function(mode) {
 window.saveLangState = function(mode, state) {
     try {
         const all = {};
-        ['normal', 'immersive'].forEach(m => all[m] = window.getLangState(m));
+        ['normal', 'immersive', 'pip'].forEach(m => all[m] = window.getLangState(m));
         all[mode] = state;
         localStorage.setItem('ws_lang_state', JSON.stringify(all));
     } catch (e) {}
@@ -44,7 +47,7 @@ window.applyLangToggles = function() {
 };
 
 window.syncLangCheckboxes = function() {
-    const modeIds = { normal: 'lyricLangTogglesNormal', immersive: 'lyricLangTogglesImmersive' };
+    const modeIds = { normal: 'lyricLangTogglesNormal', immersive: 'lyricLangTogglesImmersive', pip: 'lyricLangTogglesPiP' };
     Object.keys(modeIds).forEach(mode => {
         const box = document.getElementById(modeIds[mode]);
         if (!box) return;
