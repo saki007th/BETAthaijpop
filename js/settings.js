@@ -38,13 +38,19 @@ window.saveLangState = function(mode, state) {
     } catch (e) {}
 };
 
-// ตัดสินว่าบรรทัดภาษาในท่อนนี้ควรถูกซ่อนหรือไม่
-// ใช้รูปแบบของท่อนนั้นเอง เพราะบางเพลงมีท่อน 3 บรรทัดปนกับท่อน 4 บรรทัด
-//  - ท่อน 3 บรรทัด: lang-0 = JP/EN, lang-1 = คำอ่าน, lang-2 = คำแปล  → ห้ามซ่อน lang-2
-//  - ท่อน 4 บรรทัด: lang-0 = JP, lang-1 = โรมาจิ, lang-2 = ไทย, lang-3 = คำแปล → ซ่อน lang-2 ได้
-window.shouldHideLyricLine = function(index, is4Line, hideFlags) {
-    if (index === 2 && !is4Line) return false; // 3 บรรทัด → lang-2 คือคำแปล
-    return !!hideFlags[index];
+// บรรทัดสุดท้ายของทุกท่อนคือคำแปล ไม่ว่าท่อนนั้นจะมี 3 หรือ 4 บรรทัด
+// โดย player.js จะใส่ class "reading-text" ให้เฉพาะบรรทัดที่ไม่ใช่แรกและไม่ใช่สุดท้าย
+// ดังนั้นบรรทัดที่ index > 0 และไม่มี reading-text = คำแปล → ห้ามซ่อนเด็ดขาด
+//  - ท่อน 3 บรรทัด: lang-0 ต้นฉบับ, lang-1 คำอ่าน (reading-text), lang-2 คำแปล
+//  - ท่อน 4 บรรทัด: lang-0 ต้นฉบับ, lang-1 โรมาจิ (reading-text), lang-2 ไทย (reading-text), lang-3 คำแปล
+window.isTranslationRow = function(el, index) {
+    return index > 0 && !el.classList.contains('reading-text');
+};
+
+window.shouldHideLyricLine = function(el, index, hideFlags) {
+    if (!hideFlags[index]) return false;
+    if (window.isTranslationRow(el, index)) return false;
+    return true;
 };
 
 // ซ่อน/แสดงภาษาแยกทีละท่อน (รองรับเพลงที่มีทั้ง 3 และ 4 บรรทัดปนกัน)
@@ -60,14 +66,11 @@ window.applyLangToggles = function() {
     const hideFlags = state.map(s => !s);
 
     container.querySelectorAll('.lyric-line').forEach(section => {
-        const rows = section.querySelectorAll('[class*="lang-"]');
-        if (!rows.length) return;
-        const is4Line = rows.length >= 4;
-
-        rows.forEach(el => {
+        section.querySelectorAll('[class*="lang-"]').forEach(el => {
             const match = /lang-(\d+)/.exec(el.className || '');
             if (!match) return;
-            el.style.display = window.shouldHideLyricLine(parseInt(match[1], 10), is4Line, hideFlags) ? 'none' : '';
+            const index = parseInt(match[1], 10);
+            el.style.display = window.shouldHideLyricLine(el, index, hideFlags) ? 'none' : '';
         });
     });
 };
