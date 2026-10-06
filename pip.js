@@ -397,10 +397,14 @@ window.togglePiPMode = async function() {
                     // 🟢 ประยุกต์การซ่อน/แสดงภาษาโหมด Pip ตามการตั้งค่า
                     if (typeof window.getLangState === 'function') {
                         const pipState = window.getLangState('pip');
+                        const is4Line = typeof window.getLyricLineCount === 'function'
+                            ? window.getLyricLineCount() >= 4
+                            : true;
                         pipState.forEach((show, i) => {
-                            if (!show) {
-                                lyricBox.querySelectorAll(`.lang-${i}`).forEach(el => el.style.display = 'none');
-                            }
+                            if (show) return;
+                            // เพลง 3 บรรทัด: index 2 คือคำแปล → ห้ามซ่อน
+                            if (i === 2 && !is4Line) return;
+                            lyricBox.querySelectorAll(`.lang-${i}`).forEach(el => el.style.display = 'none');
                         });
                     }
                 } else {
