@@ -397,14 +397,18 @@ window.togglePiPMode = async function() {
                     // 🟢 ประยุกต์การซ่อน/แสดงภาษาโหมด Pip ตามการตั้งค่า
                     if (typeof window.getLangState === 'function') {
                         const pipState = window.getLangState('pip');
-                        const is4Line = typeof window.getLyricLineCount === 'function'
-                            ? window.getLyricLineCount() >= 4
-                            : true;
-                        pipState.forEach((show, i) => {
-                            if (show) return;
-                            // เพลง 3 บรรทัด: index 2 คือคำแปล → ห้ามซ่อน
-                            if (i === 2 && !is4Line) return;
-                            lyricBox.querySelectorAll(`.lang-${i}`).forEach(el => el.style.display = 'none');
+                        const pipHide = pipState.map(s => !s);
+
+                        // PiP แสดงทีละท่อน → นับจำนวนบรรทัดของท่อนนี้เอง
+                        // (เพลงเดียวกันอาจมีท่อน 3 บรรทัดปนกับท่อน 4 บรรทัด)
+                        const rows = lyricBox.querySelectorAll('[class*="lang-"]');
+                        const is4Line = rows.length >= 4;
+
+                        rows.forEach(el => {
+                            const match = /lang-(\d+)/.exec(el.className || '');
+                            if (!match) return;
+                            const i = parseInt(match[1], 10);
+                            el.style.display = (i === 2 && !is4Line) ? '' : (pipHide[i] ? 'none' : '');
                         });
                     }
                 } else {
