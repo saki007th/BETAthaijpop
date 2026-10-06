@@ -399,16 +399,15 @@ window.togglePiPMode = async function() {
                         const pipState = window.getLangState('pip');
                         const pipHide = pipState.map(s => !s);
 
-                        // PiP แสดงทีละท่อน → นับจำนวนบรรทัดของท่อนนี้เอง
-                        // (เพลงเดียวกันอาจมีท่อน 3 บรรทัดปนกับท่อน 4 บรรทัด)
-                        const rows = lyricBox.querySelectorAll('[class*="lang-"]');
-                        const is4Line = rows.length >= 4;
-
-                        rows.forEach(el => {
+                        // ใช้เกณฑ์เดียวกับหน้าหลัก: บรรทัดสุดท้ายของท่อนคือคำแปล
+                        // (ไม่มี class reading-text) → ห้ามซ่อน
+                        // ไม่ต้องนับจำนวนบรรทัด จึงรองรับเพลงที่มีทั้ง 3/4 บรรทัดปนกัน
+                        lyricBox.querySelectorAll('[class*="lang-"]').forEach(el => {
                             const match = /lang-(\d+)/.exec(el.className || '');
                             if (!match) return;
-                            const i = parseInt(match[1], 10);
-                            el.style.display = (i === 2 && !is4Line) ? '' : (pipHide[i] ? 'none' : '');
+                            const index = parseInt(match[1], 10);
+                            const isTranslation = index > 0 && !el.classList.contains('reading-text');
+                            el.style.display = (isTranslation || !pipHide[index]) ? '' : 'none';
                         });
                     }
                 } else {
