@@ -38,41 +38,37 @@ window.saveLangState = function(mode, state) {
     } catch (e) {}
 };
 
-// จำนวนบรรทัดย่อยภายใน "ท่อนเดียว" (ไม่ใช่รวมทั้งเพลง)
-// เพลง 3 บรรทัด = JP/EN, คำอ่าน, คำแปล  → index 2 คือคำแปล (ห้ามซ่อน)
-// เพลง 4 บรรทัด = JP, โรมาจิ, ไทย, คำแปล → index 2 คือไทย (ซ่อนได้)
-window.getLyricLineCount = function() {
-    if (!Array.isArray(window.currentLyricsArray) || !window.currentLyricsArray.length) return 0;
-    let max = 0;
-    for (const section of window.currentLyricsArray) {
-        const text = (section || '').trim();
-        if (!text || text === '[ดนตรี]') continue;
-        const count = text.split('\n').filter(l => l.trim() !== '').length;
-        if (count > max) max = count;
-    }
-    return max;
+// ตัดสินว่าบรรทัดภาษาในท่อนนี้ควรถูกซ่อนหรือไม่
+// ใช้รูปแบบของท่อนนั้นเอง เพราะบางเพลงมีท่อน 3 บรรทัดปนกับท่อน 4 บรรทัด
+//  - ท่อน 3 บรรทัด: lang-0 = JP/EN, lang-1 = คำอ่าน, lang-2 = คำแปล  → ห้ามซ่อน lang-2
+//  - ท่อน 4 บรรทัด: lang-0 = JP, lang-1 = โรมาจิ, lang-2 = ไทย, lang-3 = คำแปล → ซ่อน lang-2 ได้
+window.shouldHideLyricLine = function(index, is4Line, hideFlags) {
+    if (index === 2 && !is4Line) return false; // 3 บรรทัด → lang-2 คือคำแปล
+    return !!hideFlags[index];
 };
 
+// ซ่อน/แสดงภาษาแยกทีละท่อน (รองรับเพลงที่มีทั้ง 3 และ 4 บรรทัดปนกัน)
 window.applyLangToggles = function() {
     const container = document.getElementById('lyricsContainer');
     if (!container) return;
 
-    // นับบรรทัดย่อยภายในท่อนเดียว เพื่อแยกว่าเป็นเพลง 3 หรือ 4 บรรทัด
-    const lineCount = window.getLyricLineCount();
-    const is4Line = lineCount >= 4; // JP+โรมาจิ+ไทย+คำแปล
-
-    const state = window.getLangState(window.getLangMode());
-
+    // CSS เดิมใช้ hide-lang-* ที่ container ซึ่งซ่อนทุกท่อนพร้อมกัน
+    // ซึ่งใช้ไม่ได้กับเพลงที่มีทั้ง 3/4 บรรทัดปนกัน จึงเปลี่ยนมาซ่อนรายท่อนแทน
     container.classList.remove('hide-lang-0', 'hide-lang-1', 'hide-lang-2');
 
-    state.forEach((show, i) => {
-        if (show) return;
+    const state = window.getLangState(window.getLangMode());
+    const hideFlags = state.map(s => !s);
 
-        // เพลง 3 บรรทัด: index 2 คือคำแปล → ห้ามซ่อน ไม่งั้นคำแปลจะหาย
-        // เพลง 4 บรรทัด: index 2 คือภาษาไทย → ซ่อนได้ตามปกติ
-        if (i === 2 && !is4Line) return;
+    container.querySelectorAll('.lyric-line').forEach(section => {
+        const rows = section.querySelectorAll('[class*="lang-"]');
+        if (!rows.length) return;
+        const is4Line = rows.length >= 4;
 
-        container.classList.add(`hide-lang-${i}`);
+        rows.forEach(el => {
+            const match = /lang-(\d+)/.exec(el.className || '');
+            if (!match) return;
+            el.style.display = window.shouldHideLyricLine(parseInt(match[1], 10), is4Line, hideFlags) ? 'none' : '';
+        });
     });
 };
 
