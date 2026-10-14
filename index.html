@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261103-1">
+    <meta name="app-build" content="20261103-3">
     <title>Ultimate JP Mix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <meta property="og:type" content="website">
@@ -31,6 +31,7 @@
 <body>
     <div id="desktop-wallpaper"></div>
     <div id="dynamic-bg"></div>
+    <div id="dynamic-bg-b"></div>
 
     <div id="loadingOverlay">
         <div>กำลังโหลดข้อมูลคลังเพลง...</div>
@@ -216,6 +217,13 @@
                         <div style="margin-bottom:25px;">
                             <label class="lang-toggle" style="display:inline-flex;">
                                 <input type="checkbox" id="toggleShuffleBtn" onchange="toggleShuffle(this.checked)"> สุ่มเพลงอัตโนมัติเมื่อเล่นจบ
+                            </label>
+                        </div>
+
+                        <h3>🎬 อนิเมชั่นเปลี่ยนเพลง</h3>
+                        <div style="margin-bottom:25px;">
+                            <label class="lang-toggle" style="display:inline-flex;">
+                                <input type="checkbox" id="toggleSongTransition" onchange="setSongTransition(this.checked)" checked> แสดงอนิเมชั่นตอนเปลี่ยนเพลง
                             </label>
                         </div>
 

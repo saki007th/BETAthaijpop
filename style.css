@@ -64,13 +64,13 @@ a{ color:inherit; }
     background-size:cover; background-repeat:no-repeat; background-position:center;
     z-index:-20; transition:background .5s ease;
 }
-#dynamic-bg{
+#dynamic-bg, #dynamic-bg-b{
     position:fixed; top:-5%; left:-5%; width:110vw; height:110vh;
     background-size:cover; background-position:center;
     filter:blur(45px) brightness(.3);
-    z-index:-10; transition:all 1s ease; opacity:0;
+    z-index:-10; transition:opacity 1s ease; opacity:0;
 }
-#dynamic-bg.active{ opacity:1; }
+#dynamic-bg.active, #dynamic-bg-b.active{ opacity:1; }
 
 #loadingOverlay{
     position:fixed; inset:0; background:#000; color:var(--text-2);
@@ -638,6 +638,60 @@ var(--bg-content);
 .np-controls-row{ display:flex; align-items:center; justify-content:center; gap:30px; }
 .np-ctrl-btn{ background:none; border:none; color:var(--text-1); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .np-play-btn{ width:48px; height:48px; border-radius:50%; background:var(--text-1); color:#000; font-size:16px; }
+
+/* ==========================================================
+   🎬 อนิเมชั่นเปลี่ยนเพลง (song transition)
+   - ข้อมูลเพลง (ชื่อ/ศิลปิน/ปก) เลื่อน-จางออกแล้วอันใหม่เลื่อน-จางเข้า
+     ทิศทางตามปุ่ม: next = ใหม่มาจากขวา · prev = ใหม่มาจากซ้าย · auto = จางสลับ
+   - เฟรมวิดีโอวูบจางชั่วครู่ระหว่างโหลดเพลงใหม่
+   ========================================================== */
+:root{
+    --song-swap-out:.18s;
+    --song-swap-in:.3s;
+    --song-swap-shift:16px;
+}
+.np-track-info.swap-out,
+#npTrackThumb.swap-out,
+.live-info.swap-out,
+#liveThumb.swap-out{
+    animation:songSwapOutFade var(--song-swap-out) cubic-bezier(.4,0,1,1) both;
+}
+.np-track-info.swap-in,
+#npTrackThumb.swap-in,
+.live-info.swap-in,
+#liveThumb.swap-in{
+    animation:songSwapInFade var(--song-swap-in) cubic-bezier(0,0,.2,1) both;
+}
+
+/* next: ของเก่าไหลออกซ้าย · ของใหม่ไหลเข้าจากขวา */
+.swap-out.dir-next{ animation-name:songSwapOutNext; }
+.swap-in.dir-next{ animation-name:songSwapInNext; }
+/* prev: ของเก่าไหลออกขวา · ของใหม่ไหลเข้าจากซ้าย */
+.swap-out.dir-prev{ animation-name:songSwapOutPrev; }
+.swap-in.dir-prev{ animation-name:songSwapInPrev; }
+
+@keyframes songSwapOutNext{ from{ opacity:1; transform:translateX(0); } to{ opacity:0; transform:translateX(calc(var(--song-swap-shift) * -1)); } }
+@keyframes songSwapInNext{ from{ opacity:0; transform:translateX(var(--song-swap-shift)); } to{ opacity:1; transform:translateX(0); } }
+@keyframes songSwapOutPrev{ from{ opacity:1; transform:translateX(0); } to{ opacity:0; transform:translateX(var(--song-swap-shift)); } }
+@keyframes songSwapInPrev{ from{ opacity:0; transform:translateX(calc(var(--song-swap-shift) * -1)); } to{ opacity:1; transform:translateX(0); } }
+@keyframes songSwapOutFade{ from{ opacity:1; transform:translateX(0); } to{ opacity:0; transform:translateX(0); } }
+@keyframes songSwapInFade{ from{ opacity:0; transform:translateX(0); } to{ opacity:1; transform:translateX(0); } }
+
+@keyframes mediaSwapPulse{
+    0%{ opacity:1; transform:scale(1); }
+    32%{ opacity:.16; transform:scale(.986); }
+    100%{ opacity:1; transform:scale(1); }
+}
+.np-media-frame.media-swapping{ animation:mediaSwapPulse .55s cubic-bezier(.4,0,.2,1); }
+
+@media (prefers-reduced-motion: reduce){
+    .np-track-info.swap-out, #npTrackThumb.swap-out, .live-info.swap-out, #liveThumb.swap-out,
+    .np-track-info.swap-in, #npTrackThumb.swap-in, .live-info.swap-in, #liveThumb.swap-in,
+    .np-media-frame.media-swapping{
+        animation:none !important;
+    }
+}
+
 
 /* ==========================================================
    💿 แผ่นไวนิล — แสดงแทนวิดีโอสำหรับเพลงที่ไม่มี MV (song.hasMv === false)
