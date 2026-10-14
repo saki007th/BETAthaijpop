@@ -154,6 +154,44 @@ window.applyAmbience = function(thumbUrl, videoId) {
     window.extractDominantColor(thumbUrl, videoId);
 };
 
+// ==========================================
+// 🖼️ พื้นหลังไดนามิกแบบ crossfade (2 เลเยอร์สลับกัน)
+// - ตั้งภาพใหม่ทีละเลเยอร์แล้ว fade สลับ เพื่อไม่ให้ภาพกระพริบตอนเปลี่ยนเพลง
+// - #dynamic-bg / #dynamic-bg-b ต้องมีอยู่ใน DOM
+// ==========================================
+window._dynamicBgCur = -1;
+
+window.setDynamicBackground = function(url) {
+    const a = document.getElementById('dynamic-bg');
+    const b = document.getElementById('dynamic-bg-b');
+    if (!url) { window.clearDynamicBackground(); return; }
+
+    // fallback: ถ้ามีเลเยอร์เดียว ก็แค่ตั้งภาพตรง ๆ
+    if (!a || !b) {
+        const el = a || b;
+        if (el) { el.style.backgroundImage = `url('${url}')`; el.classList.add('active'); }
+        return;
+    }
+
+    const next = window._dynamicBgCur === 0 ? 1 : 0;
+    const layers = [a, b];
+    const show = layers[next];
+    const hide = layers[window._dynamicBgCur];
+    show.style.backgroundImage = `url('${url}')`;
+    void show.offsetWidth; // ให้เบราว์เซอร์ commit ภาพใหม่ก่อนเริ่ม fade
+    show.classList.add('active');
+    if (hide) hide.classList.remove('active');
+    window._dynamicBgCur = next;
+};
+
+window.clearDynamicBackground = function() {
+    ['dynamic-bg', 'dynamic-bg-b'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+    window._dynamicBgCur = -1;
+};
+
 // โหลดรูปสำหรับสกัดสี: ลอง crossOrigin ตรงก่อน ถ้าโดน CORS บล็อก ลองผ่าน proxy ที่รองรับ CORS
 function loadImageExtraction(urls, onDone) {
     const tryNext = function(i) {

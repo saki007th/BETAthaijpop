@@ -108,6 +108,7 @@ window.toggleLang = function(langIndex, el, mode) {
 window.loadCustomSettings = function() {
     const fs = localStorage.getItem('ws_fontsize');
     const shuffle = localStorage.getItem('ws_shuffle');
+    const songTrans = localStorage.getItem('ws_song_transition');
 
     if (fs) {
         window.setLyricFontSize(fs);
@@ -119,6 +120,9 @@ window.loadCustomSettings = function() {
         const chkShuffle = document.getElementById('toggleShuffleBtn');
         if (chkShuffle) chkShuffle.checked = true;
     }
+
+    const chkTrans = document.getElementById('toggleSongTransition');
+    if (chkTrans) chkTrans.checked = (songTrans !== '0');
 
     window.syncLangCheckboxes();
     window.applyLangToggles();
@@ -132,4 +136,15 @@ window.isShuffleEnabled = false;
 window.toggleShuffle = function(isEnable) {
     window.isShuffleEnabled = isEnable;
     localStorage.setItem('ws_shuffle', isEnable ? '1' : '0');
+};
+
+// อนิเมชั่นเปลี่ยนเพลง — เปิดไว้เป็นค่าเริ่มต้น (ปิดได้ในหน้าตั้งค่า)
+window.isSongTransitionEnabled = function() {
+    try { return localStorage.getItem('ws_song_transition') !== '0'; }
+    catch (e) { return true; }
+};
+
+window.setSongTransition = function(isEnable) {
+    try { localStorage.setItem('ws_song_transition', isEnable ? '1' : '0'); }
+    catch (e) {}
 };

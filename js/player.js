@@ -336,9 +336,80 @@ window.setVinylSpinning = function(playing) {
 };
 
 // ==========================================
+// 🎬 อนิเมชั่นเปลี่ยนเพลง
+// - ข้อมูลเพลง (ชื่อ/ศิลปิน/ปก) เลื่อน-จางออก แล้วอันใหม่เลื่อน-จางเข้า
+// - isChange=false (เพลงแรก) จะจางเข้าเฉย ๆ
+// ==========================================
+window.getSongSwapEls = function() {
+    return [
+        document.querySelector('.np-track-info'),
+        document.getElementById('npTrackThumb'),
+        document.querySelector('.live-info'),
+        document.getElementById('liveThumb')
+    ].filter(Boolean);
+};
+
+window.runSongTransition = function(direction, isChange, applyContent) {
+    const els = window.getSongSwapEls();
+    const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+    // เคลียร์ timer / คลาสที่ค้างจากการเปลี่ยนเพลงครั้งก่อน (กรณีกดเปลี่ยนเร็ว ๆ)
+    (window._songSwapTimers || []).forEach(clearTimeout);
+    window._songSwapTimers = [];
+    els.forEach(el => el.classList.remove('swap-out', 'swap-in', 'dir-next', 'dir-prev'));
+
+    if (reduce) { if (applyContent) applyContent(); return; }
+
+    const dir = direction === 'next' ? 'next' : (direction === 'prev' ? 'prev' : 'auto');
+
+    // เพลงแรก (ไม่ใช่การเปลี่ยนเพลง) → จางเข้า ไม่มี slide ออก
+    if (!isChange) {
+        if (applyContent) applyContent();
+        els.forEach(el => el.classList.add('swap-in', 'dir-auto'));
+        window._songSwapTimers.push(setTimeout(() => {
+            els.forEach(el => el.classList.remove('swap-in', 'dir-auto'));
+        }, 340));
+        return;
+    }
+
+    els.forEach(el => el.classList.add('swap-out', 'dir-' + dir));
+    window._songSwapTimers.push(setTimeout(() => {
+        if (applyContent) applyContent();
+        els.forEach(el => {
+            el.classList.remove('swap-out');
+            void el.offsetWidth; // รีสตาร์ท animation ฝั่งเข้า
+            el.classList.add('swap-in', 'dir-' + dir);
+        });
+        window._songSwapTimers.push(setTimeout(() => {
+            els.forEach(el => el.classList.remove('swap-in', 'dir-next', 'dir-prev', 'dir-auto'));
+        }, 340));
+    }, 190));
+};
+
+window.pulseMediaFrame = function() {
+    const frame = document.getElementById('npMediaFrame');
+    if (!frame) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window._mediaPulseHandler) frame.removeEventListener('animationend', window._mediaPulseHandler);
+    frame.classList.remove('media-swapping');
+    void frame.offsetWidth;
+    frame.classList.add('media-swapping');
+    window._mediaPulseHandler = () => {
+        frame.classList.remove('media-swapping');
+        frame.removeEventListener('animationend', window._mediaPulseHandler);
+        window._mediaPulseHandler = null;
+    };
+    frame.addEventListener('animationend', window._mediaPulseHandler);
+};
+
+// ==========================================
 // ▶️ เล่นเพลง
 // ==========================================
-window.playSong = function(id) {
+window.playSong = function(id, direction) {
+    const prevSongId = window.currentSongId;
+    const isChange = !!prevSongId && prevSongId !== id;
+    const transitionOn = !!(window.isSongTransitionEnabled && window.isSongTransitionEnabled());
+
     window.currentSongId = id;
     window._isPlaying = true;
     window._vinylForceVideo = false;
@@ -366,18 +437,27 @@ window.playSong = function(id) {
 
     if (window.wm && window.wm.notifyWin) window.wm.notifyWin.close();
 
+    const videoId = window.extractYouTubeID(song.audioPath);
     const liveAct = document.getElementById('liveActivity');
-    if (liveAct) {
-        document.getElementById('liveTitle').innerText = song.title;
-        document.getElementById('liveArtist').innerText = '🎤 ' + (song.artist || '-');
-        document.getElementById('npTrackTitle').innerText = song.title;
-        document.getElementById('npTrackArtist').innerText = '🎤 ' + (song.artist || '-');
+    if (liveAct) { liveAct.classList.remove('hidden'); liveAct.classList.remove('paused'); }
 
-        const ytId = window.extractYouTubeID(song.audioPath);
-        window.applyTrackArtwork(ytId);
+    const applyTrackContent = () => {
+        const t = document.getElementById('liveTitle'); if (t) t.innerText = song.title;
+        const a = document.getElementById('liveArtist'); if (a) a.innerText = '🎤 ' + (song.artist || '-');
+        const nt = document.getElementById('npTrackTitle'); if (nt) nt.innerText = song.title;
+        const na = document.getElementById('npTrackArtist'); if (na) na.innerText = '🎤 ' + (song.artist || '-');
+        window.applyTrackArtwork(videoId);
+    };
 
-        liveAct.classList.remove('hidden'); liveAct.classList.remove('paused');
+    if (transitionOn) {
+        window.runSongTransition(direction, isChange, applyTrackContent);
+        window.pulseMediaFrame();
+    } else {
+        applyTrackContent();
     }
+
+    if (videoId) window.setDynamicBackground(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+    else window.clearDynamicBackground();
 
     window.currentLyricsArray = song.lyrics.split(/\n\s*\n/); window.currentLyricIndex = -1;
 
@@ -385,9 +465,6 @@ window.playSong = function(id) {
     window.wm.updateSyncTitle(song.title);
 
     window.renderTimestampEditor(); window.renderLyricsToContainer(); window.updateLyricDisplay();
-
-    const videoId = window.extractYouTubeID(song.audioPath); const bgEl = document.getElementById('dynamic-bg');
-    if (bgEl && videoId) { bgEl.style.backgroundImage = `url('https://img.youtube.com/vi/${videoId}/hqdefault.jpg')`; bgEl.classList.add('active'); }
 
     let playerDiv = document.getElementById('youtubePlayer');
     if (!playerDiv) document.getElementById('content-player').innerHTML = '<div id="youtubePlayer" style="width: 100%; height: 100%;"></div>';
@@ -845,7 +922,7 @@ window.onPlayerStateChange = function(event) {
         // 🎵 ถ้ามีคิวเพลง ให้เล่นเพลงถัดไปจากคิวก่อน
         const nextQueuedId = window.takeNextFromQueue ? window.takeNextFromQueue() : null;
         if (nextQueuedId) {
-            window.playSong(nextQueuedId);
+            window.playSong(nextQueuedId, 'auto');
             return;
         }
 
@@ -857,14 +934,13 @@ window.onPlayerStateChange = function(event) {
                     randomIndex = Math.floor(Math.random() * window.songs.length);
                 }
             }
-            window.playSong(window.songs[randomIndex].id);
+            window.playSong(window.songs[randomIndex].id, 'auto');
         } else {
             const idx = window.songs.findIndex(s => s.id === window.currentSongId);
             if (idx !== -1 && idx + 1 < window.songs.length) {
-                window.playSong(window.songs[idx + 1].id);
+                window.playSong(window.songs[idx + 1].id, 'auto');
             } else {
-                const bgEl = document.getElementById('dynamic-bg');
-                if (bgEl) bgEl.classList.remove('active');
+                window.clearDynamicBackground();
 
                 if (liveAct) liveAct.classList.add('hidden');
                 window.wm.collapseNowPlaying();
@@ -893,7 +969,7 @@ window.nextLiveSong = function() {
     // 🎵 ถ้ามีคิวเพลง ให้เล่นเพลงถัดไปจากคิวก่อน
     const nextQueuedId = window.takeNextFromQueue ? window.takeNextFromQueue() : null;
     if (nextQueuedId) {
-        window.playSong(nextQueuedId);
+        window.playSong(nextQueuedId, 'next');
         return;
     }
 
@@ -903,11 +979,11 @@ window.nextLiveSong = function() {
             const currentIdx = window.songs.findIndex(s => s.id === window.currentSongId);
             while (randomIndex === currentIdx) randomIndex = Math.floor(Math.random() * window.songs.length);
         }
-        window.playSong(window.songs[randomIndex].id);
+        window.playSong(window.songs[randomIndex].id, 'next');
     } else {
         const currentIdx = window.songs.findIndex(s => s.id === window.currentSongId);
         const nextIndex = currentIdx + 1 < window.songs.length ? currentIdx + 1 : 0;
-        window.playSong(window.songs[nextIndex].id);
+        window.playSong(window.songs[nextIndex].id, 'next');
     }
 };
 
@@ -916,7 +992,7 @@ window.prevLiveSong = function() {
 
     const currentIdx = window.songs.findIndex(s => s.id === window.currentSongId);
     const prevIndex = currentIdx - 1 >= 0 ? currentIdx - 1 : window.songs.length - 1;
-    window.playSong(window.songs[prevIndex].id);
+    window.playSong(window.songs[prevIndex].id, 'prev');
 };
 
 // ==========================================
