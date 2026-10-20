@@ -154,7 +154,6 @@ window.renderLyricsToContainer = function() {
     const container = document.getElementById('lyricsContainer'); if (!container) return;
     container.innerHTML = ''; if (window.currentLyricsArray.length === 0) { container.innerHTML = 'ไม่มีเนื้อเพลง'; return; }
     const song = window.songs.find(s => s.id === window.currentSongId);
-
     window.currentLyricsArray.forEach((lyric, index) => {
         const lineDiv = document.createElement('div'); lineDiv.className = 'lyric-line'; lineDiv.id = `lyric-line-${index}`;
 
@@ -209,6 +208,11 @@ window.renderLyricsToContainer = function() {
 
         container.appendChild(lineDiv);
     });
+
+    // สร้าง DOM ใหม่ทั้งหมด จึงต้อง apply ภาษาซ้ำ เพราะการซ่อนของเรา
+    // ทำผ่าน style.display ราย element (ไม่ใช่ class ที่ container แบบเดิม)
+    // ถ้าไม่ทำ เมื่อเพลงเปลี่ยน/แก้เนื้อเพลง การซ่อนจะหายไป
+    if (window.applyLangToggles) window.applyLangToggles();
 };
 
 // ==========================================
