@@ -345,19 +345,12 @@ window.setVinylSpinning = function(playing) {
 // - isChange=false (เพลงแรก) จะจางเข้าเฉย ๆ
 // ==========================================
 window.getSongSwapEls = function() {
-    const isImmersive = document.getElementById('nowPlayingView')?.classList.contains('immersive');
-    
-    if (isImmersive) {
-        return [
-            document.querySelector('.np-track-info'),
-            document.getElementById('npTrackThumb')
-        ].filter(Boolean);
-    } else {
-        return [
-            document.querySelector('.live-info'),
-            document.getElementById('liveThumb')
-        ].filter(Boolean);
-    }
+    return [
+        document.querySelector('.np-track-info'),
+        document.getElementById('npTrackThumb'),
+        document.querySelector('.live-info'),
+        document.getElementById('liveThumb')
+    ].filter(Boolean);
 };
 
 window.runSongTransition = function(direction, isChange, applyContent) {
