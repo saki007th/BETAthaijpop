@@ -114,6 +114,59 @@ window.renderRecentlyAdded = function() {
     });
 };
 
+window.showRecentlyAddedHistory = function() {
+    if (!window.songs) return;
+
+    const list = [...window.songs]
+        .filter(s => s.createdAt)
+        .sort((a, b) => b.createdAt - a.createdAt);
+
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '10px';
+    container.style.maxHeight = '60vh';
+    container.style.overflowY = 'auto';
+    container.style.paddingRight = '8px';
+
+    if (list.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--text-3); padding:40px 0;">ยังไม่มีข้อมูลเพลงที่เพิ่มเข้ามา</div>';
+    } else {
+        list.forEach(song => {
+            const item = document.createElement('div');
+            item.className = 'stat-song-item';
+            item.onclick = () => { window.closeSheet(); window.playSong(song.id); };
+
+            const videoId = window.extractYouTubeID(song.audioPath);
+            const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : '';
+
+            let dateStr = '';
+            const ts = song.createdAt;
+            if (ts) {
+                let ms = (typeof ts === 'number') ? ts
+                    : (typeof ts === 'object' && ts.seconds) ? ts.seconds * 1000
+                    : new Date(ts).getTime();
+                if (!isNaN(ms)) {
+                    const d = new Date(ms);
+                    dateStr = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+                }
+            }
+
+            item.innerHTML = `
+                <img src="${thumbUrl}" onerror="this.style.display='none'">
+                <div class="stat-song-info">
+                    <div class="stat-song-title">${song.title}</div>
+                    <div class="stat-song-artist">🎤 ${song.artist || '-'}</div>
+                </div>
+                <div class="stat-song-meta">${dateStr || '—'}</div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    window.openSheet('ประวัติการเพิ่มเพลงทั้งหมด', container);
+};
+
 // ==========================================
 // 🔥 เพลงยอดนิยมทั้งระบบ (ยอดรวมทุกบัญชี มาจาก songs/{id}.plays)
 // ==========================================
