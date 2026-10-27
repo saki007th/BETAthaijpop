@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261103-4">
+    <meta name="app-build" content="20261103-5">
     <title>Ultimate JP Mix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <meta property="og:type" content="website">
@@ -125,7 +125,7 @@
             <section id="view-home" class="content-view active">
                 <header class="content-header">
                     <h1 class="content-title">หน้าแรก</h1>
-                    <button id="btnDockNotify" class="icon-btn" onclick="window.openNotifyWindow()" title="เพลงใหม่ล่าสุด">
+                    <button id="btnDockNotify" class="icon-btn" onclick="window.openNotifyWindow()" title="ประวัติการเพิ่มเพลงทั้งหมด">
                         <i class="fa-solid fa-bell"></i>
                         <span id="notifyBadge" class="notify-badge" style="display:none;"></span>
                     </button>
@@ -133,7 +133,6 @@
                 <div class="content-body">
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <h2 class="section-title" style="margin-bottom:0;">🆕 เพลงที่เพิ่มล่าสุด</h2>
-                        <button class="btn-secondary" onclick="showRecentlyAddedHistory()" style="padding:6px 14px; font-size:12px;">ดูประวัติทั้งหมด</button>
                     </div>
                     <div id="recentlyAddedList" class="home-random-row"></div>
 
