@@ -112,60 +112,27 @@ window.renderRecentlyAdded = function() {
         `;
         container.appendChild(item);
     });
+
+    // 📋 การ์ด "ดูประวัติทั้งหมด" ต่อท้ายแถวเพลงล่าสุด
+    const historyCard = document.createElement('div');
+    historyCard.className = 'random-song-item';
+    historyCard.onclick = () => { window.openNotifyWindow(); };
+    historyCard.innerHTML = `
+        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.12) 55%, rgba(0,0,0,.18)); z-index:1;">
+            <i class="fa-solid fa-clock-rotate-left" style="font-size:40px; color:#ffcc00; filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));"></i>
+        </div>
+        <div class="random-song-info" style="position:relative; z-index:2;">
+            <div class="random-song-title" style="color:#ffcc00;">ดูประวัติทั้งหมด</div>
+            <div class="random-song-artist">ประวัติการเพิ่มเพลง</div>
+        </div>
+    `;
+    container.appendChild(historyCard);
 };
 
-window.showRecentlyAddedHistory = function() {
-    if (!window.songs) return;
-
-    const list = [...window.songs]
-        .filter(s => s.createdAt)
-        .sort((a, b) => b.createdAt - a.createdAt);
-
-    const container = document.createElement('div');
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.gap = '10px';
-    container.style.maxHeight = '60vh';
-    container.style.overflowY = 'auto';
-    container.style.paddingRight = '8px';
-
-    if (list.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:var(--text-3); padding:40px 0;">ยังไม่มีข้อมูลเพลงที่เพิ่มเข้ามา</div>';
-    } else {
-        list.forEach(song => {
-            const item = document.createElement('div');
-            item.className = 'stat-song-item';
-            item.onclick = () => { window.closeSheet(); window.playSong(song.id); };
-
-            const videoId = window.extractYouTubeID(song.audioPath);
-            const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/default.jpg` : '';
-
-            let dateStr = '';
-            const ts = song.createdAt;
-            if (ts) {
-                let ms = (typeof ts === 'number') ? ts
-                    : (typeof ts === 'object' && ts.seconds) ? ts.seconds * 1000
-                    : new Date(ts).getTime();
-                if (!isNaN(ms)) {
-                    const d = new Date(ms);
-                    dateStr = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-                }
-            }
-
-            item.innerHTML = `
-                <img src="${thumbUrl}" onerror="this.style.display='none'">
-                <div class="stat-song-info">
-                    <div class="stat-song-title">${song.title}</div>
-                    <div class="stat-song-artist">🎤 ${song.artist || '-'}</div>
-                </div>
-                <div class="stat-song-meta">${dateStr || '—'}</div>
-            `;
-            container.appendChild(item);
-        });
-    }
-
-    window.openSheet('ประวัติการเพิ่มเพลงทั้งหมด', container);
-};
+// ==========================================
+// window.showRecentlyAddedHistory ถูกรวมเข้าไปที่ openNotifyWindow ใน notify.js แล้ว
+// ใช้ปุ่มกระดิ่งปุ่มเดียว ไม่แยกที่อีกต่อไป
+// ==========================================
 
 // ==========================================
 // 🔥 เพลงยอดนิยมทั้งระบบ (ยอดรวมทุกบัญชี มาจาก songs/{id}.plays)
