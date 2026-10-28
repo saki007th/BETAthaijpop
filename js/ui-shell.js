@@ -60,7 +60,7 @@ window.wm = {
         const view = document.getElementById('nowPlayingView');
         if (!view) return false;
         window.userForcedImmersive = true;
-        return window.setImmersive(!view.classList.contains('immersive'), true);
+        return this.setImmersive(!view.classList.contains('immersive'), true);
     },
 
     setImmersive(enabled, fromUser) {
@@ -93,9 +93,9 @@ window.wm = {
         const isSmall = window.innerWidth <= 768;
         const currently = view.classList.contains('immersive');
         if (isSmall && !currently) {
-            window.setImmersive(true, false);
+            this.setImmersive(true, false);
         } else if (!isSmall && currently) {
-            window.setImmersive(false, false);
+            this.setImmersive(false, false);
         }
     },
 
