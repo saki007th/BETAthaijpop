@@ -836,6 +836,18 @@ label.mv-toggle b{ color:var(--text-1); }
 .lyric-line.active .singer-badge{ box-shadow:0 0 8px rgba(255,255,255,.15); }
 
 .reading-text{ opacity:.55; font-size:.85em; }
+
+/* แสดงเฉพาะเนื้อเพลงหลัก (บรรทัดแรก) สำหรับท่อนที่ยังไม่ถึงท่อนปัจจุบัน */
+.lyric-line.lyric-future-collapsed .lang-1,
+.lyric-line.lyric-future-collapsed .lang-2,
+.lyric-line.lyric-future-collapsed .lyric-sub {
+    display: none !important;
+}
+
+.lyric-line.lyric-future-collapsed .lang-0,
+.lyric-line.lyric-future-collapsed .lyric-main {
+    display: block !important;
+}
 .hide-lang-0 .lang-0, .hide-lang-1 .lang-1, .hide-lang-2 .lang-2{ display:none !important; }
 
 .lyric-instrumental{ display:flex; justify-content:center; align-items:center; gap:15px; font-size:1.5em; height:60px; }

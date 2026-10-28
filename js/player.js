@@ -213,6 +213,33 @@ window.renderLyricsToContainer = function() {
     // ทำผ่าน style.display ราย element (ไม่ใช่ class ที่ container แบบเดิม)
     // ถ้าไม่ทำ เมื่อเพลงเปลี่ยน/แก้เนื้อเพลง การซ่อนจะหายไป
     if (window.applyLangToggles) window.applyLangToggles();
+    if (window.applyLyricPreviewCollapse) window.applyLyricPreviewCollapse();
+};
+
+// ==========================================
+// 🎵 แสดงเฉพาะเนื้อเพลงหลักสำหรับท่อนที่ยังไม่ถึง
+// ==========================================
+window.applyLyricPreviewCollapse = function() {
+    const container = document.getElementById('lyricsContainer');
+    if (!container) return;
+    const cur = window.currentLyricIndex;
+    const lines = container.querySelectorAll('.lyric-line');
+
+    if (cur < 0) {
+        lines.forEach(line => line.classList.remove('lyric-future-collapsed'));
+        if (window.applyLangToggles) window.applyLangToggles();
+        return;
+    }
+
+    lines.forEach((line, idx) => {
+        if (idx < cur) {
+            line.classList.add('lyric-future-collapsed');
+        } else {
+            line.classList.remove('lyric-future-collapsed');
+        }
+    });
+
+    if (window.applyLangToggles) window.applyLangToggles();
 };
 
 // ==========================================
@@ -772,6 +799,7 @@ window.updateLyricDisplay = function() {
         }
     }
     window.syncTimestampEditorUI();
+    if (window.applyLyricPreviewCollapse) window.applyLyricPreviewCollapse();
 };
 
 // คำนวณท่อนที่กำลังร้องจากเวลาปัจจุบัน ใช้ตอนสลับโหมด เพื่อให้เนื้อเพลงติดตามการเล่นเสมอ
