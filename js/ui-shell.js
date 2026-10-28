@@ -58,17 +58,7 @@ window.wm = {
 
     toggleImmersive() {
         const view = document.getElementById('nowPlayingView');
-        if (!view) return false;
-        window.userForcedImmersive = true;
-        return this.setImmersive(!view.classList.contains('immersive'), true);
-    },
-
-    setImmersive(enabled, fromUser) {
-        if (fromUser) window.userForcedImmersive = true;
-        const view = document.getElementById('nowPlayingView');
-        if (!view) return false;
-        const currently = view.classList.contains('immersive');
-        if (enabled === currently) return currently;
+        if (!view) return;
         const isImmersive = view.classList.toggle('immersive');
         localStorage.setItem('ws_immersive', isImmersive ? '1' : '0');
         const icon = document.querySelector('#btnImmersive i');
@@ -84,19 +74,6 @@ window.wm = {
         if (window.updateLyricDisplay) window.updateLyricDisplay();
         if (!isImmersive && window.forceLyricScroll) window.forceLyricScroll();
         return isImmersive;
-    },
-
-    applyAutoImmersive() {
-        if (window.userForcedImmersive) return;
-        const view = document.getElementById('nowPlayingView');
-        if (!view) return;
-        const isSmall = window.innerWidth <= 768;
-        const currently = view.classList.contains('immersive');
-        if (isSmall && !currently) {
-            this.setImmersive(true, false);
-        } else if (!isSmall && currently) {
-            this.setImmersive(false, false);
-        }
     },
 
     updateSyncTitle(title) {
@@ -169,10 +146,6 @@ window.setSidebarCollapsed = function(collapsed) {
 };
 
 window.toggleSidebar = function() {
-    if (window.innerWidth <= 1024) {
-        document.documentElement.classList.toggle('sidebar-open');
-        return;
-    }
     return window.setSidebarCollapsed(!window.isSidebarCollapsed());
 };
 
@@ -225,18 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.userForcedImmersive = false;
-
     if (localStorage.getItem('ws_immersive') === '1') {
         const view = document.getElementById('nowPlayingView');
         if (view) view.classList.add('immersive');
         const icon = document.querySelector('#btnImmersive i');
         if (icon) icon.className = 'fa-solid fa-compress';
         if (window.npImmersiveUi) window.npImmersiveUi.show();
-        window.userForcedImmersive = true;
     }
-
-    window.applyAutoImmersive();
 });
 
 // close any open singer-select dropdown when clicking elsewhere (timestamp editor)
@@ -306,7 +274,3 @@ document.addEventListener('click', function(e) {
         if (isImmersive()) show();
     }, { passive: true });
 })();
-
-window.addEventListener('resize', () => {
-    window.applyAutoImmersive();
-});
