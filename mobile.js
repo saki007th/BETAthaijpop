@@ -28,13 +28,17 @@ async function fetchMobileSongs() {
         window.mobileSongs = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            window.mobileSongs.push({ id: doc.id, title: data.title, artist: data.artist, audioPath: data.audioPath, plays: data.plays || 0 });
+            window.mobileSongs.push({ id: doc.id, title: data.title || '', artist: data.artist || '', audioPath: data.audioPath || '', plays: data.plays || 0 });
         });
         
         renderLibrary();
         renderHomeWidget();
     } catch (error) {
         console.error("Error loading songs:", error);
+        throw error;
+    } finally {
+        const loading = document.getElementById('mobileLoading');
+        if (loading) loading.style.display = 'none';
     }
 }
 
@@ -187,4 +191,18 @@ function onPlayerStateChange(event) {
 }
 
 // เริ่มโหลดข้อมูล
-document.addEventListener('DOMContentLoaded', fetchMobileSongs);
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        fetchMobileSongs().catch(err => {
+            console.error('โหลดเพลงไม่สำเร็จ:', err);
+            const list = document.getElementById('mobileSongList');
+            if (list) list.innerHTML = '<div style="text-align:center; color:#ff4444; padding:20px;">โหลดข้อมูลไม่สำเร็จ<br><small>' + (err.message || '') + '</small></div>';
+            const random = document.getElementById('mobileRandomSongs');
+            if (random) random.innerHTML = '<div style="text-align:center; color:#666; padding:10px;">โหลดข้อมูลไม่สำเร็จ</div>';
+            const artist = document.getElementById('mobileArtistWidget');
+            if (artist) artist.innerHTML = '<div style="text-align:center; color:#666; padding:10px;">โหลดข้อมูลไม่สำเร็จ</div>';
+        });
+    } catch (e) {
+        console.error('เกิดข้อผิดพลาด:', e);
+    }
+});

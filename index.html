@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+    <script>
+        (function() {
+            try {
+                if (window.location.search.indexOf('desktop=1') !== -1) return;
+                var ua = navigator.userAgent || navigator.vendor || window.opera;
+                var isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua) || (window.innerWidth <= 768);
+                if (isMobile) {
+                    window.location.replace('mobile.html' + window.location.search);
+                }
+            } catch(e) {}
+        })();
+    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
