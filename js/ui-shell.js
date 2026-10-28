@@ -58,7 +58,17 @@ window.wm = {
 
     toggleImmersive() {
         const view = document.getElementById('nowPlayingView');
-        if (!view) return;
+        if (!view) return false;
+        window.userForcedImmersive = true;
+        return window.setImmersive(!view.classList.contains('immersive'), true);
+    },
+
+    setImmersive(enabled, fromUser) {
+        if (fromUser) window.userForcedImmersive = true;
+        const view = document.getElementById('nowPlayingView');
+        if (!view) return false;
+        const currently = view.classList.contains('immersive');
+        if (enabled === currently) return currently;
         const isImmersive = view.classList.toggle('immersive');
         localStorage.setItem('ws_immersive', isImmersive ? '1' : '0');
         const icon = document.querySelector('#btnImmersive i');
@@ -74,6 +84,19 @@ window.wm = {
         if (window.updateLyricDisplay) window.updateLyricDisplay();
         if (!isImmersive && window.forceLyricScroll) window.forceLyricScroll();
         return isImmersive;
+    },
+
+    applyAutoImmersive() {
+        if (window.userForcedImmersive) return;
+        const view = document.getElementById('nowPlayingView');
+        if (!view) return;
+        const isSmall = window.innerWidth <= 768;
+        const currently = view.classList.contains('immersive');
+        if (isSmall && !currently) {
+            window.setImmersive(true, false);
+        } else if (!isSmall && currently) {
+            window.setImmersive(false, false);
+        }
     },
 
     updateSyncTitle(title) {
@@ -202,13 +225,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    window.userForcedImmersive = false;
+
     if (localStorage.getItem('ws_immersive') === '1') {
         const view = document.getElementById('nowPlayingView');
         if (view) view.classList.add('immersive');
         const icon = document.querySelector('#btnImmersive i');
         if (icon) icon.className = 'fa-solid fa-compress';
         if (window.npImmersiveUi) window.npImmersiveUi.show();
+        window.userForcedImmersive = true;
     }
+
+    window.applyAutoImmersive();
 });
 
 // close any open singer-select dropdown when clicking elsewhere (timestamp editor)
@@ -278,3 +306,7 @@ document.addEventListener('click', function(e) {
         if (isImmersive()) show();
     }, { passive: true });
 })();
+
+window.addEventListener('resize', () => {
+    window.applyAutoImmersive();
+});
