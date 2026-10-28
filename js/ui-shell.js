@@ -146,6 +146,10 @@ window.setSidebarCollapsed = function(collapsed) {
 };
 
 window.toggleSidebar = function() {
+    if (window.innerWidth <= 1024) {
+        document.documentElement.classList.toggle('sidebar-open');
+        return;
+    }
     return window.setSidebarCollapsed(!window.isSidebarCollapsed());
 };
 
