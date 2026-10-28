@@ -64,13 +64,50 @@ window.applyLangToggles = function() {
 
     const state = window.getLangState(window.getLangMode());
     const hideFlags = state.map(s => !s);
+    const cur = window.currentLyricIndex;
 
-    container.querySelectorAll('.lyric-line').forEach(section => {
+    container.querySelectorAll('.lyric-line').forEach((section, idx) => {
+        if (cur >= 0 && idx !== cur) {
+            // ทุกท่อนยกเว้นท่อนปัจจุบัน แสดงแค่บรรทัดแรก (เนื้อเพลงหลัก) เท่านั้น
+            section.querySelectorAll('.lang-0, .lyric-main').forEach(el => {
+                el.style.setProperty('display', 'block', 'important');
+            });
+            section.querySelectorAll('.lang-1, .lang-2, .lyric-sub').forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+            return;
+        }
+
+        if (cur < 0) {
+            // ยังไม่เริ่มเล่น แสดงแค่บรรทัดแรกทุกท่อน
+            section.querySelectorAll('.lang-0, .lyric-main').forEach(el => {
+                el.style.setProperty('display', 'block', 'important');
+            });
+            section.querySelectorAll('.lang-1, .lang-2, .lyric-sub').forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+            });
+            return;
+        }
+
+        // ท่อนปัจจุบันเท่านั้นที่อิงตามการตั้งค่าภาษาของผู้ใช้
         section.querySelectorAll('[class*="lang-"]').forEach(el => {
             const match = /lang-(\d+)/.exec(el.className || '');
             if (!match) return;
             const index = parseInt(match[1], 10);
             el.style.display = window.shouldHideLyricLine(el, index, hideFlags) ? 'none' : '';
+        });
+        section.querySelectorAll('.lyric-main').forEach(el => {
+            el.style.removeProperty('display');
+        });
+        section.querySelectorAll('.lyric-sub').forEach(el => {
+            const parent = el.parentElement;
+            if (parent && /lang-(\d+)/.test(parent.className || '')) {
+                const match = /lang-(\d+)/.exec(parent.className || '');
+                const index = match ? parseInt(match[1], 10) : 1;
+                el.style.display = window.shouldHideLyricLine(parent, index, hideFlags) ? 'none' : '';
+            } else {
+                el.style.removeProperty('display');
+            }
         });
     });
 };
