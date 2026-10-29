@@ -151,17 +151,22 @@ async function sendDiscordActivity(payload) {
         }
     }
 
+    const artistName = String(payload.artist || payload.details || 'Ultimate JP Mix').replace(/^🎤\s*/, '').trim().slice(0, 128);
+    const songTitle = String(payload.songTitle || payload.state || 'กำลังฟังเพลง').replace(/^🎵\s*/, '').trim().slice(0, 128);
+
     const activity = {
-        type: 2,
-        details: String(payload.songTitle || payload.state || 'กำลังฟังเพลง').slice(0, 128),
-        state: String(payload.artist || payload.details || 'Ultimate JP Mix').slice(0, 128),
+        type: 2, // 2 = Listening ("กำลังฟัง...")
+        status_display_type: typeof payload.statusDisplayType === 'number' ? payload.statusDisplayType : 1, // 1 = แสดง state (ชื่อนักร้อง) แทนชื่อแอป
+        name: artistName,
+        details: songTitle,
+        state: artistName,
         timestamps
     };
 
     if (payload.thumbUrl) {
         activity.assets = {
             large_image: payload.thumbUrl,
-            large_text: String(payload.songTitle || 'Ultimate JP Mix').slice(0, 128)
+            large_text: String(payload.largeText || 'Ultimate JP Mix').slice(0, 128)
         };
     }
     if (Array.isArray(payload.buttons) && payload.buttons.length > 0) {

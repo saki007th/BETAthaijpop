@@ -264,6 +264,7 @@ function createBadgeElement(label, artistName, index) {
         window.renderTimestampEditor();
         window.renderLyricsToContainer();
         window.updateLyricDisplay();
+        if (window.syncDiscordPresence) window.syncDiscordPresence();
     };
     return badge;
 }

@@ -184,8 +184,17 @@ window.syncDiscordPresence = async function() {
         return;
     }
 
-    const videoId = window.extractYouTubeID ? window.extractYouTubeID(song.audioPath) : null;
-    window.updateMediaSession(song, videoId, true);
+    // รองรับชื่อนักร้องและวิดีโอตามเวอร์ชัน Cover ที่กำลังเลือกฟังอยู่
+    let activeArtist = song.artist || 'ไม่ระบุศิลปิน';
+    let targetAudioPath = song.audioPath;
+    if (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]) {
+        const cov = song.covers[window.currentCoverIndex];
+        if (cov.coverArtist) activeArtist = cov.coverArtist;
+        if (cov.audioPath) targetAudioPath = cov.audioPath;
+    }
+
+    const videoId = window.extractYouTubeID ? window.extractYouTubeID(targetAudioPath) : null;
+    window.updateMediaSession({ title: song.title, artist: activeArtist }, videoId, true);
 
     const elapsed = (window.ytPlayer && typeof window.ytPlayer.getCurrentTime === 'function')
         ? (window.ytPlayer.getCurrentTime() || 0) : 0;
@@ -201,10 +210,13 @@ window.syncDiscordPresence = async function() {
     if (window.updateDiscordPresence) {
         window.updateDiscordPresence({
             clientId: window.discordConfig.clientId,
+            statusDisplayType: 1, // 1 = แสดงชื่อนักร้อง (state) หลังคำว่า "กำลังฟัง..."
+            name: activeArtist,
             songTitle: song.title,
-            artist: `🎤 ${song.artist || '-'}`,
-            state: `🎵 ${song.title}`,
-            details: `🎤 ${song.artist || '-'}`,
+            artist: activeArtist,
+            state: song.title,
+            details: activeArtist,
+            largeText: 'Ultimate JP Mix',
             elapsed: Math.floor(elapsed),
             duration: Math.floor(duration),
             thumbUrl,
