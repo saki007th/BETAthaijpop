@@ -487,6 +487,9 @@ window.playSong = function(id, direction) {
         }
     }
 
+    // 🎵 Discord Rich Presence — อัปเดตสถานะ Now Playing เมื่อเริ่มเล่นเพลงใหม่
+    if (window.syncDiscordPresence) window.syncDiscordPresence();
+
     clearInterval(window.syncInterval);
     window.syncInterval = setInterval(() => {
         if (window.tickStats) window.tickStats();
@@ -911,6 +914,8 @@ window.onPlayerStateChange = function(event) {
         window.pingYTQuality();
         window._isPlaying = true;
         window.restoreWinBoxColor();
+        // 🎵 Discord Rich Presence — อัปเดตสถานะ Now Playing
+        if (window.syncDiscordPresence) window.syncDiscordPresence();
     }
     if (event.data === 2) {
         if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
@@ -920,9 +925,13 @@ window.onPlayerStateChange = function(event) {
         window.stopEqBars();
         window._isPlaying = false;
         window.resetWinBoxColor();
+        // 🎵 Discord Rich Presence — ล้างสถานะเมื่อพัก
+        if (window.clearDiscordPresence) window.clearDiscordPresence();
     }
 
     if (event.data === 0) {
+        // 🎵 Discord Rich Presence — ล้างสถานะเมื่อเพลงจบ
+        if (window.clearDiscordPresence) window.clearDiscordPresence();
         window.stopEqBars();
         window.setVinylSpinning(false);
         if (window.endListeningStats) window.endListeningStats();

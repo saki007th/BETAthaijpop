@@ -1,0 +1,39 @@
+{
+    "name": "ultimate-jp-mix",
+    "version": "19.0.0",
+    "description": "Ultimate JP Mix - คลังเพลงญี่ปุ่น พร้อมเนื้อเพลงซิงค์และ Discord Rich Presence",
+    "main": "electron/main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron .",
+        "pack:win": "electron-builder --win portable",
+        "release": "electron-builder --win --publish always"
+    },
+    "devDependencies": {
+        "electron": "^31.0.0",
+        "electron-builder": "^24.13.3"
+    },
+    "build": {
+        "appId": "com.ultimatejpmix.app",
+        "productName": "Ultimate-JP-Mix",
+        "win": {
+            "target": [
+                {
+                    "target": "portable",
+                    "arch": ["x64"]
+                }
+            ],
+            "artifactName": "Ultimate-JP-Mix-Portable.${ext}"
+        },
+        "files": [
+            "electron/**/*",
+            "index.html",
+            "style.css",
+            "changelog.json",
+            "js/**/*",
+            "backup.html",
+            "notify.js",
+            "pip.js"
+        ]
+    }
+}

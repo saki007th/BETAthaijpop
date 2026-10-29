@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261103-8">
+    <meta name="app-build" content="20261029-1">
     <title>Ultimate JP Mix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <meta property="og:type" content="website">
@@ -82,6 +82,10 @@
                 </button>
                 <button class="nav-item" data-view="settings" onclick="wm.openSettings()" title="ตั้งค่า">
                     <i class="fa-solid fa-gear"></i><span>ตั้งค่า</span>
+                </button>
+                <button class="nav-item" onclick="window.openDiscordSheet()" title="เชื่อมสถานะกำลังฟังเพลงกับ Discord">
+                    <i class="fa-brands fa-discord" style="color:#5865F2;"></i><span>เชื่อม Discord</span>
+                    <span id="discordNavDot" style="display:none; width:8px; height:8px; border-radius:50%; background:#34c759; margin-left:auto;"></span>
                 </button>
             </nav>
 
@@ -265,10 +269,23 @@
                         </div>
 
                         <h3>🪟 แสดง/ซ่อนภาษา (โหมด PiP)</h3>
-                        <div id="lyricLangTogglesPiP" style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <div id="lyricLangTogglesPiP" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:25px;">
                             <label class="lang-toggle"><input type="checkbox" data-lang="0" checked onchange="toggleLang(0, this, 'pip')"> 🇯🇵 ญี่ปุ่น</label>
                             <label class="lang-toggle"><input type="checkbox" data-lang="1" onchange="toggleLang(1, this, 'pip')"> 🔤 โรมาจิ</label>
                             <label class="lang-toggle"><input type="checkbox" data-lang="2" checked onchange="toggleLang(2, this, 'pip')"> 🇹🇭 ไทย</label>
+                        </div>
+
+                        <h3>🎧 สถานะกำลังฟังเพลงบน Discord (Rich Presence)</h3>
+                        <div class="version-panel" style="margin-bottom:25px;">
+                            <div class="version-row">
+                                <span class="version-label">สถานะการเชื่อมต่อ</span>
+                                <span class="version-value" id="discordSettingsStatusText">⚪ ใช้งานผ่านเว็บเบราว์เซอร์</span>
+                            </div>
+                            <div class="version-actions" style="margin-top:12px;">
+                                <button class="btn-primary" style="background:#5865F2; border-color:#5865F2;" onclick="window.openDiscordSheet()">
+                                    <i class="fa-brands fa-discord"></i> ดาวน์โหลดแอป / ตั้งค่าการเชื่อม Discord
+                                </button>
+                            </div>
                         </div>
 
                         <h3>🔄 เวอร์ชันแอป</h3>
@@ -524,6 +541,7 @@
     <script type="module" src="js/home.js"></script>
     <script type="module" src="js/library.js"></script>
 <script type="module" src="js/artists.js"></script>
+    <script type="module" src="js/discord-presence.js"></script>
     <script type="module" src="js/player.js"></script>
     <script type="module" src="js/sync-hotkeys.js"></script>
     <script type="module" src="js/singerColors.js"></script>
