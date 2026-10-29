@@ -820,7 +820,7 @@ label.mv-toggle b{ color:var(--text-1); }
 /* ==========================================================
    8. Lyrics display (unchanged behaviour, refreshed look)
    ========================================================== */
-.lyrics-container{ width:100%; max-width:640px; text-align:center; padding:20px 0 60px; }
+.lyrics-container{ width:100%; max-width:640px; text-align:center; padding:20px 0 60px; overflow-y: auto; scroll-behavior: smooth; scroll-padding-block: 50%; }
 .lyric-line{
     font-size:var(--lyric-font-size); color:var(--text-3);
     padding:10px 14px; margin-bottom:4px; border-radius:var(--r-s);
