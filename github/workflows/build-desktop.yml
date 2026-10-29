@@ -1,0 +1,52 @@
+name: Build Desktop App (.exe)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'electron/**'
+      - 'package.json'
+      - '.github/workflows/build-desktop.yml'
+      - 'js/**'
+      - 'index.html'
+      - 'style.css'
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Portable .exe
+        run: npm run pack:win
+
+      - name: List dist files
+        run: dir dist
+
+      - name: Upload to GitHub Release (latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-latest
+          name: "🎧 Ultimate JP Mix — Desktop App (Discord Rich Presence)"
+          body: |
+            แอปสำหรับเปิดใช้งาน **Ultimate JP Mix** บน Windows พร้อมระบบเชื่อมต่อ **Discord Rich Presence (แสดงสถานะกำลังฟังเพลง)** อัตโนมัติ
+            - ดาวน์โหลดไฟล์ .exe ด้านล่างแล้วดับเบิลคลิกเปิดใช้งานได้ทันที (ไม่ต้องติดตั้ง)
+          files: dist/*.exe
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
