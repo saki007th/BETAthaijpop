@@ -768,7 +768,11 @@ window.updateLyricDisplay = function() {
         if (activeLine) {
             activeLine.classList.add('active');
             if (!immersive) {
-                activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        activeLine.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+                    });
+                });
             }
         }
     }
@@ -800,7 +804,7 @@ window.forceLyricScroll = function() {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             const activeLine = document.querySelector('#lyricsContainer .lyric-line.active');
-            if (activeLine) activeLine.scrollIntoView({ behavior: "auto", block: "center" });
+            if (activeLine) activeLine.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
         });
     });
 };
