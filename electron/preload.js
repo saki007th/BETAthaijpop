@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updatePresence: (activity) => ipcRenderer.invoke('discord:update-presence', activity),
     clearPresence: () => ipcRenderer.invoke('discord:clear-presence'),
     getStatus: () => ipcRenderer.invoke('discord:get-status'),
+    openYouTubeLogin: () => ipcRenderer.invoke('discord:open-yt-login'),
 });

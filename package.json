@@ -1,6 +1,6 @@
 {
     "name": "ultimate-jp-mix",
-    "version": "19.0.0",
+    "version": "19.1.0",
     "description": "Ultimate JP Mix - Discord Rich Presence bridge (โหลดเว็บจาก GitHub Pages)",
     "main": "electron/main.js",
     "scripts": {

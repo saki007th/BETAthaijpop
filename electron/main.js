@@ -1,7 +1,7 @@
 // ==========================================
-// electron/main.js - Discord Rich Presence Bridge
+// electron/main.js - Discord Rich Presence Bridge & Desktop Shell
 // โหลดหน้าเว็บจาก GitHub Pages (อัปเดตเว็บเมื่อไหร่ แอปเห็นทันที)
-// Bridge พอร์ต 8787 สำหรับเว็บเบราว์เซอร์ที่อยากส่งสถานะให้ Discord
+// รองรับ Google Login (Firebase Auth) + YouTube Premium Session ถาวร
 // ==========================================
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
@@ -9,7 +9,15 @@ const http = require('http');
 const net = require('net');
 const crypto = require('crypto');
 
-// URL ของเว็บ (แก้จาก GitHub Pages หรือ set env WEB_URL)
+// 🔑 ปรับ User-Agent ให้เป็น Chrome มาตรฐาน (ลบคำว่า Electron ออก)
+// เพื่อป้องกันไม่ให้ Google / YouTube บล็อกการ Login ว่า "เบราว์เซอร์นี้ไม่ปลอดภัย"
+if (app.userAgentFallback) {
+    app.userAgentFallback = app.userAgentFallback
+        .replace(/\s*Electron\/[^\s]+/i, '')
+        .replace(/\s*ultimate-jp-mix\/[^\s]+/i, '');
+}
+
+// URL ของเว็บหลักบน GitHub Pages
 const WEB_URL = process.env.WEB_URL || 'https://saki007th.github.io/BETAthaijpop/';
 const BRIDGE_PORT = 8787;
 
@@ -199,9 +207,43 @@ function startBridgeServer() {
     server.on('error', (e) => console.warn('Bridge port in use:', e.message));
 }
 
+// ตรวจสอบว่าเป็น URL สำหรับ Login Google / Firebase / YouTube ที่ต้องเปิดในแอปหรือไม่
+function isAuthOrYouTubeUrl(url) {
+    if (!url || url === 'about:blank') return true;
+    return (
+        url.includes('accounts.google.com') ||
+        url.includes('google.com/accounts') ||
+        url.includes('firebaseapp.com') ||
+        url.includes('web.app/__/auth') ||
+        url.includes('googleapis.com') ||
+        url.includes('youtube.com')
+    );
+}
+
+function openYouTubeLoginWindow() {
+    const loginWin = new BrowserWindow({
+        width: 520,
+        height: 680,
+        title: 'ล็อกอิน YouTube Premium / Google',
+        parent: mainWindow || undefined,
+        autoHideMenuBar: true,
+        webPreferences: {
+            contextIsolation: true,
+            nodeIntegration: false
+        }
+    });
+    loginWin.loadURL('https://accounts.google.com/ServiceLogin?service=youtube&continue=https://www.youtube.com');
+    loginWin.on('closed', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.reload();
+        }
+    });
+}
+
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 1440, height: 880,
+        width: 1440,
+        height: 880,
         title: 'Ultimate JP Mix',
         autoHideMenuBar: true,
         webPreferences: {
@@ -210,10 +252,28 @@ function createWindow() {
             nodeIntegration: false
         }
     });
+
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        // อนุญาตหน้าต่าง Popup ของ Firebase Google Auth และ YouTube ให้เปิดในแอป
+        if (isAuthOrYouTubeUrl(url)) {
+            return {
+                action: 'allow',
+                overrideBrowserWindowOptions: {
+                    width: 520,
+                    height: 680,
+                    autoHideMenuBar: true,
+                    webPreferences: {
+                        contextIsolation: true,
+                        nodeIntegration: false
+                    }
+                }
+            };
+        }
+        // ลิงก์ภายนอกอื่นๆ ให้เปิดในเบราว์เซอร์หลักของเครื่อง
         if (url.startsWith('http')) shell.openExternal(url);
         return { action: 'deny' };
     });
+
     mainWindow.loadURL(WEB_URL);
 }
 
@@ -223,6 +283,10 @@ app.whenReady().then(async () => {
     ipcMain.handle('discord:update-presence', async (_event, activity) => await sendDiscordActivity(activity));
     ipcMain.handle('discord:clear-presence', async () => await clearDiscordActivity());
     ipcMain.handle('discord:get-status', async () => ({ isElectron: true, rpcReady: isRpcReady }));
+    ipcMain.handle('discord:open-yt-login', async () => {
+        openYouTubeLoginWindow();
+        return true;
+    });
 
     createWindow();
 });

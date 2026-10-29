@@ -24,7 +24,7 @@ function getAutoGithubReleaseUrl() {
         if (host.endsWith('.github.io') && pathParts.length >= 1) {
             const owner = host.replace('.github.io', '');
             const repo = pathParts[0];
-            return `https://github.com/${owner}/${repo}/releases/download/desktop-latest/Ultimate-JP-Mix-Portable.exe`;
+            return `https://github.com/${owner}/${repo}/releases/latest/download/Ultimate-JP-Mix-Portable.exe`;
         }
     } catch (e) {}
     return '';
@@ -213,6 +213,18 @@ window.syncDiscordPresence = async function() {
     }
 };
 
+window.openYouTubeLoginPopup = function() {
+    if (window.electronAPI && typeof window.electronAPI.openYouTubeLogin === 'function') {
+        window.electronAPI.openYouTubeLogin();
+        return;
+    }
+    window.open(
+        'https://accounts.google.com/ServiceLogin?service=youtube&continue=https://www.youtube.com',
+        'ytLoginPopup',
+        'width=520,height=680'
+    );
+};
+
 // ==========================================
 // 🪟 3. หน้าต่างดาวน์โหลดแอป & ตั้งค่า Discord บนหน้าเว็บ
 // ==========================================
@@ -304,6 +316,9 @@ window.openDiscordSheet = async function() {
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <button id="btnRecheckDiscord" class="btn-secondary" style="flex:1; margin:0;">
                     <i class="fa-solid fa-plug-circle-check"></i> ตรวจสอบการเชื่อมต่ออีกครั้ง
+                </button>
+                <button onclick="window.openYouTubeLoginPopup()" class="btn-secondary" style="flex:1; margin:0; border-color:rgba(255,59,48,0.45); color:#ff6961;">
+                    <i class="fa-brands fa-youtube"></i> ล็อกอิน YouTube Premium ในแอป
                 </button>
             </div>
         </div>
