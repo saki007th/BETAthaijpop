@@ -871,6 +871,9 @@ label.mv-toggle b{ color:var(--text-1); }
 
 .reading-text{ opacity:.55; font-size:.85em; }
 
+/* จอเล็ก (≤560px) โหมดปกติ: แสดงเฉพาะบรรทัดแรก + คำแปล ให้ลิสต์กระชับ */
+.lyrics-container.lyric-compact .lyric-line{ padding:8px 10px; margin-bottom:2px; }
+
 /* แสดงเฉพาะเนื้อเพลงหลัก (บรรทัดแรก) สำหรับท่อนที่ยังไม่ถึงท่อนปัจจุบัน */
 .lyric-line.lyric-future-collapsed .lang-1,
 .lyric-line.lyric-future-collapsed .lang-2,

@@ -53,6 +53,58 @@ window.shouldHideLyricLine = function(el, index, hideFlags) {
     return true;
 };
 
+// ==========================================
+// โหมดเนื้อเพลงแบบย่อสำหรับจอเล็ก
+// จอ ≤ 560px + โหมดปกติ (ไม่ใช่ Immersive) → แสดงเฉพาะ
+// บรรทัดแรก (ภาษาหลัก) และบรรทัดสุดท้าย (คำแปล) ของแต่ละท่อน
+// ==========================================
+const COMPACT_LYRIC_MAX_WIDTH = 560;
+let compactLyricMql = null;
+
+window.isCompactLyricLayout = function() {
+    if (typeof window.matchMedia !== 'function') return false;
+    // โหมด Immersive มีการแสดงผลเฉพาะท่อน active อยู่แล้ว จึงไม่ต้องย่อซ้ำ
+    if (window.getLangMode && window.getLangMode() === 'immersive') return false;
+    return window.matchMedia(`(max-width: ${COMPACT_LYRIC_MAX_WIDTH}px)`).matches;
+};
+
+// ดึงเฉพาะบรรทัดภาษา (lang-0, lang-1, ...) ที่เป็นลูกโดยตรงของ .lyric-line
+function getLangRows(section) {
+    return Array.from(section.children).filter(el =>
+        el.classList && Array.from(el.classList).some(c => /^lang-\d+$/.test(c))
+    );
+}
+
+function showLangRow(row) {
+    row.style.removeProperty('display');
+    row.querySelectorAll('.lyric-main, .lyric-sub').forEach(el => el.style.removeProperty('display'));
+}
+
+function hideLangRow(row) {
+    row.style.setProperty('display', 'none', 'important');
+}
+
+function applyCompactLyrics(container) {
+    container.querySelectorAll('.lyric-line').forEach(section => {
+        const rows = getLangRows(section);
+        if (!rows.length) return; // ท่อน [ดนตรี] ไม่มีบรรทัดภาษา
+        const last = rows.length - 1;
+        rows.forEach((row, i) => {
+            if (i === 0 || i === last) showLangRow(row);
+            else hideLangRow(row);
+        });
+    });
+}
+
+// อัปเดตทันทีเมื่อหมุนจอ/เปลี่ยนความกว้างข้าม breakpoint
+window.bindCompactLyricWatcher = function() {
+    if (compactLyricMql || typeof window.matchMedia !== 'function') return;
+    compactLyricMql = window.matchMedia(`(max-width: ${COMPACT_LYRIC_MAX_WIDTH}px)`);
+    const onChange = () => { if (window.applyLangToggles) window.applyLangToggles(); };
+    if (compactLyricMql.addEventListener) compactLyricMql.addEventListener('change', onChange);
+    else if (compactLyricMql.addListener) compactLyricMql.addListener(onChange);
+};
+
 // ซ่อน/แสดงภาษาแยกทีละท่อน (รองรับเพลงที่มีทั้ง 3 และ 4 บรรทัดปนกัน)
 window.applyLangToggles = function() {
     const container = document.getElementById('lyricsContainer');
@@ -62,11 +114,24 @@ window.applyLangToggles = function() {
     // ซึ่งใช้ไม่ได้กับเพลงที่มีทั้ง 3/4 บรรทัดปนกัน จึงเปลี่ยนมาซ่อนรายท่อนแทน
     container.classList.remove('hide-lang-0', 'hide-lang-1', 'hide-lang-2');
 
+    // จอเล็ก + โหมดปกติ: เหลือแค่บรรทัดแรกกับคำแปล ไม่สนใจ checkbox ภาษา
+    const compact = window.isCompactLyricLayout();
+    container.classList.toggle('lyric-compact', compact);
+    if (compact) {
+        applyCompactLyrics(container);
+        return;
+    }
+
     const state = window.getLangState(window.getLangMode());
     const hideFlags = state.map(s => !s);
     const cur = window.currentLyricIndex;
 
     container.querySelectorAll('.lyric-line').forEach((section, idx) => {
+        // ล้าง inline display ก่อนทุกครั้ง เพื่อให้การสลับโหมดจอเล็ก/ใหญ่
+        // และการเปลี่ยนเพลงไม่ทิ้งสถานะซ่อนค้างไว้
+        section.querySelectorAll('[class*="lang-"]').forEach(el => el.style.removeProperty('display'));
+        section.querySelectorAll('.lyric-main, .lyric-sub').forEach(el => el.style.removeProperty('display'));
+
         if (cur >= 0 && idx !== cur) {
             // ทุกท่อนยกเว้นท่อนปัจจุบัน แสดงแค่บรรทัดแรก (เนื้อเพลงหลัก) เท่านั้น
             section.querySelectorAll('.lang-0, .lyric-main').forEach(el => {
@@ -143,6 +208,8 @@ window.toggleLang = function(langIndex, el, mode) {
 };
 
 window.loadCustomSettings = function() {
+    window.bindCompactLyricWatcher();
+
     const fs = localStorage.getItem('ws_fontsize');
     const shuffle = localStorage.getItem('ws_shuffle');
     const songTrans = localStorage.getItem('ws_song_transition');
