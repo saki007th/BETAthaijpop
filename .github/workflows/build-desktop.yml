@@ -43,7 +43,7 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: "Ultimate JP Mix - Desktop v19.0.0 (Build ${{ github.run_number }})"
           body: |
-            ## Ultimate JP Mix - Desktop v19.0.0
+            ## Ultimate JP Mix - Desktop v19.1.0
             - Discord Rich Presence
             - Portable .exe ไม่ต้องติดตั้ง
           files: dist/*.exe
