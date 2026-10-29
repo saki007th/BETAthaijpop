@@ -76,6 +76,11 @@ window.wm = {
         return isImmersive;
     },
 
+    toggleNpMinimal() {
+        // ใช้ฟังก์ชันกลางใน ui-shell เพื่อให้จอเล็ก/จอกว้างทำงานถูกต้อง
+        return window.toggleNpMinimal();
+    },
+
     updateSyncTitle(title) {
         const el = document.getElementById('syncPanelTitle');
         if (el) el.innerText = "⏱ ซิงค์: " + title;
@@ -149,6 +154,74 @@ window.toggleSidebar = function() {
     return window.setSidebarCollapsed(!window.isSidebarCollapsed());
 };
 
+// ==========================================
+// แถบควบคุม Now Playing — โหมด Minimal
+// - พับเหลือบรรทัดเดียว (ปก + ชื่อเพลง + ปุ่มเล่น/พัก)
+// - คลาส .np-minimal วางบน <html> เพื่อให้ inline script ใน <head>
+//   กั้นสถานะไว้ได้ก่อนหน้าจอวาดครั้งแรก (ไม่แว็บ)
+// - จอแคบกว่า NP_MINIMAL_BREAKPOINT จะยุบให้อัตโนมัติ
+//   (ผู้ใช้ยังกดปุ่มเพื่อกางชั่วคราวได้ แต่พอเปลี่ยนขนาดจอกลับเป็นอัตโนมัติ)
+// - ค่าที่ผู้ใช้เลือกตอนจอกว้างบันทึกไว้ใน localStorage
+// ==========================================
+const NP_MINIMAL_KEY = 'ws_np_minimal';
+const NP_MINIMAL_BREAKPOINT = 1240;   // ต้องตรงกับ media query ใน <head> ของ index.html
+
+let npMinimalMql = null;
+let npNarrowOverride = null;   // ค่าที่ผู้ใช้กดเองตอนจอเล็ก (null = ใช้ค่าอัตโนมัติ)
+
+window.isNpMinimal = function() {
+    try { return localStorage.getItem(NP_MINIMAL_KEY) === '1'; }
+    catch (e) { return false; }
+};
+
+window.isNpNarrow = function() {
+    return window.matchMedia(`(max-width: ${NP_MINIMAL_BREAKPOINT}px)`).matches;
+};
+
+window.applyNpMinimal = function() {
+    const narrow = window.isNpNarrow();
+    const minimal = narrow
+        ? (npNarrowOverride === null ? true : npNarrowOverride)   // จอเล็ก: ยุบอัตโนมัติ
+        : window.isNpMinimal();                                   // จอกว้าง: ใช้ค่าที่บันทึกไว้
+    document.documentElement.classList.toggle('np-minimal', minimal);
+
+    const btn = document.getElementById('btnNpMinimize');
+    if (btn) {
+        btn.title = minimal ? 'ขยายแถบควบคุม' : 'ย่อแถบควบคุม';
+        btn.setAttribute('aria-label', btn.title);
+        btn.setAttribute('aria-expanded', minimal ? 'false' : 'true');
+    }
+    return minimal;
+};
+
+window.setNpMinimal = function(minimal) {
+    minimal = !!minimal;
+    if (window.isNpNarrow()) {
+        // จอเล็ก: เป็นการกาง/ยุบชั่วคราว ไม่ทับค่าที่บันทึกไว้
+        npNarrowOverride = minimal;
+    } else {
+        npNarrowOverride = null;
+        try { localStorage.setItem(NP_MINIMAL_KEY, minimal ? '1' : '0'); }
+        catch (e) {}
+    }
+    return window.applyNpMinimal();
+};
+
+window.toggleNpMinimal = function() {
+    // ใช้สถานะที่เห็นจริงบนจอ ไม่ใช่ค่าที่บันทึกไว้ (จอเล็กอาจถูกยุบอัตโนมัติอยู่)
+    const effective = document.documentElement.classList.contains('np-minimal');
+    return window.setNpMinimal(!effective);
+};
+
+// เปลี่ยนขนาดหน้าต่างข้ามจุดตัด → ยุบ/กางให้ทันที
+window.bindNpMinimalWatcher = function() {
+    if (npMinimalMql || typeof window.matchMedia !== 'function') return;
+    npMinimalMql = window.matchMedia(`(max-width: ${NP_MINIMAL_BREAKPOINT}px)`);
+    const onChange = () => { npNarrowOverride = null; window.applyNpMinimal(); };
+    if (npMinimalMql.addEventListener) npMinimalMql.addEventListener('change', onChange);
+    else if (npMinimalMql.addListener) npMinimalMql.addListener(onChange);
+};
+
 // ---------- Generic backdrop-driven sheet helper (used by both the fixed
 // Add/Edit sheet above, and the dynamically-filled generic sheet below) ----------
 window.openSheetEl = function(sheetEl) {
@@ -186,6 +259,8 @@ window.closeSheet = function() {
 // click-to-seek on the Now Playing progress bar
 document.addEventListener('DOMContentLoaded', () => {
     window.applySidebarCollapsed();
+    window.applyNpMinimal();
+    window.bindNpMinimalWatcher();
 
     const scrub = document.getElementById('npScrub');
     if (scrub) {

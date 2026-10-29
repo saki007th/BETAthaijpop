@@ -1,18 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <script>
-        (function() {
-            try {
-                if (window.location.search.indexOf('desktop=1') !== -1) return;
-                var ua = navigator.userAgent || navigator.vendor || window.opera;
-                var isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua) || (window.innerWidth <= 768);
-                if (isMobile) {
-                    window.location.replace('mobile.html' + window.location.search);
-                }
-            } catch(e) {}
-        })();
-    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,6 +25,19 @@
             if (localStorage.getItem('ws_sidebar_collapsed') === '1') {
                 document.documentElement.classList.add('sidebar-collapsed');
             }
+        } catch (e) {}
+        // โหมด Minimal ของแถบควบคุม Now Playing: กั้นสถานะไว้ก่อน CSS วาดหน้าจอครั้งแรก
+        // - จำสถานะที่ผู้ใช้กดเอง (ws_np_minimal)
+        // - จอแคบกว่า 1240px ยุบให้อัตโนมัติ (จุดตัดเดียวกับที่เลย์เอาต์เริ่มบีบใน style.css)
+        //   ค่านี้ต้องตรงกับ NP_MINIMAL_BREAKPOINT ใน js/ui-shell.js
+        try {
+            (function () {
+                var savedMinimal = localStorage.getItem('ws_np_minimal') === '1';
+                var narrowScreen = window.matchMedia('(max-width: 1240px)').matches;
+                if (savedMinimal || narrowScreen) {
+                    document.documentElement.classList.add('np-minimal');
+                }
+            })();
         } catch (e) {}
     </script>
 </head>
@@ -385,6 +386,10 @@
                         </button>
                         <button id="btnImmersiveControls" class="np-immersive-text-btn" onclick="wm.toggleImmersive()" title="โหมด Immersive (ขยายวิดีโอเกือบเต็มจอ + เนื้อเพลง)">
                             Immsv
+                        </button>
+                        <button id="btnNpMinimize" class="np-minimize-btn" onclick="wm.toggleNpMinimal()"
+                                title="ย่อแถบควบคุม" aria-label="ย่อแถบควบคุม" aria-expanded="true">
+                            <i class="fa-solid fa-chevron-down"></i>
                         </button>
                     </div>
                     <div class="np-scrub" id="npScrub" title="ลากเพื่อไปยังตำแหน่งเพลง">

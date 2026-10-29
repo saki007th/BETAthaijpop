@@ -640,6 +640,40 @@ var(--bg-content);
 .np-play-btn{ width:48px; height:48px; border-radius:50%; background:var(--text-1); color:#000; font-size:16px; }
 
 /* ==========================================================
+   🎛️ Now Playing — โหมด Minimal (พับแถบควบคุม)
+   - ปุ่ม #btnNpMinimize สลับคลาส .np-minimal บน <html>
+   - ย่อเหลือบรรทัดเดียว: ปก + ชื่อเพลง + ปุ่มเล่น/พัก
+   - ไม่ยุ่งกับโหมด immersive (ในนั้นมีแถบควบคุมลอยของตัวเองอยู่แล้ว)
+   ========================================================== */
+.np-minimize-btn{
+    flex-shrink:0; width:34px; height:34px; border-radius:50%;
+    background:transparent; border:1px solid var(--border-soft);
+    color:var(--text-3); cursor:pointer; font-size:12px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s var(--ease);
+}
+.np-minimize-btn:hover{ background:var(--bg-elevated-hover); color:var(--text-1); }
+.np-minimize-btn i{ transition:transform .25s var(--ease); }
+.now-playing-view.immersive .np-minimize-btn{ display:none; }
+
+html.np-minimal .now-playing-view:not(.immersive) .np-controls-block{
+    margin-top:14px; display:flex; align-items:center; gap:14px;
+}
+html.np-minimal .now-playing-view:not(.immersive) .np-track-meta{ flex:1 1 auto; gap:10px; }
+html.np-minimal .now-playing-view:not(.immersive) .np-track-thumb{ width:42px; height:42px; border-radius:9px; }
+html.np-minimal .now-playing-view:not(.immersive) .np-track-info{ flex:1 1 auto; }
+html.np-minimal .now-playing-view:not(.immersive) .np-track-title{ font-size:15px; }
+html.np-minimal .now-playing-view:not(.immersive) .np-track-artist{ font-size:12px; margin-top:1px; }
+html.np-minimal .now-playing-view:not(.immersive) .np-video-quality,
+html.np-minimal .now-playing-view:not(.immersive) .np-ctrl-queue-btn,
+html.np-minimal .now-playing-view:not(.immersive) .np-immersive-text-btn{ display:none; }
+html.np-minimal .now-playing-view:not(.immersive) .np-scrub{ display:none; }
+html.np-minimal .now-playing-view:not(.immersive) .np-controls-row{ flex-shrink:0; gap:0; }
+html.np-minimal .now-playing-view:not(.immersive) .np-controls-row .np-ctrl-btn:not(.np-play-btn){ display:none; }
+html.np-minimal .now-playing-view:not(.immersive) .np-play-btn{ width:40px; height:40px; font-size:14px; }
+html.np-minimal .now-playing-view:not(.immersive) .np-minimize-btn i{ transform:rotate(180deg); }
+
+/* ==========================================================
    🎬 อนิเมชั่นเปลี่ยนเพลง (song transition)
    - ข้อมูลเพลง (ชื่อ/ศิลปิน/ปก) เลื่อน-จางออกแล้วอันใหม่เลื่อน-จางเข้า
      ทิศทางตามปุ่ม: next = ใหม่มาจากขวา · prev = ใหม่มาจากซ้าย · auto = จางสลับ
@@ -1292,6 +1326,19 @@ body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
     .np-media{ width:100%; max-width:none; align-self:stretch; }
     .np-lyrics-panel{ flex-basis:auto; max-width:none; }
     .sync-panel{ flex:1 0 auto; max-width:none; align-self:stretch; }
+
+    /* แถบควบคุม Now Playing: ปุ่มคุณภาพ/คิว/immersive มีอยู่ในหัวหน้าจอแล้ว
+       ซ่อนออกเมื่อจอแคบ เพื่อไม่ให้ทุกอย่างบีบกันจนอ่านชื่อเพลงไม่ออก */
+    .now-playing-view:not(.immersive) .np-video-quality,
+    .now-playing-view:not(.immersive) .np-ctrl-queue-btn,
+    .now-playing-view:not(.immersive) .np-immersive-text-btn{ display:none; }
+    .now-playing-view:not(.immersive) .np-track-meta{ gap:10px; }
+    .now-playing-view:not(.immersive) .np-track-thumb{ width:44px; height:44px; }
+    .now-playing-view:not(.immersive) .np-track-title{ font-size:16px; }
+    .now-playing-view:not(.immersive) .np-track-artist{ font-size:12px; }
+    .now-playing-view:not(.immersive) .np-controls-block{ margin-top:16px; }
+    .now-playing-view:not(.immersive) .np-scrub{ margin:14px 0 12px; }
+    .now-playing-view:not(.immersive) .np-controls-row{ gap:24px; }
 }
 
 /* ==========================================================
