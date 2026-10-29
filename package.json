@@ -1,7 +1,7 @@
 {
     "name": "ultimate-jp-mix",
     "version": "19.0.0",
-    "description": "Ultimate JP Mix - คลังเพลงญี่ปุ่น พร้อมเนื้อเพลงซิงค์และ Discord Rich Presence",
+    "description": "Ultimate JP Mix - Discord Rich Presence bridge (โหลดเว็บจาก GitHub Pages)",
     "main": "electron/main.js",
     "scripts": {
         "start": "electron .",
@@ -26,14 +26,7 @@
             "artifactName": "Ultimate-JP-Mix-Portable.${ext}"
         },
         "files": [
-            "electron/**/*",
-            "index.html",
-            "style.css",
-            "changelog.json",
-            "js/**/*",
-            "backup.html",
-            "notify.js",
-            "pip.js"
+            "electron/**/*"
         ]
     }
 }
