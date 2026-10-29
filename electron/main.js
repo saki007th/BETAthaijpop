@@ -1,21 +1,22 @@
 // ==========================================
 // electron/main.js - Discord Rich Presence Bridge & Desktop Shell
 // โหลดหน้าเว็บจาก GitHub Pages (อัปเดตเว็บเมื่อไหร่ แอปเห็นทันที)
-// รองรับ Google Login (Firebase Auth) + YouTube Premium Session ถาวร
+// รองรับ Google Login (Bypass "เบราว์เซอร์หรือแอปนี้อาจไม่ปลอดภัย") + YouTube Premium
 // ==========================================
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, session } = require('electron');
 const path = require('path');
 const http = require('http');
 const net = require('net');
 const crypto = require('crypto');
 
-// 🔑 ปรับ User-Agent ให้เป็น Chrome มาตรฐาน (ลบคำว่า Electron ออก)
-// เพื่อป้องกันไม่ให้ Google / YouTube บล็อกการ Login ว่า "เบราว์เซอร์นี้ไม่ปลอดภัย"
-if (app.userAgentFallback) {
-    app.userAgentFallback = app.userAgentFallback
-        .replace(/\s*Electron\/[^\s]+/i, '')
-        .replace(/\s*ultimate-jp-mix\/[^\s]+/i, '');
-}
+// 🔑 1. ปิด Automation flag ที่ทำให้ Google เข้าใจผิดว่าเป็นบอท
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
+
+const CHROME_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+// ใช้ User-Agent ของ Firefox เฉพาะหน้า accounts.google.com เพื่อไม่ให้ Google เช็ค Chrome Internal API แล้วบล็อก
+const FIREFOX_AUTH_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0';
+
+app.userAgentFallback = CHROME_UA;
 
 // URL ของเว็บหลักบน GitHub Pages
 const WEB_URL = process.env.WEB_URL || 'https://saki007th.github.io/BETAthaijpop/';
@@ -26,6 +27,33 @@ let ipcSocket = null;
 let isRpcReady = false;
 let connectedClientId = null;
 let lastActivity = null;
+
+// ==========================================
+// 🛡️ 2. ระบบปลดล็อก Google Login (แก้ปัญหา "เบราว์เซอร์หรือแอปนี้อาจไม่ปลอดภัย")
+// ==========================================
+function setupGoogleAuthBypass() {
+    const filter = {
+        urls: [
+            '*://accounts.google.com/*',
+            '*://*.google.com/accounts/*',
+            '*://musix-syn.firebaseapp.com/*'
+        ]
+    };
+
+    session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
+        const headers = details.requestHeaders;
+        if (details.url.includes('accounts.google.com') || details.url.includes('google.com/accounts')) {
+            headers['User-Agent'] = FIREFOX_AUTH_UA;
+            // ลบ Header ตระกูล Sec-CH-UA ออกทั้งหมดเพื่อให้ Google เห็นเป็น Firefox แท้
+            Object.keys(headers).forEach(key => {
+                if (key.toLowerCase().startsWith('sec-ch-ua')) {
+                    delete headers[key];
+                }
+            });
+        }
+        callback({ cancel: false, requestHeaders: headers });
+    });
+}
 
 // ==========================================
 // 🎧 ระบบเชื่อมต่อ Discord Local IPC โดยตรง
@@ -207,7 +235,6 @@ function startBridgeServer() {
     server.on('error', (e) => console.warn('Bridge port in use:', e.message));
 }
 
-// ตรวจสอบว่าเป็น URL สำหรับ Login Google / Firebase / YouTube ที่ต้องเปิดในแอปหรือไม่
 function isAuthOrYouTubeUrl(url) {
     if (!url || url === 'about:blank') return true;
     return (
@@ -218,6 +245,11 @@ function isAuthOrYouTubeUrl(url) {
         url.includes('googleapis.com') ||
         url.includes('youtube.com')
     );
+}
+
+function configureAuthChildWindow(childWin) {
+    if (!childWin || childWin.isDestroyed()) return;
+    childWin.webContents.setUserAgent(FIREFOX_AUTH_UA);
 }
 
 function openYouTubeLoginWindow() {
@@ -232,6 +264,7 @@ function openYouTubeLoginWindow() {
             nodeIntegration: false
         }
     });
+    loginWin.webContents.setUserAgent(FIREFOX_AUTH_UA);
     loginWin.loadURL('https://accounts.google.com/ServiceLogin?service=youtube&continue=https://www.youtube.com');
     loginWin.on('closed', () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -254,7 +287,6 @@ function createWindow() {
     });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        // อนุญาตหน้าต่าง Popup ของ Firebase Google Auth และ YouTube ให้เปิดในแอป
         if (isAuthOrYouTubeUrl(url)) {
             return {
                 action: 'allow',
@@ -269,15 +301,20 @@ function createWindow() {
                 }
             };
         }
-        // ลิงก์ภายนอกอื่นๆ ให้เปิดในเบราว์เซอร์หลักของเครื่อง
         if (url.startsWith('http')) shell.openExternal(url);
         return { action: 'deny' };
+    });
+
+    // เมื่อหน้าต่าง Popup ล็อกอินถูกเปิดขึ้นมา ให้ใช้ User-Agent ของ Firefox เพื่อผ่านการตรวจสอบของ Google
+    mainWindow.webContents.on('did-create-window', (childWindow) => {
+        configureAuthChildWindow(childWindow);
     });
 
     mainWindow.loadURL(WEB_URL);
 }
 
 app.whenReady().then(async () => {
+    setupGoogleAuthBypass();
     startBridgeServer();
 
     ipcMain.handle('discord:update-presence', async (_event, activity) => await sendDiscordActivity(activity));
