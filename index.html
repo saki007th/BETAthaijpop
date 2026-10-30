@@ -362,7 +362,7 @@
         <canvas id="npDynamicBg" class="np-dynamic-bg" aria-hidden="true"></canvas>
         <div class="np-header">
             <button onclick="wm.collapseNowPlaying()" title="ย่อหน้าต่าง"><i class="fa-solid fa-chevron-down"></i></button>
-            <span class="np-header-title">กำลังเล่น</span>
+            <span class="np-header-title" onclick="wm.collapseNowPlaying()" style="cursor:pointer;">กำลังเล่น</span>
             <div class="np-header-right">
                 <button id="btnDockAdminSync" onclick="wm.toggleSyncPanel()" title="⏱ จัดการซิงค์เนื้อเพลง">⏱</button>
                 <button class="np-queue-btn" onclick="openQueuePanel()" title="เปิดหน้าคิวเพลง">

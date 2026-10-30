@@ -1350,9 +1350,20 @@ body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
     .profile-avatar{ width:26px; height:26px; font-size:12.5px; }
     .profile-version{ font-size:0; gap:0; }
     .profile-menu{ right:auto; left:0; width:210px; }
-    .np-body{ flex-direction:column; overflow-y:auto; justify-content:flex-start; padding:0 24px 20px; }
+    .np-header{ padding:8px 16px 6px; }
+    .np-header-title{
+        font-size:0; width:36px; height:4px; border-radius:999px;
+        background:rgba(255,255,255,.24);
+    }
+    .np-header button{
+        width:28px; height:28px; font-size:12.5px;
+        background:rgba(255,255,255,.06); color:rgba(255,255,255,.82);
+    }
+    .np-header-right{ gap:6px; }
+    .np-body{ flex-direction:column; overflow-y:auto; justify-content:flex-start; gap:12px; padding:0 16px 16px; }
     .np-media{ width:100%; max-width:none; align-self:stretch; }
-    .np-lyrics-panel{ flex-basis:auto; max-width:none; }
+    .np-lyrics-panel{ flex-basis:auto; max-width:none; padding:4px 6px 32px; }
+    .lyrics-container{ padding:10px 0 44px; }
     .sync-panel{ flex:1 0 auto; max-width:none; align-self:stretch; }
 
     /* แถบควบคุม Now Playing: ปุ่มคุณภาพ/คิว/immersive มีอยู่ในหัวหน้าจอแล้ว
@@ -1361,12 +1372,27 @@ body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
     .now-playing-view:not(.immersive) .np-ctrl-queue-btn,
     .now-playing-view:not(.immersive) .np-immersive-text-btn{ display:none; }
     .now-playing-view:not(.immersive) .np-track-meta{ gap:10px; }
-    .now-playing-view:not(.immersive) .np-track-thumb{ width:44px; height:44px; }
-    .now-playing-view:not(.immersive) .np-track-title{ font-size:16px; }
+    .now-playing-view:not(.immersive) .np-track-thumb{ width:40px; height:40px; }
+    .now-playing-view:not(.immersive) .np-track-title{ font-size:15px; }
     .now-playing-view:not(.immersive) .np-track-artist{ font-size:12px; }
-    .now-playing-view:not(.immersive) .np-controls-block{ margin-top:16px; }
-    .now-playing-view:not(.immersive) .np-scrub{ margin:14px 0 12px; }
-    .now-playing-view:not(.immersive) .np-controls-row{ gap:24px; }
+    .now-playing-view:not(.immersive) .np-controls-block{ margin-top:12px; }
+    .now-playing-view:not(.immersive) .np-scrub{ margin:12px 0 10px; }
+    .now-playing-view:not(.immersive) .np-controls-row{ gap:22px; }
+    html.np-minimal .now-playing-view:not(.immersive) .np-controls-block{ margin-top:10px; gap:10px; }
+    html.np-minimal .now-playing-view:not(.immersive) .np-track-thumb{ width:36px; height:36px; border-radius:8px; }
+    html.np-minimal .now-playing-view:not(.immersive) .np-track-title{ font-size:14px; }
+    html.np-minimal .now-playing-view:not(.immersive) .np-track-artist{ font-size:11.5px; }
+    html.np-minimal .now-playing-view:not(.immersive) .np-minimize-btn{ width:28px; height:28px; font-size:11px; }
+    html.np-minimal .now-playing-view:not(.immersive) .np-play-btn{ width:36px; height:36px; font-size:13px; }
+}
+@media (max-width: 560px){
+    .np-header{ padding:6px 12px 4px; }
+    .np-header button{
+        width:26px; height:26px; font-size:12px;
+        background:transparent; color:rgba(255,255,255,.75);
+    }
+    .np-header-right{ gap:4px; }
+    .np-body{ gap:8px; padding:0 12px 12px; }
 }
 
 /* ==========================================================
