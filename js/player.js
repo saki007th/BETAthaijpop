@@ -422,22 +422,6 @@ window.playSong = function(id, direction) {
     const song = window.songs.find(s => s.id === id); if (!song) return;
     if (window.startListeningStats) window.startListeningStats(id);
 
-    // 🟢 ตั้งค่าสีพื้นหลังตามนักร้องในเพลง
-    const activeSingers = window.getActiveSingers(song);
-    if (activeSingers && activeSingers.length > 0) {
-        const bgColor = window.getSingerBackgroundColor(song);
-        if (bgColor) {
-            document.documentElement.style.setProperty('--wb-bg-r', parseInt(bgColor.slice(1, 3), 16));
-            document.documentElement.style.setProperty('--wb-bg-g', parseInt(bgColor.slice(3, 5), 16));
-            document.documentElement.style.setProperty('--wb-bg-b', parseInt(bgColor.slice(5, 7), 16));
-        }
-    } else {
-        // ไม่มีนักร้อง → รีเซ็ตสีเดิม
-        document.documentElement.style.removeProperty('--wb-bg-r');
-        document.documentElement.style.removeProperty('--wb-bg-g');
-        document.documentElement.style.removeProperty('--wb-bg-b');
-    }
-
     window.currentCoverIndex = -1;
     window.renderVersionBadges();
 
@@ -461,9 +445,6 @@ window.playSong = function(id, direction) {
     } else {
         applyTrackContent();
     }
-
-    if (videoId) window.setDynamicBackground(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
-    else window.clearDynamicBackground();
 
     window.currentLyricsArray = song.lyrics.split(/\n\s*\n/); window.currentLyricIndex = -1;
 
@@ -522,7 +503,9 @@ window.playSong = function(id, direction) {
             if (activeTimestamps[i] != null && currentTime >= activeTimestamps[i]) correctIndex = i;
         }
         if (window.currentLyricIndex !== correctIndex) {
-            window.currentLyricIndex = correctIndex; window.updateLyricDisplay();
+            window.currentLyricIndex = correctIndex;
+            window.updateLyricDisplay();
+            if (correctIndex >= 0 && window.pulseNpDynamicBg) window.pulseNpDynamicBg();
         }
     }, 100);
 };
@@ -914,7 +897,7 @@ window.onPlayerStateChange = function(event) {
         window.startEqBars();
         window.pingYTQuality();
         window._isPlaying = true;
-        window.restoreWinBoxColor();
+        if (window.resumeNpDynamicBg) window.resumeNpDynamicBg();
         // 🎵 Discord Rich Presence — อัปเดตสถานะ Now Playing
         if (window.syncDiscordPresence) window.syncDiscordPresence();
     }
@@ -925,7 +908,7 @@ window.onPlayerStateChange = function(event) {
         window.setVinylSpinning(false);
         window.stopEqBars();
         window._isPlaying = false;
-        window.resetWinBoxColor();
+        if (window.pauseNpDynamicBg) window.pauseNpDynamicBg();
         // 🎵 Discord Rich Presence — ล้างสถานะเมื่อพัก
         if (window.clearDiscordPresence) window.clearDiscordPresence();
     }
@@ -960,8 +943,6 @@ window.onPlayerStateChange = function(event) {
             if (idx !== -1 && idx + 1 < window.songs.length) {
                 window.playSong(window.songs[idx + 1].id, 'auto');
             } else {
-                window.clearDynamicBackground();
-
                 if (liveAct) liveAct.classList.add('hidden');
                 window.wm.collapseNowPlaying();
                 const syncPanel = document.getElementById('syncPanel');

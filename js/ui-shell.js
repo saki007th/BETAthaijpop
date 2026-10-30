@@ -44,16 +44,19 @@ window.wm = {
     openPlayer() {
         document.getElementById('nowPlayingView').classList.add('active');
         document.getElementById('liveActivity').classList.remove('hidden');
+        if (window.startNpDynamicBg) window.startNpDynamicBg();
     },
 
     openLyrics() {
         // Lyrics live inside the same Now Playing view as the player now.
         document.getElementById('nowPlayingView').classList.add('active');
+        if (window.startNpDynamicBg) window.startNpDynamicBg();
     },
 
     collapseNowPlaying() {
         document.getElementById('nowPlayingView').classList.remove('active');
         if (window.closeNpQueuePanel) window.closeNpQueuePanel();
+        if (window.stopNpDynamicBg) window.stopNpDynamicBg();
     },
 
     toggleImmersive() {

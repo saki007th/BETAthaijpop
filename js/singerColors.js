@@ -165,16 +165,4 @@ window.blendColors = function(colors) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 };
 
-// 🟢 ฟังก์ชันดึงสีพื้นหลังจากนักร้องในเพลง
-window.getSingerBackgroundColor = function(song) {
-    const singers = window.getActiveSingers(song);
-    if (!singers || singers.length === 0) return null; // ใช้สีเดิม
-    
-    const colors = singers.map(name => {
-        return (window.SINGER_COLORS && window.SINGER_COLORS[name]) ? window.SINGER_COLORS[name] : '#0a84ff';
-    });
-    
-    return window.blendColors(colors);
-};
-
 window.openSingerColorManager = openSingerColorManager;
