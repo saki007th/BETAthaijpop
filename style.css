@@ -87,14 +87,14 @@ a{ color:inherit; }
 
 /* ---------- Sidebar ---------- */
 .sidebar{
-    width:220px; flex-shrink:0;
+    width:186px; flex-shrink:0;
     background:
         radial-gradient(120% 90% at 0% 0%, rgba(var(--wb-bg-r),var(--wb-bg-g),var(--wb-bg-b),.6), transparent 62%),
         var(--bg-sidebar);
     backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
     border-right:1px solid var(--border-soft);
     display:flex; flex-direction:column;
-    padding:18px 12px;
+    padding:14px 10px;
     /* ต้องอยู่เหนือ .main-content (position:relative) ไม่งั้นเมนูโปรไฟล์ที่ล้นออกนอกแถบ
        ตอนพับจะถูกเนื้อหาข้าง ๆ ทับแล้วดูเหมือนถูกตัดทางขวา */
     position:relative; z-index:3;
@@ -102,28 +102,41 @@ a{ color:inherit; }
 }
 .sidebar-head{
     display:flex; align-items:center; gap:8px;
-    padding:6px 6px 18px 10px;
+    padding:2px 4px 14px 8px;
 }
 .sidebar-brand{
     display:flex; align-items:center; gap:8px; min-width:0; flex:1;
-    font-size:14px; font-weight:600; color:var(--text-1);
+    font-size:13.5px; font-weight:600; color:var(--text-1);
 }
 .sidebar-brand-text{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .sidebar-brand-mark{ display:none; font-size:16px; }
-.sidebar-nav{ display:flex; flex-direction:column; gap:2px; }
+.sidebar-nav{ display:flex; flex-direction:column; gap:3px; }
 .nav-item{
-    display:flex; align-items:center; gap:10px;
-    padding:8px 10px; border-radius:var(--r-s);
-    font-size:13px; color:var(--text-2); cursor:pointer;
+    display:flex; align-items:center; gap:9px;
+    min-height:34px; padding:6px 9px; border-radius:var(--r-s);
+    font-size:12.5px; color:var(--text-2); cursor:pointer;
     background:none; border:none; text-align:left; width:100%;
     position:relative;
     transition:background .15s var(--ease), color .15s var(--ease);
 }
-.nav-item i{ width:16px; text-align:center; font-size:13px; flex-shrink:0; }
+.nav-item > i,
+.sidebar-footer button > i{
+    width:18px; height:18px; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:13.5px; line-height:1;
+}
+/* ปรับสมดุลสายตาของไอคอนที่สัดส่วนกว้าง/แคบต่างกันใน Font Awesome */
+.nav-item > i.fa-house{ font-size:13px; }
+.nav-item > i.fa-microphone-lines{ font-size:14.5px; }
+.nav-item > i.fa-discord{ font-size:12px; }
 .nav-item:hover{ background:var(--bg-elevated); color:var(--text-1); }
 .nav-item.active{ background:var(--accent); color:#fff; }
-.nav-divider{ height:1px; background:var(--border-soft); margin:12px 6px; }
-.nav-section-label{ font-size:10.5px; color:var(--text-3); padding:6px 10px 4px; }
+.discord-nav-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:#34c759; margin-left:auto; flex-shrink:0;
+}
+.nav-divider{ height:1px; background:var(--border-soft); margin:10px 6px; }
+.nav-section-label{ font-size:10.5px; color:var(--text-3); padding:4px 9px 3px; }
 
 /* ---------- ปุ่มแฮมเบอร์เกอร์พับ/กางแถบ ---------- */
 .sidebar-toggle{
@@ -131,63 +144,79 @@ a{ color:inherit; }
     display:flex; align-items:center; justify-content:center;
     border:none; border-radius:var(--r-s);
     background:transparent; color:var(--text-2);
-    cursor:pointer; font-size:14px;
+    cursor:pointer; font-size:13.5px;
     transition:background .15s var(--ease), color .15s var(--ease);
 }
 .sidebar-toggle:hover{ background:var(--bg-elevated-hover); color:var(--text-1); }
 .sidebar-toggle:active{ background:var(--bg-elevated); }
 
 /* ---------- สถานะพับ (คลาส .sidebar-collapsed อยู่บน <html>) ---------- */
-html.sidebar-collapsed .sidebar{ width:64px; padding-left:8px; padding-right:8px; }
-html.sidebar-collapsed .sidebar-head{ justify-content:center; padding:6px 0 18px; }
+html.sidebar-collapsed .sidebar{ width:56px; padding-left:9px; padding-right:9px; }
+html.sidebar-collapsed .sidebar-head{ justify-content:center; padding:2px 0 12px; }
 html.sidebar-collapsed .sidebar-brand{ display:none; }
-html.sidebar-collapsed .nav-item{ justify-content:center; padding:9px 6px; }
-html.sidebar-collapsed .nav-item span:not(.nav-badge){ display:none; }
+html.sidebar-collapsed .sidebar-toggle{ width:36px; height:36px; }
+html.sidebar-collapsed .nav-item{
+    justify-content:center; width:38px; height:36px; min-height:36px;
+    padding:0; margin:0 auto; gap:0;
+}
+html.sidebar-collapsed .nav-item span:not(.nav-badge):not(.discord-nav-dot){ display:none; }
 html.sidebar-collapsed .nav-badge{
-    position:absolute; top:2px; right:3px; margin-left:0;
-    min-width:15px; height:15px; padding:0 3px; font-size:9px;
+    position:absolute; top:2px; right:2px; margin-left:0;
+    min-width:14px; height:14px; padding:0 3px; font-size:9px;
+}
+html.sidebar-collapsed .discord-nav-dot{
+    position:absolute; top:5px; right:5px; margin-left:0;
+    width:6px; height:6px;
 }
 html.sidebar-collapsed .nav-divider{ margin-left:4px; margin-right:4px; }
 html.sidebar-collapsed .nav-section-label{ display:none; }
-html.sidebar-collapsed .sidebar-footer button{ justify-content:center; padding:8px 6px; }
+html.sidebar-collapsed .sidebar-footer button{
+    justify-content:center; width:38px; height:36px; min-height:36px;
+    padding:0; margin:0 auto; gap:0;
+}
 html.sidebar-collapsed .sidebar-footer button span{ display:none; }
 html.sidebar-collapsed .profile-info,
 html.sidebar-collapsed .profile-chevron{ display:none; }
-html.sidebar-collapsed .profile-bar{ justify-content:center; padding:6px; }
-html.sidebar-collapsed .profile-avatar{ width:34px; height:34px; }
+html.sidebar-collapsed .profile-bar{
+    justify-content:center; width:38px; height:38px;
+    padding:0; margin:0 auto; gap:0;
+}
+html.sidebar-collapsed .profile-avatar{ width:26px; height:26px; font-size:12.5px; }
 html.sidebar-collapsed .profile-version{ font-size:0; gap:0; }
-html.sidebar-collapsed .profile-menu{ right:auto; left:0; width:220px; }
+html.sidebar-collapsed .profile-menu{ right:auto; left:0; width:210px; }
 
 .sidebar-spacer{ flex:1; }
-.sidebar-footer{ position:relative; display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-soft); }
+.sidebar-footer{ position:relative; display:flex; flex-direction:column; gap:5px; padding-top:8px; border-top:1px solid var(--border-soft); }
 .sidebar-footer button{
-    display:flex; align-items:center; gap:8px;
+    display:flex; align-items:center; gap:9px;
+    min-height:34px; width:100%;
     background:var(--bg-elevated); border:none; color:var(--text-1);
-    padding:8px 10px; border-radius:var(--r-s); font-size:12.5px; cursor:pointer;
+    padding:6px 9px; border-radius:var(--r-s); font-size:12px; cursor:pointer;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .sidebar-footer button:hover{ background:var(--bg-elevated-hover); }
 
 .profile-bar{
-    display:flex; align-items:center; gap:10px;
-    padding:8px; border-radius:var(--r-m);
+    display:flex; align-items:center; gap:8px;
+    padding:6px 8px; border-radius:var(--r-s);
     background:var(--bg-elevated); cursor:pointer;
     transition:background .15s var(--ease);
 }
 .profile-bar:hover{ background:var(--bg-elevated-hover); }
 .profile-avatar{
-    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    width:28px; height:28px; border-radius:50%; flex-shrink:0;
     background-color:var(--bg-surface-2);
     background-size:cover; background-position:center;
     display:flex; align-items:center; justify-content:center;
-    color:var(--text-3); font-size:15px; overflow:hidden;
+    color:var(--text-3); font-size:12.5px; overflow:hidden;
 }
 .profile-info{ flex:1; min-width:0; }
 .profile-name{
-    font-size:12.5px; font-weight:600; color:var(--text-1);
+    font-size:12px; font-weight:600; color:var(--text-1);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .profile-email{
-    font-size:10.5px; color:var(--text-3); margin-top:1px;
+    font-size:10px; color:var(--text-3); margin-top:1px;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .profile-version{
@@ -512,7 +541,7 @@ var(--bg-content);
 .player-bar.hidden{ transform:translateY(120%); pointer-events:none; }
 
 /* Lift the sidebar footer above the persistent player bar while a song is playing */
-#app-shell:has(~ .player-bar:not(.hidden)) .sidebar{ padding-bottom:calc(18px + 64px); }
+#app-shell:has(~ .player-bar:not(.hidden)) .sidebar{ padding-bottom:calc(14px + 64px); }
 #app-shell:has(~ .player-bar:not(.hidden)) .content-body{ padding-bottom:calc(28px + 64px); }
 
 .player-progress-bg{
@@ -1314,17 +1343,22 @@ body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
     .sync-panel{ flex-basis:320px; max-width:320px; }
 }
 @media (max-width: 880px){
-    .sidebar{ width:64px; padding:16px 8px; }
-    #app-shell:has(~ .player-bar:not(.hidden)) .sidebar{ padding-bottom:calc(16px + 64px); }
+    .sidebar{ width:56px; padding:14px 9px; }
+    #app-shell:has(~ .player-bar:not(.hidden)) .sidebar{ padding-bottom:calc(14px + 64px); }
     #app-shell:has(~ .player-bar:not(.hidden)) .content-body{ padding-bottom:calc(28px + 64px); }
     .sidebar-head{ display:none; }
-    .nav-item span{ display:none; }
+    .nav-item{ justify-content:center; width:38px; height:36px; min-height:36px; padding:0; margin:0 auto; gap:0; }
+    .nav-item span:not(.nav-badge):not(.discord-nav-dot){ display:none; }
+    .nav-badge{ position:absolute; top:2px; right:2px; margin-left:0; min-width:14px; height:14px; padding:0 3px; font-size:9px; }
+    .discord-nav-dot{ position:absolute; top:5px; right:5px; margin-left:0; width:6px; height:6px; }
     .nav-section-label{ display:none; }
+    .sidebar-footer button{ justify-content:center; width:38px; height:36px; min-height:36px; padding:0; margin:0 auto; gap:0; }
     .sidebar-footer button span{ display:none; }
     .profile-info, .profile-chevron{ display:none; }
-    .profile-bar{ justify-content:center; padding:6px; }
-    .profile-avatar{ width:34px; height:34px; }
-    .profile-menu{ width:220px; }
+    .profile-bar{ justify-content:center; width:38px; height:38px; padding:0; margin:0 auto; gap:0; }
+    .profile-avatar{ width:26px; height:26px; font-size:12.5px; }
+    .profile-version{ font-size:0; gap:0; }
+    .profile-menu{ right:auto; left:0; width:210px; }
     .np-body{ flex-direction:column; overflow-y:auto; justify-content:flex-start; padding:0 24px 20px; }
     .np-media{ width:100%; max-width:none; align-self:stretch; }
     .np-lyrics-panel{ flex-basis:auto; max-width:none; }

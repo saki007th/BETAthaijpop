@@ -262,6 +262,7 @@ function openYouTubeLoginWindow() {
         width: 520,
         height: 680,
         title: 'ล็อกอิน YouTube Premium / Google',
+        icon: path.resolve(__dirname, 'icon.png'),
         parent: mainWindow || undefined,
         autoHideMenuBar: true,
         webPreferences: {
@@ -283,6 +284,7 @@ function createWindow() {
         width: 1440,
         height: 880,
         title: 'Ultimate JP Mix',
+        icon: path.resolve(__dirname, 'icon.png'),
         autoHideMenuBar: true,
         webPreferences: {
             preload: path.resolve(__dirname, 'preload.js'),
