@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261104-4">
+    <meta name="app-build" content="20261104-5">
     <title>Ultimate JP Mix</title>
     <link rel="icon" type="image/png" href="electron/icon.png">
     <link rel="apple-touch-icon" href="electron/icon.png">
@@ -77,6 +77,9 @@
                 <button class="nav-item" data-view="playlists" onclick="openPlaylistsView()" title="Playlist">
                     <i class="fa-solid fa-list"></i><span>Playlist</span>
                 </button>
+                <button class="nav-item" data-view="profile" onclick="wm.openProfile()" title="โปรไฟล์">
+                    <i class="fa-solid fa-circle-user"></i><span>โปรไฟล์</span>
+                </button>
                 <button class="nav-item" data-view="settings" onclick="wm.openSettings()" title="ตั้งค่า">
                     <i class="fa-solid fa-gear"></i><span>ตั้งค่า</span>
                 </button>
@@ -145,16 +148,20 @@
                     </button>
                 </header>
                 <div class="content-body">
-                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                        <h2 class="section-title" style="margin-bottom:0;">🆕 เพลงที่เพิ่มล่าสุด</h2>
-                    </div>
-                    <div id="recentlyAddedList" class="home-random-row"></div>
+                    <div id="homeHeroBanner" class="home-hero-slot"></div>
 
-                    <div id="content-stats">
-                        <div id="homeStats">
-                            <div style="text-align:center; color:var(--text-3); margin-top:20px;">กำลังโหลดสถิติ...</div>
+                    <div class="home-section-head">
+                        <h2 class="section-title" style="margin:0;">🆕 เพลงที่เพิ่มล่าสุด</h2>
+                        <div class="home-section-actions">
+                            <button id="btnExpandRecent" class="home-section-link" onclick="window.toggleHomeRowExpand('recentlyAddedList', this)">
+                                <i class="fa-solid fa-chevron-down"></i> ขยายดูเพิ่ม
+                            </button>
+                            <button class="home-section-link" onclick="window.openNotifyWindow()">
+                                <i class="fa-solid fa-clock-rotate-left"></i> ดูประวัติทั้งหมด
+                            </button>
                         </div>
                     </div>
+                    <div id="recentlyAddedList" class="home-random-row"></div>
 
                     <div id="content-system-top">
                         <div id="systemTopList">
@@ -168,11 +175,16 @@
                         </div>
                     </div>
 
-                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                        <h2 class="section-title" style="margin-bottom:0;">✨ เพลงสุ่มน่าฟัง</h2>
-                        <button class="widget-refresh-btn" onclick="renderRandomPlaylist()" title="สุ่มใหม่" style="margin-top:20px;">
-                            <i class="fa-solid fa-arrows-rotate"></i>
-                        </button>
+                    <div class="home-section-head">
+                        <h2 class="section-title" style="margin:0;">✨ เพลงสุ่มน่าฟัง</h2>
+                        <div class="home-section-actions">
+                            <button id="btnExpandRandom" class="home-section-link" onclick="window.toggleHomeRowExpand('randomSongList', this)">
+                                <i class="fa-solid fa-chevron-down"></i> ขยายดูเพิ่ม
+                            </button>
+                            <button class="widget-refresh-btn" onclick="renderRandomPlaylist()" title="สุ่มใหม่">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </button>
+                        </div>
                     </div>
                     <div id="randomSongList" class="home-random-row"></div>
                 </div>
@@ -322,6 +334,16 @@
                 <header class="content-header"><h1 class="content-title">🎧 Playlist ของฉัน</h1></header>
                 <div class="content-body">
                     <div id="playlistsContainer"></div>
+                </div>
+            </section>
+
+            <!-- ---- Profile & Stats view ---- -->
+            <section id="view-profile" class="content-view">
+                <header class="content-header"><h1 class="content-title">โปรไฟล์และสถิติ</h1></header>
+                <div class="content-body">
+                    <div id="profileViewContainer">
+                        <div style="text-align:center; color:var(--text-3); margin-top:20px;">กำลังโหลดข้อมูลโปรไฟล์และสถิติ...</div>
+                    </div>
                 </div>
             </section>
 
