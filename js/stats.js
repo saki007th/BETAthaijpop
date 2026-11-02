@@ -243,8 +243,8 @@ let _lastHomeRender = 0;
 function maybeRenderHome() {
     const now = Date.now();
     if (now - _lastHomeRender < 30000) return;
-    const homeEl = document.getElementById('view-home');
-    if (homeEl && homeEl.classList.contains('active') && window.renderHomeStats) {
+    const profEl = document.getElementById('view-profile');
+    if (profEl && profEl.classList.contains('active') && window.renderHomeStats) {
         _lastHomeRender = now;
         window.renderHomeStats();
     }

@@ -27,6 +27,7 @@ export async function initializeSingerColors(db) {
     } catch (error) {
         console.error("❌ เกิดข้อผิดพลาดในการโหลดสี:", error);
     }
+    if (window.updateTrackArtistColor) window.updateTrackArtistColor();
 }
 
 // ==========================================
@@ -94,6 +95,7 @@ export async function openSingerColorManager(db) {
             await setDoc(colorDocRef, newColorsDict, { merge: true });
             window.SINGER_COLORS = newColorsDict;
             if (window.renderLyricsToContainer) window.renderLyricsToContainer();
+            if (window.updateTrackArtistColor) window.updateTrackArtistColor();
         } catch (error) {
             console.error(error);
             alert('❌ เกิดข้อผิดพลาดในการบันทึก: ' + error.message);

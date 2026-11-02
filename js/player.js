@@ -262,6 +262,7 @@ function createBadgeElement(label, artistName, index) {
         const videoId = window.extractYouTubeID(targetVideoPath);
         if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') { window.ytPlayer.loadVideoById(videoId); window.updateVideoQuality(); }
         window.applyTrackArtwork(videoId);
+        if (window.updateTrackArtistColor) window.updateTrackArtistColor();
 
         window.currentLyricIndex = -1;
         window.renderTimestampEditor();
@@ -275,6 +276,34 @@ function createBadgeElement(label, artistName, index) {
 // ==========================================
 // 🎨 ภาพปกประจำเพลง (ใช้ร่วมกันทุกจุด) + 💿 โหมดแผ่นไวนิล
 // ==========================================
+window.formatColoredArtistHtml = function(artistStr) {
+    const raw = (artistStr || '-').trim();
+    const singers = (typeof window.getSingersList === 'function') ? window.getSingersList(raw) : [];
+    if (!singers || singers.length === 0) return '🎤 ' + raw;
+
+    const coloredParts = singers.map(name => {
+        const c = (window.SINGER_COLORS && window.SINGER_COLORS[name]) ? window.SINGER_COLORS[name] : null;
+        return c ? `<span style="color:${c}; font-weight:600;">${name}</span>` : `<span>${name}</span>`;
+    });
+    return '🎤 ' + coloredParts.join('<span style="color:rgba(255,255,255,.55);">, </span>');
+};
+
+window.updateTrackArtistColor = function() {
+    if (!window.songs || !window.currentSongId) return;
+    const song = window.songs.find(s => s.id === window.currentSongId);
+    if (!song) return;
+
+    let artistStr = song.artist || '-';
+    if (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]) {
+        artistStr = song.covers[window.currentCoverIndex].coverArtist || song.artist || '-';
+    }
+
+    const html = window.formatColoredArtistHtml(artistStr);
+    const na = document.getElementById('npTrackArtist');
+    if (na) na.innerHTML = html;
+    const a = document.getElementById('liveArtist');
+    if (a) a.innerHTML = html;
+};
 window.isVinylSong = function() {
     const song = window.songs && window.songs.find(s => s.id === window.currentSongId);
     return !!(song && song.hasMv === false);
@@ -436,9 +465,8 @@ window.playSong = function(id, direction) {
 
     const applyTrackContent = () => {
         const t = document.getElementById('liveTitle'); if (t) t.innerText = song.title;
-        const a = document.getElementById('liveArtist'); if (a) a.innerText = '🎤 ' + (song.artist || '-');
         const nt = document.getElementById('npTrackTitle'); if (nt) nt.innerText = song.title;
-        const na = document.getElementById('npTrackArtist'); if (na) na.innerText = '🎤 ' + (song.artist || '-');
+        window.updateTrackArtistColor();
         window.applyTrackArtwork(videoId);
     };
 

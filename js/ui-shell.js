@@ -17,7 +17,13 @@ window.wm = {
         const nav = document.querySelector(`.nav-item[data-view="${viewName}"]`);
         if (nav) nav.classList.add('active');
 
-        if (viewName === 'home' && window.renderHomeStats) window.renderHomeStats();
+        if (viewName === 'home' && window.renderHomeHero) window.renderHomeHero();
+        if (viewName === 'profile' && window.renderProfileView) window.renderProfileView();
+    },
+
+    openProfile() {
+        this.showView('profile');
+        if (window.renderProfileView) window.renderProfileView();
     },
 
     openLibrary() {

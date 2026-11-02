@@ -60,23 +60,25 @@ function applyProfileUI(user) {
             menuAvatarIcon.style.display = 'none';
         } else { menuAvatarIcon.style.display = ''; }
     } else {
-        profileName.textContent  = 'เข้าสู่ระบบ';
-        profileEmail.textContent = 'ใช้บัญชี Google';
+        profileName.textContent  = 'ผู้เยี่ยมชม';
+        profileEmail.textContent = 'ดูโปรไฟล์และสถิติ';
         profileAvatar.style.backgroundImage = '';
         avatarIcon.style.display = '';
         adminTag.style.display = 'none';
-        profileBar.title = 'เข้าสู่ระบบ';
+        profileBar.title = 'เปิดหน้าโปรไฟล์และสถิติ';
         menuName.textContent  = '-';
         menuEmail.textContent = '';
         menuAvatar.style.backgroundImage = '';
         menuAvatarIcon.style.display = '';
         toggleProfileMenu(false);
     }
+    if (window.renderProfileView) window.renderProfileView();
 }
 
 window.handleProfileClick = function() {
-    if (!window.isLoggedIn) { window.loginWithGoogle(); return; }
-    toggleProfileMenu();
+    if (window.wm && typeof window.wm.openProfile === 'function') {
+        window.wm.openProfile();
+    }
 };
 
 window.loginWithGoogle = async function() {

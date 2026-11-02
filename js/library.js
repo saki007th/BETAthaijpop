@@ -64,6 +64,7 @@ export async function fetchSongs() {
 
         if (window.cleanupUserData) window.cleanupUserData();
 
+        if (window.renderHomeHero) window.renderHomeHero();
         window.renderRandomPlaylist();
         window.renderArtistWidget();
         if (window.renderRecentlyAdded) window.renderRecentlyAdded();
