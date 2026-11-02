@@ -209,6 +209,9 @@ window.renderLyricsToContainer = function() {
         container.appendChild(lineDiv);
     });
 
+    window._prevAnimatedLyricIdx = -1;
+    container.scrollTop = 0;
+
     // สร้าง DOM ใหม่ทั้งหมด จึงต้อง apply ภาษาซ้ำ เพราะการซ่อนของเรา
     // ทำผ่าน style.display ราย element (ไม่ใช่ class ที่ container แบบเดิม)
     if (window.applyLangToggles) window.applyLangToggles();
@@ -752,19 +755,32 @@ window.syncTimestampEditorUI = function() {
     window._lastSyncTsIdx = cur;
 };
 
-// อนิเมชั่นเลื่อนเนื้อเพลงแบบนุ่มนวลด้วย requestAnimationFrame เฉพาะภายใน #lyricsContainer
-// - ไม่ใช้ scrollIntoView({ behavior: 'smooth' }) ที่ชอบไปเลื่อนพาเรนต์ซ้อนกันและกระตุกตอนเปลี่ยนท่อนถี่ๆ
-// - คำนวณตำแหน่งหลังจาก applyLangToggles เสร็จแล้วเสมอ ทำให้ความสูงของท่อนนิ่งก่อนเริ่มเลื่อน
-let _lyricScrollRaf = null;
+// อนิเมชั่นเลื่อนเนื้อเพลงแบบ FLIP Spring Cascade Wave สไตล์ Apple Music
+// - วัดตำแหน่งจอภาพของแต่ละท่อนก่อนเปลี่ยน (FIRST)
+// - อัปเดตท่อน active + กางคำแปล + ตั้ง scrollTop เป้าหมายทันที (LAST)
+// - คำนวณระยะต่าง (dy) แล้วใส่ --flip-y พร้อม --stagger ไล่คลื่นทีละท่อนด้วยสปริง GPU (INVERT & PLAY)
+//   ทำให้ไม่มีการคำนวณ Layout Reflow ระหว่างอนิเมชั่นเลย และแต่ละท่อนไหลตามกันเป็นคลื่นนุ่มๆ
+window._prevAnimatedLyricIdx = -1;
 
-function scrollLyricsToLine(activeLine, immediate) {
+function applyLyricDepthAttributes(container, activeIdx) {
+    const lines = container.querySelectorAll('.lyric-line');
+    if (activeIdx < 0) {
+        lines.forEach(el => el.removeAttribute('data-dist'));
+        return;
+    }
+    lines.forEach((el, i) => {
+        const d = Math.abs(i - activeIdx);
+        if (d === 0) el.removeAttribute('data-dist');
+        else if (d === 1) el.setAttribute('data-dist', '1');
+        else if (d === 2) el.setAttribute('data-dist', '2');
+        else if (d <= 4) el.setAttribute('data-dist', '3');
+        else el.setAttribute('data-dist', 'far');
+    });
+}
+
+function scrollLyricsToLine(activeLine, immediate, prevIdx, curIdx) {
     const container = document.getElementById('lyricsContainer');
     if (!container || !activeLine) return;
-
-    if (_lyricScrollRaf) {
-        cancelAnimationFrame(_lyricScrollRaf);
-        _lyricScrollRaf = null;
-    }
 
     const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
     const rawTarget = activeLine.offsetTop - (container.clientHeight / 2) + (activeLine.offsetHeight / 2);
@@ -775,39 +791,35 @@ function scrollLyricsToLine(activeLine, immediate) {
         return;
     }
 
-    const startTop = container.scrollTop;
-    const delta = targetTop - startTop;
-    if (Math.abs(delta) < 1) return;
-
-    const duration = 340;
-    const startTime = performance.now();
-
-    const step = (now) => {
-        const t = Math.min(1, (now - startTime) / duration);
-        // Cubic ease-out ที่ต่อความเร็วได้ลื่นเมื่อมีท่อนถัดไปเข้ามาต่อเนื่อง
-        const ease = 1 - Math.pow(1 - t, 3);
-        container.scrollTop = startTop + delta * ease;
-        if (t < 1) {
-            _lyricScrollRaf = requestAnimationFrame(step);
-        } else {
-            _lyricScrollRaf = null;
-        }
-    };
-
-    _lyricScrollRaf = requestAnimationFrame(step);
+    container.scrollTop = targetTop;
 }
 
 window.updateLyricDisplay = function() {
     const container = document.getElementById('lyricsContainer'); if (!container) return;
-    container.querySelectorAll('.lyric-line.active').forEach(line => line.classList.remove('active'));
 
     const npView = document.getElementById('nowPlayingView');
-    const immersive = npView && npView.classList.contains('immersive');
+    const immersive = !!(npView && npView.classList.contains('immersive'));
+    const canAnimateWave = !immersive && !document.hidden && !!(npView && npView.classList.contains('active'));
 
+    const prevIdx = window._prevAnimatedLyricIdx;
     let idx = window.currentLyricIndex;
     if (immersive && (idx < 0 || idx >= window.currentLyricsArray.length) && window.currentLyricsArray.length > 0) {
         idx = 0;
     }
+
+    // 1. FIRST: เก็บพิกัดหน้าจอปัจจุบันของท่อนที่อยู่ในระยะสายตาก่อนเปลี่ยนสถานะ
+    const firstRects = new Map();
+    if (canAnimateWave && idx >= 0 && prevIdx !== idx) {
+        const minI = Math.max(0, Math.min(prevIdx >= 0 ? prevIdx : idx, idx) - 6);
+        const maxI = Math.min(window.currentLyricsArray.length - 1, Math.max(prevIdx >= 0 ? prevIdx : idx, idx) + 8);
+        for (let i = minI; i <= maxI; i++) {
+            const el = document.getElementById(`lyric-line-${i}`);
+            if (el) firstRects.set(i, el.getBoundingClientRect().top);
+        }
+    }
+
+    // 2. LAST: อัปเดตคลาส .active + ความชัดลึก + กางคำแปล + ตั้ง scrollTop ไปยังจุดกึ่งกลางใหม่
+    container.querySelectorAll('.lyric-line.active').forEach(line => line.classList.remove('active'));
 
     let activeLine = null;
     if (idx >= 0 && idx < window.currentLyricsArray.length) {
@@ -815,13 +827,46 @@ window.updateLyricDisplay = function() {
         if (activeLine) activeLine.classList.add('active');
     }
 
-    // อัปเดตการแสดง/ซ่อนบรรทัดภาษาก่อนคำนวณตำแหน่งเลื่อน เพื่อไม่ให้ตารางความสูงขยับระหว่างกำลังเลื่อน
     if (window.applyLangToggles) window.applyLangToggles(true);
+    applyLyricDepthAttributes(container, immersive ? -1 : idx);
     window.syncTimestampEditorUI();
 
     if (activeLine && !immersive) {
-        scrollLyricsToLine(activeLine, false);
+        scrollLyricsToLine(activeLine, !canAnimateWave, prevIdx, idx);
     }
+
+    // 3. INVERT & PLAY: คำนวณระยะต่าง (dy) ของแต่ละท่อน แล้วปล่อยให้ลอยเข้าที่แบบคลื่นสปริง (Staggered Wave)
+    if (canAnimateWave && firstRects.size > 0 && activeLine) {
+        const movedEls = [];
+        const baseOrder = prevIdx >= 0 ? Math.min(prevIdx, idx) : idx;
+
+        firstRects.forEach((oldTop, i) => {
+            const el = document.getElementById(`lyric-line-${i}`);
+            if (!el) return;
+            const newTop = el.getBoundingClientRect().top;
+            const dy = Math.max(-260, Math.min(260, oldTop - newTop));
+            if (Math.abs(dy) < 0.5) return;
+
+            // ไล่จังหวะคลื่น: ท่อนที่อยู่ใกล้ขยับก่อน ท่อนถัดไปค่อยไหลตามมาทีละ 28ms
+            const waveStep = Math.max(0, i - baseOrder);
+            const staggerMs = Math.min(168, waveStep * 28);
+
+            el.classList.add('flip-prep');
+            el.style.setProperty('--flip-y', `${dy.toFixed(1)}px`);
+            el.style.setProperty('--stagger', `${staggerMs}ms`);
+            movedEls.push(el);
+        });
+
+        if (movedEls.length > 0) {
+            void container.offsetHeight; // Commit ตำแหน่งเริ่มต้นก่อนปล่อยสปริง
+            movedEls.forEach(el => {
+                el.classList.remove('flip-prep');
+                el.style.setProperty('--flip-y', '0px');
+            });
+        }
+    }
+
+    window._prevAnimatedLyricIdx = idx;
 };
 
 // คำนวณท่อนที่กำลังร้องจากเวลาปัจจุบัน ใช้ตอนสลับโหมด เพื่อให้เนื้อเพลงติดตามการเล่นเสมอ
