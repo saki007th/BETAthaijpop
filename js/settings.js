@@ -105,76 +105,84 @@ window.bindCompactLyricWatcher = function() {
     else if (compactLyricMql.addListener) compactLyricMql.addListener(onChange);
 };
 
+function applyLangToSection(section, idx, cur, hideFlags) {
+    if (!section) return;
+    section.querySelectorAll('[class*="lang-"]').forEach(el => el.style.removeProperty('display'));
+    section.querySelectorAll('.lyric-main, .lyric-sub').forEach(el => el.style.removeProperty('display'));
+
+    if (cur < 0 || idx !== cur) {
+        // ทุกท่อนยกเว้นท่อนปัจจุบัน แสดงแค่บรรทัดแรก (เนื้อเพลงหลัก) เท่านั้น
+        section.querySelectorAll('.lang-0, .lyric-main').forEach(el => {
+            el.style.setProperty('display', 'block', 'important');
+        });
+        section.querySelectorAll('.lang-1, .lang-2, .lyric-sub').forEach(el => {
+            el.style.setProperty('display', 'none', 'important');
+        });
+        return;
+    }
+
+    // ท่อนปัจจุบันเท่านั้นที่อิงตามการตั้งค่าภาษาของผู้ใช้
+    section.querySelectorAll('[class*="lang-"]').forEach(el => {
+        const match = /lang-(\d+)/.exec(el.className || '');
+        if (!match) return;
+        const index = parseInt(match[1], 10);
+        el.style.display = window.shouldHideLyricLine(el, index, hideFlags) ? 'none' : '';
+    });
+    section.querySelectorAll('.lyric-main').forEach(el => {
+        el.style.removeProperty('display');
+    });
+    section.querySelectorAll('.lyric-sub').forEach(el => {
+        const parent = el.parentElement;
+        if (parent && /lang-(\d+)/.test(parent.className || '')) {
+            const match = /lang-(\d+)/.exec(parent.className || '');
+            const index = match ? parseInt(match[1], 10) : 1;
+            el.style.display = window.shouldHideLyricLine(parent, index, hideFlags) ? 'none' : '';
+        } else {
+            el.style.removeProperty('display');
+        }
+    });
+}
+
 // ซ่อน/แสดงภาษาแยกทีละท่อน (รองรับเพลงที่มีทั้ง 3 และ 4 บรรทัดปนกัน)
-window.applyLangToggles = function() {
+window.applyLangToggles = function(onlyActiveDiff) {
     const container = document.getElementById('lyricsContainer');
     if (!container) return;
 
-    // CSS เดิมใช้ hide-lang-* ที่ container ซึ่งซ่อนทุกท่อนพร้อมกัน
-    // ซึ่งใช้ไม่ได้กับเพลงที่มีทั้ง 3/4 บรรทัดปนกัน จึงเปลี่ยนมาซ่อนรายท่อนแทน
     container.classList.remove('hide-lang-0', 'hide-lang-1', 'hide-lang-2');
 
     // จอเล็ก + โหมดปกติ: เหลือแค่บรรทัดแรกกับคำแปล ไม่สนใจ checkbox ภาษา
     const compact = window.isCompactLyricLayout();
     container.classList.toggle('lyric-compact', compact);
     if (compact) {
-        applyCompactLyrics(container);
+        if (!onlyActiveDiff || container._langAppliedKey !== 'compact') {
+            applyCompactLyrics(container);
+            container._langAppliedKey = 'compact';
+        }
         return;
     }
 
-    const state = window.getLangState(window.getLangMode());
+    const mode = window.getLangMode();
+    const state = window.getLangState(mode);
     const hideFlags = state.map(s => !s);
     const cur = window.currentLyricIndex;
+    const stateKey = mode + ':' + state.map(v => v ? '1' : '0').join('');
+
+    // ทางลัดระหว่างเล่นเพลง: อัปเดตเฉพาะท่อนเก่าและท่อนใหม่ ไม่ต้องวนแก้ DOM ทั้งเพลงทุกครั้ง
+    if (onlyActiveDiff && container._langAppliedKey === stateKey && typeof container._langAppliedIdx === 'number') {
+        const prev = container._langAppliedIdx;
+        if (prev !== cur) {
+            if (prev >= 0) applyLangToSection(document.getElementById(`lyric-line-${prev}`), prev, cur, hideFlags);
+            if (cur >= 0) applyLangToSection(document.getElementById(`lyric-line-${cur}`), cur, cur, hideFlags);
+            container._langAppliedIdx = cur;
+        }
+        return;
+    }
 
     container.querySelectorAll('.lyric-line').forEach((section, idx) => {
-        // ล้าง inline display ก่อนทุกครั้ง เพื่อให้การสลับโหมดจอเล็ก/ใหญ่
-        // และการเปลี่ยนเพลงไม่ทิ้งสถานะซ่อนค้างไว้
-        section.querySelectorAll('[class*="lang-"]').forEach(el => el.style.removeProperty('display'));
-        section.querySelectorAll('.lyric-main, .lyric-sub').forEach(el => el.style.removeProperty('display'));
-
-        if (cur >= 0 && idx !== cur) {
-            // ทุกท่อนยกเว้นท่อนปัจจุบัน แสดงแค่บรรทัดแรก (เนื้อเพลงหลัก) เท่านั้น
-            section.querySelectorAll('.lang-0, .lyric-main').forEach(el => {
-                el.style.setProperty('display', 'block', 'important');
-            });
-            section.querySelectorAll('.lang-1, .lang-2, .lyric-sub').forEach(el => {
-                el.style.setProperty('display', 'none', 'important');
-            });
-            return;
-        }
-
-        if (cur < 0) {
-            // ยังไม่เริ่มเล่น แสดงแค่บรรทัดแรกทุกท่อน
-            section.querySelectorAll('.lang-0, .lyric-main').forEach(el => {
-                el.style.setProperty('display', 'block', 'important');
-            });
-            section.querySelectorAll('.lang-1, .lang-2, .lyric-sub').forEach(el => {
-                el.style.setProperty('display', 'none', 'important');
-            });
-            return;
-        }
-
-        // ท่อนปัจจุบันเท่านั้นที่อิงตามการตั้งค่าภาษาของผู้ใช้
-        section.querySelectorAll('[class*="lang-"]').forEach(el => {
-            const match = /lang-(\d+)/.exec(el.className || '');
-            if (!match) return;
-            const index = parseInt(match[1], 10);
-            el.style.display = window.shouldHideLyricLine(el, index, hideFlags) ? 'none' : '';
-        });
-        section.querySelectorAll('.lyric-main').forEach(el => {
-            el.style.removeProperty('display');
-        });
-        section.querySelectorAll('.lyric-sub').forEach(el => {
-            const parent = el.parentElement;
-            if (parent && /lang-(\d+)/.test(parent.className || '')) {
-                const match = /lang-(\d+)/.exec(parent.className || '');
-                const index = match ? parseInt(match[1], 10) : 1;
-                el.style.display = window.shouldHideLyricLine(parent, index, hideFlags) ? 'none' : '';
-            } else {
-                el.style.removeProperty('display');
-            }
-        });
+        applyLangToSection(section, idx, cur, hideFlags);
     });
+    container._langAppliedKey = stateKey;
+    container._langAppliedIdx = cur;
 };
 
 window.syncLangCheckboxes = function() {

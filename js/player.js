@@ -728,19 +728,78 @@ window.deleteLyricLine = function(index) {
     window.saveTimestampsToFirebase(true).then(() => { window.renderTimestampEditor(); });
 };
 
+window._lastSyncTsIdx = -1;
 window.syncTimestampEditorUI = function() {
-    window.currentLyricsArray.forEach((_, index) => {
-        const row = document.getElementById(`ts-row-${index}`);
-        if (row) {
-            if (index === window.currentLyricIndex) { row.style.background = 'rgba(10, 132, 255, 0.25)'; row.style.borderColor = '#0a84ff'; }
-            else { row.style.background = 'rgba(255, 255, 255, 0.05)'; row.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }
+    const sp = document.getElementById('syncPanel');
+    if (!sp || sp.style.display === 'none') return;
+
+    const prev = window._lastSyncTsIdx;
+    const cur = window.currentLyricIndex;
+    if (prev >= 0 && prev !== cur) {
+        const prevRow = document.getElementById(`ts-row-${prev}`);
+        if (prevRow) {
+            prevRow.style.background = 'rgba(255, 255, 255, 0.05)';
+            prevRow.style.borderColor = 'rgba(255, 255, 255, 0.1)';
         }
-    });
+    }
+    if (cur >= 0) {
+        const curRow = document.getElementById(`ts-row-${cur}`);
+        if (curRow) {
+            curRow.style.background = 'rgba(10, 132, 255, 0.25)';
+            curRow.style.borderColor = '#0a84ff';
+        }
+    }
+    window._lastSyncTsIdx = cur;
 };
+
+// อนิเมชั่นเลื่อนเนื้อเพลงแบบนุ่มนวลด้วย requestAnimationFrame เฉพาะภายใน #lyricsContainer
+// - ไม่ใช้ scrollIntoView({ behavior: 'smooth' }) ที่ชอบไปเลื่อนพาเรนต์ซ้อนกันและกระตุกตอนเปลี่ยนท่อนถี่ๆ
+// - คำนวณตำแหน่งหลังจาก applyLangToggles เสร็จแล้วเสมอ ทำให้ความสูงของท่อนนิ่งก่อนเริ่มเลื่อน
+let _lyricScrollRaf = null;
+
+function scrollLyricsToLine(activeLine, immediate) {
+    const container = document.getElementById('lyricsContainer');
+    if (!container || !activeLine) return;
+
+    if (_lyricScrollRaf) {
+        cancelAnimationFrame(_lyricScrollRaf);
+        _lyricScrollRaf = null;
+    }
+
+    const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+    const rawTarget = activeLine.offsetTop - (container.clientHeight / 2) + (activeLine.offsetHeight / 2);
+    const targetTop = Math.max(0, Math.min(maxScroll, rawTarget));
+
+    if (immediate || document.hidden) {
+        container.scrollTop = targetTop;
+        return;
+    }
+
+    const startTop = container.scrollTop;
+    const delta = targetTop - startTop;
+    if (Math.abs(delta) < 1) return;
+
+    const duration = 340;
+    const startTime = performance.now();
+
+    const step = (now) => {
+        const t = Math.min(1, (now - startTime) / duration);
+        // Cubic ease-out ที่ต่อความเร็วได้ลื่นเมื่อมีท่อนถัดไปเข้ามาต่อเนื่อง
+        const ease = 1 - Math.pow(1 - t, 3);
+        container.scrollTop = startTop + delta * ease;
+        if (t < 1) {
+            _lyricScrollRaf = requestAnimationFrame(step);
+        } else {
+            _lyricScrollRaf = null;
+        }
+    };
+
+    _lyricScrollRaf = requestAnimationFrame(step);
+}
 
 window.updateLyricDisplay = function() {
     const container = document.getElementById('lyricsContainer'); if (!container) return;
-    container.querySelectorAll('.lyric-line').forEach(line => line.classList.remove('active'));
+    container.querySelectorAll('.lyric-line.active').forEach(line => line.classList.remove('active'));
 
     const npView = document.getElementById('nowPlayingView');
     const immersive = npView && npView.classList.contains('immersive');
@@ -750,21 +809,19 @@ window.updateLyricDisplay = function() {
         idx = 0;
     }
 
+    let activeLine = null;
     if (idx >= 0 && idx < window.currentLyricsArray.length) {
-        const activeLine = document.getElementById(`lyric-line-${idx}`);
-        if (activeLine) {
-            activeLine.classList.add('active');
-            if (!immersive) {
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        activeLine.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
-                    });
-                });
-            }
-        }
+        activeLine = document.getElementById(`lyric-line-${idx}`);
+        if (activeLine) activeLine.classList.add('active');
     }
+
+    // อัปเดตการแสดง/ซ่อนบรรทัดภาษาก่อนคำนวณตำแหน่งเลื่อน เพื่อไม่ให้ตารางความสูงขยับระหว่างกำลังเลื่อน
+    if (window.applyLangToggles) window.applyLangToggles(true);
     window.syncTimestampEditorUI();
-    if (window.applyLangToggles) window.applyLangToggles();
+
+    if (activeLine && !immersive) {
+        scrollLyricsToLine(activeLine, false);
+    }
 };
 
 // คำนวณท่อนที่กำลังร้องจากเวลาปัจจุบัน ใช้ตอนสลับโหมด เพื่อให้เนื้อเพลงติดตามการเล่นเสมอ
@@ -788,12 +845,8 @@ window.syncLyricToPlayback = function() {
 // บังคับเลื่อนแผงเนื้อเพลงไปยังท่อนที่ highlight อยู่ (ใช้เมื่อออกจากโหมด Immsersive
 // เพราะระหว่างอยู่ในโหมดนั้นแผงจะไม่เลื่อนตามเลย)
 window.forceLyricScroll = function() {
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            const activeLine = document.querySelector('#lyricsContainer .lyric-line.active');
-            if (activeLine) activeLine.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
-        });
-    });
+    const activeLine = document.querySelector('#lyricsContainer .lyric-line.active');
+    if (activeLine) scrollLyricsToLine(activeLine, true);
 };
 
 // 🟢 ระบบหักลบความหน่วง (Calibrate) ทำงานตรงฟังก์ชันนี้
