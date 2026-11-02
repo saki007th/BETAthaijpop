@@ -67,9 +67,25 @@
         <!-- หน้าเครื่องมือ (แสดงเมื่อล็อกอินผ่าน) -->
         <div id="adminPanel">
             <h2>🛠️ เครื่องมือสำรองข้อมูล</h2>
-            <p class="info-text">ระบบนี้แยกอิสระจากเว็บไซต์หลัก<br>ใช้สำหรับส่งออก (Export) และกู้คืน (Import) ข้อมูลเพลงใน Firestore</p>
+            <p class="info-text">สำรองและกู้คืนข้อมูลทั้งหมดของระบบ<br>(เพลง, สีนักร้อง, ตั้งค่า Discord, Playlist, คิวเพลง, สถิติการฟัง และตั้งค่าในเครื่อง)</p>
+
+            <div class="backup-options" style="text-align: left; background: rgba(255,255,255,0.04); padding: 14px 16px; border-radius: 12px; margin-bottom: 18px; border: 1px solid rgba(255,255,255,0.08); font-size: 0.9em;">
+                <div style="font-weight: 600; color: #f5f5f7; margin-bottom: 10px;">📦 ข้อมูลที่ต้องการสำรอง / กู้คืน:</div>
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;">
+                    <input type="checkbox" id="chkSongs" checked> 🎵 คลังเพลงทั้งหมด (<code>songs</code> — เนื้อเพลง, ซิงค์, Cover, ยอดวิว)
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;">
+                    <input type="checkbox" id="chkSettings" checked> 🎨 ตั้งค่าระบบ (<code>settings</code> — สีนักร้อง, ตั้งค่า Discord)
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;">
+                    <input type="checkbox" id="chkUserData" checked> 👤 ข้อมูลผู้ใช้ (<code>userData</code> — Playlist, คิวเพลง, สถิติการฟัง)
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="chkLocalStorage" checked> 💻 ตั้งค่าบนเครื่องนี้ (<code>localStorage</code> — ฟอนต์, ภาษา, Calibrate หูฟัง)
+                </label>
+            </div>
             
-            <button class="btn-export" id="btnExport">📥 1. ส่งออกข้อมูล (Backup to JSON)</button>
+            <button class="btn-export" id="btnExport">📥 1. ส่งออกข้อมูลทั้งหมด (Backup to JSON)</button>
             <button class="btn-import" id="btnImportClick">📤 2. กู้คืนข้อมูล (Import from JSON)</button>
             
             <!-- ซ่อน input file ไว้ -->
@@ -84,7 +100,7 @@
     <!-- สคริปต์การทำงานของ Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         const firebaseConfig = {
@@ -104,14 +120,40 @@
         const ALLOWED_EMAILS = ["sashikiwa@gmail.com", "panupong.bb27115@gmail.com"];
         let isAdmin = false;
 
+        // รายชื่อ key ใน localStorage ที่ระบบใช้งาน
+        const APP_LOCAL_STORAGE_KEYS = [
+            'ws_fontsize',
+            'ws_shuffle',
+            'ws_song_transition',
+            'ws_lang_state',
+            'ws_sidebar_collapsed',
+            'ws_np_minimal',
+            'ws_immersive',
+            'admin_audio_offset',
+            'karaoke_off',
+            'ws_discord_client_id',
+            'ws_discord_client_id_custom',
+            'ws_discord_download_url',
+            'ujm_guest_queue',
+            'ujm_guest_playlists',
+            'ujm_stats_cache'
+        ];
+
         const loginPanel = document.getElementById('loginPanel');
         const adminPanel = document.getElementById('adminPanel');
         const statusMessage = document.getElementById('statusMessage');
+        let statusTimer = null;
 
-        function showStatus(msg, color) {
+        function showStatus(msg, color, autoHide = true) {
+            if (statusTimer) {
+                clearTimeout(statusTimer);
+                statusTimer = null;
+            }
             statusMessage.style.color = color;
             statusMessage.innerText = msg;
-            setTimeout(() => { statusMessage.innerText = ''; }, 5000);
+            if (autoHide) {
+                statusTimer = setTimeout(() => { statusMessage.innerText = ''; }, 8000);
+            }
         }
 
         // 1. ระบบตรวจสอบสถานะ
@@ -139,40 +181,116 @@
         document.getElementById('btnExport').onclick = async () => {
             if (!isAdmin) return;
             const btn = document.getElementById('btnExport');
-            btn.innerText = "กำลังดึงข้อมูล...";
+            btn.innerText = "⏳ กำลังดึงข้อมูลทั้งหมด...";
             btn.disabled = true;
 
-            try {
-                const querySnapshot = await getDocs(collection(db, 'songs'));
-                const songs = [];
-                querySnapshot.forEach((doc) => {
-                    songs.push({ id: doc.id, ...doc.data() });
-                });
+            const includeSongs = document.getElementById('chkSongs').checked;
+            const includeSettings = document.getElementById('chkSettings').checked;
+            const includeUserData = document.getElementById('chkUserData').checked;
+            const includeLocal = document.getElementById('chkLocalStorage').checked;
 
-                if (songs.length === 0) {
-                    showStatus("ไม่มีข้อมูลเพลงในระบบ", "#ff453a");
-                    return;
+            try {
+                const payload = {
+                    backupVersion: 2,
+                    exportedAt: new Date().toISOString(),
+                    exportedBy: auth.currentUser ? auth.currentUser.email : null,
+                    songs: [],
+                    settings: {},
+                    userData: {},
+                    localStorage: {}
+                };
+
+                const summaryParts = [];
+
+                // 3.1 ดึงข้อมูลเพลงทั้งหมด (songs)
+                if (includeSongs) {
+                    showStatus("กำลังดึงข้อมูลคลังเพลง (songs)...", "#0a84ff", false);
+                    const songsSnap = await getDocs(collection(db, 'songs'));
+                    songsSnap.forEach((d) => {
+                        payload.songs.push({ ...d.data(), id: d.id });
+                    });
+                    summaryParts.push(`${payload.songs.length} เพลง`);
                 }
 
-                const backupData = JSON.stringify(songs, null, 2);
+                // 3.2 ดึงข้อมูลการตั้งค่าระบบ (settings/singerColors, settings/discord และเอกสารอื่นๆ ใน settings)
+                if (includeSettings) {
+                    showStatus("กำลังดึงข้อมูลตั้งค่าระบบ (settings)...", "#0a84ff", false);
+                    try {
+                        const settingsSnap = await getDocs(collection(db, 'settings'));
+                        settingsSnap.forEach((d) => {
+                            payload.settings[d.id] = d.data();
+                        });
+                    } catch (e) {
+                        // กรณี Firestore rules ไม่ให้ list ทั้งคอลเลกชัน ให้ดึงตามชื่อ doc โดยตรง
+                        for (const docName of ['singerColors', 'discord']) {
+                            try {
+                                const sDoc = await getDoc(doc(db, 'settings', docName));
+                                if (sDoc.exists()) payload.settings[docName] = sDoc.data();
+                            } catch (innerErr) {
+                                console.warn(`ไม่สามารถดึง settings/${docName}:`, innerErr);
+                            }
+                        }
+                    }
+                    const settingsCount = Object.keys(payload.settings).length;
+                    summaryParts.push(`ตั้งค่า ${settingsCount} รายการ`);
+                }
+
+                // 3.3 ดึงข้อมูลผู้ใช้ (userData — Playlist, คิวเพลง, สถิติการฟัง)
+                if (includeUserData) {
+                    showStatus("กำลังดึงข้อมูลผู้ใช้ (userData)...", "#0a84ff", false);
+                    try {
+                        const usersSnap = await getDocs(collection(db, 'userData'));
+                        usersSnap.forEach((d) => {
+                            payload.userData[d.id] = d.data();
+                        });
+                    } catch (e) {
+                        // กรณี Firestore rules ปิดการอ่าน userData รวม ให้ดึงเฉพาะของบัญชีแอดมินที่ล็อกอินอยู่
+                        if (auth.currentUser && auth.currentUser.uid) {
+                            try {
+                                const myDoc = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+                                if (myDoc.exists()) {
+                                    payload.userData[auth.currentUser.uid] = myDoc.data();
+                                }
+                            } catch (innerErr) {
+                                console.warn("ไม่สามารถดึง userData ของบัญชีปัจจุบัน:", innerErr);
+                            }
+                        }
+                    }
+                    const userCount = Object.keys(payload.userData).length;
+                    summaryParts.push(`ข้อมูลผู้ใช้ ${userCount} บัญชี`);
+                }
+
+                // 3.4 ดึงข้อมูลตั้งค่าในเครื่อง (localStorage)
+                if (includeLocal) {
+                    for (const key of APP_LOCAL_STORAGE_KEYS) {
+                        const val = localStorage.getItem(key);
+                        if (val !== null) {
+                            payload.localStorage[key] = val;
+                        }
+                    }
+                    const localCount = Object.keys(payload.localStorage).length;
+                    if (localCount > 0) summaryParts.push(`localStorage ${localCount} รายการ`);
+                }
+
+                const backupData = JSON.stringify(payload, null, 2);
                 const blob = new Blob([backupData], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 
                 const a = document.createElement('a');
                 a.href = url;
                 const dateStr = new Date().toISOString().split('T')[0];
-                a.download = `musix_db_backup_${dateStr}.json`;
+                a.download = `musix_full_backup_${dateStr}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
 
-                showStatus(`✅ ดาวน์โหลดสำเร็จ (${songs.length} เพลง)`, "#34c759");
+                showStatus(`✅ สำรองข้อมูลสำเร็จ (${summaryParts.join(', ')})`, "#34c759");
             } catch (error) {
                 console.error(error);
-                showStatus("❌ เกิดข้อผิดพลาด", "#ff453a");
+                showStatus("❌ เกิดข้อผิดพลาด: " + (error.message || error), "#ff453a");
             } finally {
-                btn.innerText = "📥 1. ส่งออกข้อมูล (Backup to JSON)";
+                btn.innerText = "📥 1. ส่งออกข้อมูลทั้งหมด (Backup to JSON)";
                 btn.disabled = false;
             }
         };
@@ -187,33 +305,102 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            if (!confirm('⚠️ คำเตือน: ระบบจะนำข้อมูลในไฟล์นี้ไปบันทึกทับฐานข้อมูลเดิม\nแน่ใจหรือไม่ที่จะดำเนินการ?')) {
+            if (!confirm('⚠️ คำเตือน: ระบบจะนำข้อมูลในไฟล์นี้ไปบันทึกทับฐานข้อมูลเดิมตามหมวดหมู่ที่ติ๊กเลือกไว้\nแน่ใจหรือไม่ที่จะดำเนินการ?')) {
                 event.target.value = '';
                 return;
             }
 
+            const includeSongs = document.getElementById('chkSongs').checked;
+            const includeSettings = document.getElementById('chkSettings').checked;
+            const includeUserData = document.getElementById('chkUserData').checked;
+            const includeLocal = document.getElementById('chkLocalStorage').checked;
+
             const reader = new FileReader();
             reader.onload = async function(e) {
-                showStatus("กำลังนำเข้าข้อมูล กรุณารอสักครู่...", "#0a84ff");
-                try {
-                    const importedSongs = JSON.parse(e.target.result);
-                    if (!Array.isArray(importedSongs)) throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
+                const btnImport = document.getElementById('btnImportClick');
+                btnImport.disabled = true;
+                showStatus("⏳ กำลังนำเข้าข้อมูล กรุณารอสักครู่...", "#0a84ff", false);
 
-                    let successCount = 0;
-                    for (const song of importedSongs) {
-                        if (song.id && song.title) {
-                            const { id, ...songData } = song;
-                            // ใช้ setDoc เพื่อบันทึกทับข้อมูลเดิมโดยใช้ ID ตัวเดิม
-                            await setDoc(doc(db, "songs", id), songData);
-                            successCount++;
-                        }
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    // รองรับทั้งไฟล์ Backup แบบเก่า (Array ของเพลงล้วน) และแบบใหม่ (Object รวมทุกหมวด)
+                    const isLegacyArray = Array.isArray(parsed);
+                    const songsList = isLegacyArray ? parsed : (Array.isArray(parsed.songs) ? parsed.songs : []);
+                    const settingsMap = (!isLegacyArray && parsed.settings && typeof parsed.settings === 'object') ? parsed.settings : {};
+                    const userDataMap = (!isLegacyArray && parsed.userData && typeof parsed.userData === 'object') ? parsed.userData : {};
+                    const localMap = (!isLegacyArray && parsed.localStorage && typeof parsed.localStorage === 'object') ? parsed.localStorage : {};
+
+                    if (!isLegacyArray && !parsed.songs && !parsed.settings && !parsed.userData && !parsed.localStorage) {
+                        throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
                     }
-                    showStatus(`✅ กู้คืนข้อมูลสำเร็จ ${successCount} เพลง`, "#34c759");
+
+                    const summaryParts = [];
+
+                    // 4.1 กู้คืนข้อมูลเพลง (songs)
+                    if (includeSongs && songsList.length > 0) {
+                        let songSuccess = 0;
+                        for (let i = 0; i < songsList.length; i++) {
+                            const song = songsList[i];
+                            if (song && song.id) {
+                                const { id, ...songData } = song;
+                                showStatus(`⏳ กำลังกู้คืนเพลง (${i + 1}/${songsList.length})...`, "#0a84ff", false);
+                                await setDoc(doc(db, "songs", String(id)), songData);
+                                songSuccess++;
+                            }
+                        }
+                        summaryParts.push(`${songSuccess} เพลง`);
+                    }
+
+                    // 4.2 กู้คืนการตั้งค่าระบบ (settings/singerColors, settings/discord ฯลฯ)
+                    if (includeSettings && Object.keys(settingsMap).length > 0) {
+                        let settingsSuccess = 0;
+                        for (const [docId, docData] of Object.entries(settingsMap)) {
+                            if (docData && typeof docData === 'object') {
+                                showStatus(`⏳ กำลังกู้คืนการตั้งค่า (${docId})...`, "#0a84ff", false);
+                                await setDoc(doc(db, "settings", docId), docData);
+                                settingsSuccess++;
+                            }
+                        }
+                        summaryParts.push(`ตั้งค่า ${settingsSuccess} รายการ`);
+                    }
+
+                    // 4.3 กู้คืนข้อมูลผู้ใช้ (userData — Playlist, คิวเพลง, สถิติการฟัง)
+                    if (includeUserData && Object.keys(userDataMap).length > 0) {
+                        let userSuccess = 0;
+                        for (const [uid, uData] of Object.entries(userDataMap)) {
+                            if (uData && typeof uData === 'object') {
+                                try {
+                                    showStatus(`⏳ กำลังกู้คืนข้อมูลผู้ใช้ (${uid})...`, "#0a84ff", false);
+                                    await setDoc(doc(db, "userData", uid), uData, { merge: true });
+                                    userSuccess++;
+                                } catch (uErr) {
+                                    console.warn(`ไม่สามารถกู้คืน userData/${uid} (อาจติดสิทธิ์ของบัญชีอื่น):`, uErr);
+                                }
+                            }
+                        }
+                        summaryParts.push(`ข้อมูลผู้ใช้ ${userSuccess} บัญชี`);
+                    }
+
+                    // 4.4 กู้คืนข้อมูล localStorage
+                    if (includeLocal && Object.keys(localMap).length > 0) {
+                        let localSuccess = 0;
+                        for (const [k, v] of Object.entries(localMap)) {
+                            if (typeof v === 'string') {
+                                localStorage.setItem(k, v);
+                                localSuccess++;
+                            }
+                        }
+                        if (localSuccess > 0) summaryParts.push(`localStorage ${localSuccess} รายการ`);
+                    }
+
+                    showStatus(`✅ กู้คืนข้อมูลสำเร็จ (${summaryParts.join(', ') || 'ไม่มีรายการที่ถูกนำเข้า'})`, "#34c759");
                 } catch (err) {
                     console.error(err);
-                    showStatus("❌ ไฟล์ขัดข้อง หรือรูปแบบผิดพลาด", "#ff453a");
+                    showStatus("❌ ไฟล์ขัดข้อง หรือรูปแบบผิดพลาด: " + (err.message || err), "#ff453a");
+                } finally {
+                    btnImport.disabled = false;
+                    event.target.value = '';
                 }
-                event.target.value = ''; 
             };
             reader.readAsText(file);
         };
