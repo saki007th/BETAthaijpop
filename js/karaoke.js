@@ -43,8 +43,14 @@
         return Math.min(t1 != null ? t1 : times[i] + 1.5, times[i] + 1.5);
     }
 
-    // เวลาจบของท่อน = เวลาเริ่มท่อนถัดไป, หรือ null ถ้าเป็นท่อนสุดท้าย
-    function lineEndTime(timestamps, i) {
+    // เวลาจบของท่อน = เวลาจบที่กำหนดเอง (ถ้ามี) หรือเวลาเริ่มท่อนถัดไป
+    function lineEndTime(timestamps, i, overlapEnds) {
+        if (!Array.isArray(timestamps)) return null;
+        const start = timestamps[i];
+        const customEnd = Array.isArray(overlapEnds) ? overlapEnds[i] : null;
+        if (start != null && typeof customEnd === 'number' && isFinite(customEnd) && customEnd > start) {
+            return customEnd;
+        }
         for (let j = i + 1; j < timestamps.length; j++) {
             if (timestamps[j] != null) return timestamps[j];
         }
@@ -133,9 +139,10 @@
         if (!entry || !Array.isArray(entry.t) || entry.t.length < 2) return;
 
         const timestamps = window.getActiveTimestamps(song);
+        const overlapEnds = window.getActiveOverlapEnds(song);
         const lineStart = timestamps[idx];
         if (lineStart == null) return;
-        const lineEnd = lineEndTime(timestamps, idx);
+        const lineEnd = lineEndTime(timestamps, idx, overlapEnds);
 
         const block = (window.currentLyricsArray || [])[idx];
         if (!block || block.trim() === '[ดนตรี]') return;
@@ -295,6 +302,7 @@
         if (!song || idx < 0) return false;
         const wt = window.getActiveWordTimes(song);
         const timestamps = window.getActiveTimestamps(song);
+        const overlapEnds = window.getActiveOverlapEnds(song);
         const block = (window.currentLyricsArray || [])[idx];
         if (!block || block.trim() === '[ดนตรี]' || timestamps[idx] == null) return false;
 
@@ -306,7 +314,7 @@
         // เริ่มจากค่าที่มีอยู่ ถ้ายังไม่มีให้สร้างแบบ auto ก่อน
         let entry = wt[idx];
         if (!entry || !Array.isArray(entry.t) || entry.t.length !== toks.length) {
-            const lineEnd = lineEndTime(timestamps, idx);
+            const lineEnd = lineEndTime(timestamps, idx, overlapEnds);
             const gen = generateForLine(block, timestamps[idx], lineEnd);
             if (!gen) return false;
             entry = gen;
@@ -434,6 +442,7 @@
         const song = getSong();
         if (!song) return 0;
         const timestamps = window.getActiveTimestamps(song);
+        const overlapEnds = window.getActiveOverlapEnds(song);
         const isCover = (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]);
         const target = isCover ? song.covers[window.currentCoverIndex] : song;
         if (!target.wordTimes) target.wordTimes = [];
@@ -442,7 +451,7 @@
         window.currentLyricsArray.forEach((block, i) => {
             if (timestamps[i] == null) return;
             if (block.trim() === '[ดนตรี]') return;
-            target.wordTimes[i] = generateForLine(block, timestamps[i], lineEndTime(timestamps, i));
+            target.wordTimes[i] = generateForLine(block, timestamps[i], lineEndTime(timestamps, i, overlapEnds));
             if (target.wordTimes[i]) made++;
         });
         return made;

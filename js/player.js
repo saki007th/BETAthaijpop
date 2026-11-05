@@ -5,6 +5,8 @@ import { db, doc, updateDoc } from './config.js';
 
 window.currentLyricsArray = [];
 window.currentLyricIndex = -1;
+window.currentLyricIndices = [];
+window._lastActiveLyricKey = null;
 window.editingSongId = null;
 window.currentSongId = null;
 window.ytPlayer = null;
@@ -150,6 +152,65 @@ window.getActiveSingers = function(song) {
     return song.singers || [];
 };
 
+// ==========================================
+// 🔀 ท่อนที่ร้องเยื้อง/คาบเกี่ยวกัน (overlap)
+// timestamps[i] = เวลาเริ่มท่อน i
+// overlapEnds[i] = เวลาจบท่อน i (null = ใช้เวลาเริ่มท่อนถัดไปเหมือนเดิม)
+// ฟีเจอร์นี้เป็น optional: เพลงเก่าที่ไม่มี field นี้จะทำงานเหมือนเดิมทุกอย่าง
+// ==========================================
+window.getOverlapTarget = function(song) {
+    if (!song) return null;
+    if (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]) {
+        return song.covers[window.currentCoverIndex];
+    }
+    return song;
+};
+
+window.getActiveOverlapEnds = function(song) {
+    const target = window.getOverlapTarget(song);
+    return (target && Array.isArray(target.overlapEnds)) ? target.overlapEnds : [];
+};
+
+function nextTimestampAt(timestamps, index) {
+    if (!Array.isArray(timestamps)) return null;
+    for (let j = index + 1; j < timestamps.length; j++) {
+        if (timestamps[j] != null) return timestamps[j];
+    }
+    return null;
+}
+
+window.getLyricEndTime = function(song, index, timestamps, overlapEnds) {
+    const ts = Array.isArray(timestamps) ? timestamps : window.getActiveTimestamps(song);
+    if (!Array.isArray(ts) || index < 0 || index >= ts.length) return null;
+
+    const start = ts[index];
+    if (start == null || !isFinite(start)) return null;
+
+    const ov = Array.isArray(overlapEnds) ? overlapEnds : window.getActiveOverlapEnds(song);
+    const customEnd = ov[index];
+    if (typeof customEnd === 'number' && isFinite(customEnd) && customEnd > start) {
+        return customEnd;
+    }
+
+    return nextTimestampAt(ts, index);
+};
+
+// คืน index ของทุกท่อนที่ยัง active อยู่ ณ เวลานั้น (เรียงจากน้อยไปมาก)
+// เพลงปกติจะได้ index เดียว เพราะเวลาจบท่อน i = เวลาเริ่มท่อน i+1
+window.getActiveLyricIndexes = function(timestamps, overlapEnds, time) {
+    const out = [];
+    if (!Array.isArray(timestamps) || typeof time !== 'number' || !isFinite(time)) return out;
+
+    for (let i = 0; i < timestamps.length; i++) {
+        const start = timestamps[i];
+        if (start == null || !isFinite(start) || time < start) continue;
+
+        const end = window.getLyricEndTime(null, i, timestamps, overlapEnds);
+        if (end == null || time < end) out.push(i);
+    }
+    return out;
+};
+
 window.renderLyricsToContainer = function() {
     const container = document.getElementById('lyricsContainer'); if (!container) return;
     container.innerHTML = ''; if (window.currentLyricsArray.length === 0) { container.innerHTML = 'ไม่มีเนื้อเพลง'; return; }
@@ -265,6 +326,8 @@ function createBadgeElement(label, artistName, index) {
         if (window.updateTrackArtistColor) window.updateTrackArtistColor();
 
         window.currentLyricIndex = -1;
+        window.currentLyricIndices = [];
+        window._lastActiveLyricKey = null;
         window.renderTimestampEditor();
         window.renderLyricsToContainer();
         window.updateLyricDisplay();
@@ -478,6 +541,8 @@ window.playSong = function(id, direction) {
     }
 
     window.currentLyricsArray = song.lyrics.split(/\n\s*\n/); window.currentLyricIndex = -1;
+    window.currentLyricIndices = [];
+    window._lastActiveLyricKey = null;
 
     window.wm.openPlayer(song.title); window.wm.openLyrics(song.title);
     window.wm.updateSyncTitle(song.title);
@@ -517,6 +582,7 @@ window.playSong = function(id, direction) {
         const currentSong = window.songs.find(s => s.id === window.currentSongId); if (!currentSong) return;
 
         const activeTimestamps = window.getActiveTimestamps(currentSong);
+        const activeOverlapEnds = window.getActiveOverlapEnds(currentSong);
         const currentTime = window.ytPlayer.getCurrentTime();
         if (currentTime === undefined || currentTime === 0) return;
 
@@ -529,12 +595,28 @@ window.playSong = function(id, direction) {
             if (npFill) npFill.style.width = percent + '%';
         }
 
-        let correctIndex = -1;
-        for (let i = 0; i < activeTimestamps.length; i++) {
-            if (activeTimestamps[i] != null && currentTime >= activeTimestamps[i]) correctIndex = i;
+        const hasOverlap = Array.isArray(activeOverlapEnds) && activeOverlapEnds.some(v => v != null);
+
+        let activeIndexes;
+        let correctIndex;
+        if (hasOverlap) {
+            // 🟠 มีท่อนที่กำหนดเวลาจบเอง/ร้องคาบเกี่ยว → เปิดได้หลายท่อนพร้อมกัน
+            activeIndexes = window.getActiveLyricIndexes(activeTimestamps, activeOverlapEnds, currentTime);
+            correctIndex = activeIndexes.length ? activeIndexes[activeIndexes.length - 1] : -1;
+        } else {
+            // 🟢 เพลงปกติ: ใช้ตรรกะเดิมทุกบรรทัด (ท่อนล่าสุดที่เริ่มแล้ว)
+            correctIndex = -1;
+            for (let i = 0; i < activeTimestamps.length; i++) {
+                if (activeTimestamps[i] != null && currentTime >= activeTimestamps[i]) correctIndex = i;
+            }
+            activeIndexes = correctIndex >= 0 ? [correctIndex] : [];
         }
-        if (window.currentLyricIndex !== correctIndex) {
+
+        const activeKey = activeIndexes.join(',');
+        if (window.currentLyricIndex !== correctIndex || window._lastActiveLyricKey !== activeKey) {
             window.currentLyricIndex = correctIndex;
+            window.currentLyricIndices = activeIndexes;
+            window._lastActiveLyricKey = activeKey;
             window.updateLyricDisplay();
             if (correctIndex >= 0 && window.pulseNpDynamicBg) window.pulseNpDynamicBg();
         }
@@ -562,9 +644,14 @@ window.saveTimestampsToFirebase = async function(updateLyricsText = false) {
 
     let currentTs = isCover ? (song.covers[window.currentCoverIndex].timestamps || []) : (song.timestamps || []);
     let currentSg = isCover ? (song.covers[window.currentCoverIndex].singers || []) : (song.singers || []);
+    let currentOv = isCover ? (song.covers[window.currentCoverIndex].overlapEnds || []) : (song.overlapEnds || []);
 
     const safeTs = Array.from({ length: count }, (_, i) => currentTs[i] != null ? currentTs[i] : null);
     const safeSg = Array.from({ length: count }, (_, i) => currentSg[i] != null ? currentSg[i] : "");
+    const safeOv = Array.from({ length: count }, (_, i) => {
+        const value = currentOv[i];
+        return (typeof value === 'number' && isFinite(value)) ? value : null;
+    });
 
     const payload = {
         timestamps: song.timestamps || [],
@@ -576,16 +663,42 @@ window.saveTimestampsToFirebase = async function(updateLyricsText = false) {
     if (isCover) {
         song.covers[window.currentCoverIndex].timestamps = safeTs;
         song.covers[window.currentCoverIndex].singers = safeSg;
+        song.covers[window.currentCoverIndex].overlapEnds = safeOv;
         payload.covers = song.covers;
     } else {
         song.timestamps = safeTs;
         song.singers = safeSg;
+        song.overlapEnds = safeOv;
         payload.timestamps = safeTs;
         payload.singers = safeSg;
+        payload.overlapEnds = safeOv;
     }
 
     await updateDoc(doc(db, "songs", window.currentSongId), payload);
     if (updateLyricsText) { window.renderLyricsToContainer(); window.updateLyricDisplay(); }
+};
+
+// ตั้ง/ล้างเวลาจบท่อนที่ร้องคาบเกี่ยว (index อ้างอิง currentLyricsArray)
+window.setOverlapEnd = function(index, value) {
+    const song = window.songs.find(s => s.id === window.currentSongId);
+    if (!song) return;
+    const target = window.getOverlapTarget(song);
+    if (!target) return;
+
+    if (!Array.isArray(target.overlapEnds)) target.overlapEnds = [];
+    while (target.overlapEnds.length < window.currentLyricsArray.length) target.overlapEnds.push(null);
+
+    target.overlapEnds[index] = (typeof value === 'number' && isFinite(value)) ? value : null;
+    window.saveTimestampsToFirebase();
+};
+
+// เวลาปัจจุบันหลังหัก offset หูฟัง (ใช้กับปุ่ม "ใช้เวลาปัจจุบัน")
+window.getSyncPlaybackTime = function() {
+    if (!window.ytPlayer || typeof window.ytPlayer.getCurrentTime !== 'function') return null;
+    const raw = window.ytPlayer.getCurrentTime();
+    if (typeof raw !== 'number' || !isFinite(raw)) return null;
+    const offsetMs = parseInt(localStorage.getItem('admin_audio_offset')) || 0;
+    return Math.max(0, raw - (offsetMs / 1000));
 };
 
 window.renderTimestampEditor = function() {
@@ -629,6 +742,7 @@ window.renderTimestampEditor = function() {
 
     let activeTimestamps = window.getActiveTimestamps(song);
     let activeSingers = window.getActiveSingers(song);
+    let activeOverlapEnds = window.getActiveOverlapEnds(song);
 
     window.currentLyricsArray.forEach((lyric, index) => {
         const row = document.createElement('div'); row.className = 'ts-row'; row.id = `ts-row-${index}`;
@@ -644,6 +758,8 @@ window.renderTimestampEditor = function() {
         const leftControls = document.createElement('div'); leftControls.style.display = 'flex'; leftControls.style.gap = '8px'; leftControls.style.alignItems = 'center';
 
         const badge = document.createElement('span'); badge.innerText = `#${index + 1}`; badge.style.color = '#0a84ff'; badge.style.fontWeight = 'bold'; leftControls.appendChild(badge);
+
+        let overlapRowEl = null;
 
         if (window.isAdmin) {
             const allSingers = window.getSingersList(song.artist);
@@ -686,6 +802,7 @@ window.renderTimestampEditor = function() {
             dropdown.appendChild(toggleBtn); dropdown.appendChild(menu); leftControls.appendChild(dropdown);
 
             const timeInput = document.createElement('input'); timeInput.type = 'number'; timeInput.step = '0.1'; timeInput.min = '0';
+            timeInput.className = 'ts-start-input';
             timeInput.style.width = '70px'; timeInput.style.margin = '0'; timeInput.style.padding = '4px 6px'; timeInput.style.textAlign = 'center';
             timeInput.value = (activeTimestamps[index] != null) ? activeTimestamps[index].toFixed(1) : '';
             timeInput.onchange = (e) => {
@@ -703,6 +820,126 @@ window.renderTimestampEditor = function() {
                 window.saveTimestampsToFirebase();
             };
             leftControls.appendChild(timeInput);
+
+            // 🔀 ตัวเลือก "ท่อนนี้ร้องเยื้องกับท่อนถัดไป" + เวลาจบ
+            overlapRowEl = document.createElement('div');
+            overlapRowEl.className = 'ts-overlap-row';
+            overlapRowEl.style.cssText = 'display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:9px; padding-top:9px; border-top:1px dashed rgba(255,255,255,.12);';
+
+            const overlapLabel = document.createElement('label');
+            overlapLabel.style.cssText = 'display:flex; align-items:center; gap:6px; color:#ff9f0a; font-size:.82em; cursor:pointer; user-select:none;';
+
+            const overlapChk = document.createElement('input');
+            overlapChk.type = 'checkbox';
+            overlapChk.className = 'ts-overlap-chk';
+            overlapChk.style.cssText = 'width:auto; margin:0; accent-color:#ff9f0a;';
+            overlapChk.checked = activeOverlapEnds[index] != null;
+
+            const endInput = document.createElement('input');
+            endInput.type = 'number';
+            endInput.step = '0.1';
+            endInput.min = '0';
+            endInput.className = 'ts-end-input';
+            endInput.style.cssText = 'width:76px; margin:0; padding:4px 6px; text-align:center;';
+            endInput.value = activeOverlapEnds[index] != null ? Number(activeOverlapEnds[index]).toFixed(1) : '';
+            endInput.disabled = !overlapChk.checked;
+
+            const endNowBtn = document.createElement('button');
+            endNowBtn.type = 'button';
+            endNowBtn.className = 'ts-end-now';
+            endNowBtn.innerText = '⏹ ใช้เวลาปัจจุบัน';
+            endNowBtn.style.cssText = 'background:rgba(255,159,10,.18); color:#ff9f0a; border:1px solid rgba(255,159,10,.45); padding:4px 10px; border-radius:6px; cursor:pointer; font-size:.8em;';
+            endNowBtn.disabled = !overlapChk.checked;
+
+            const overlapHint = document.createElement('span');
+            overlapHint.className = 'ts-overlap-hint';
+            overlapHint.style.cssText = 'font-size:.78em; color:#8e8e93;';
+
+            const updateOverlapHint = () => {
+                const end = parseFloat(endInput.value);
+                const nextStart = nextTimestampAt(window.getActiveTimestamps(song), index);
+                if (!isNaN(end) && nextStart != null) {
+                    const diff = end - nextStart;
+                    overlapHint.textContent = diff > 0.05
+                        ? `ทับท่อนถัดไป +${diff.toFixed(1)} วิ`
+                        : `จบก่อนท่อนถัดไป ${Math.abs(diff).toFixed(1)} วิ`;
+                    overlapHint.style.color = diff > 0.05 ? '#ff9f0a' : '#8e8e93';
+                } else if (!isNaN(end)) {
+                    overlapHint.textContent = 'กำหนดเวลาจบเอง';
+                    overlapHint.style.color = '#8e8e93';
+                } else {
+                    overlapHint.textContent = '';
+                }
+            };
+
+            const syncOverlapUI = () => {
+                const enabled = !!overlapChk.checked;
+                endInput.disabled = !enabled;
+                endNowBtn.disabled = !enabled;
+                updateOverlapHint();
+            };
+
+            overlapChk.onchange = () => {
+                const ts = window.getActiveTimestamps(song);
+                const start = ts[index];
+                if (overlapChk.checked && (start == null || !isFinite(start))) {
+                    overlapChk.checked = false;
+                    alert('ต้องมีเวลาเริ่มท่อนนี้ก่อน จึงจะกำหนดเวลาจบได้');
+                    return;
+                }
+                if (overlapChk.checked) {
+                    const nextStart = nextTimestampAt(ts, index);
+                    const defaultEnd = nextStart != null ? nextStart + 1 : start + 3;
+                    endInput.value = Math.max(start + 0.1, defaultEnd).toFixed(1);
+                    window.setOverlapEnd(index, parseFloat(endInput.value));
+                } else {
+                    endInput.value = '';
+                    window.setOverlapEnd(index, null);
+                }
+                syncOverlapUI();
+            };
+
+            endInput.onchange = () => {
+                const val = parseFloat(endInput.value);
+                const ts = window.getActiveTimestamps(song);
+                const start = ts[index];
+                if (isNaN(val) || start == null || val <= start) {
+                    const target = window.getOverlapTarget(song);
+                    const prevVal = target && Array.isArray(target.overlapEnds) ? target.overlapEnds[index] : null;
+                    if (prevVal != null) {
+                        endInput.value = Number(prevVal).toFixed(1);
+                    } else {
+                        endInput.value = '';
+                        overlapChk.checked = false;
+                    }
+                    syncOverlapUI();
+                    alert('เวลาจบต้องมากกว่าเวลาเริ่มของท่อนนี้');
+                    return;
+                }
+                overlapChk.checked = true;
+                window.setOverlapEnd(index, val);
+                syncOverlapUI();
+            };
+
+            endNowBtn.onclick = () => {
+                const now = window.getSyncPlaybackTime();
+                const ts = window.getActiveTimestamps(song);
+                const start = ts[index];
+                if (now == null) { alert('ยังอ่านเวลาจากเครื่องเล่นไม่ได้'); return; }
+                if (start == null || now <= start) { alert('เวลาปัจจุบันยังไม่ถึงเวลาเริ่มท่อนนี้'); return; }
+                overlapChk.checked = true;
+                endInput.value = now.toFixed(1);
+                window.setOverlapEnd(index, now);
+                syncOverlapUI();
+            };
+
+            overlapLabel.appendChild(overlapChk);
+            overlapLabel.appendChild(document.createTextNode('ท่อนนี้ร้องเยื้องกับท่อนถัดไป'));
+            overlapRowEl.appendChild(overlapLabel);
+            overlapRowEl.appendChild(endInput);
+            overlapRowEl.appendChild(endNowBtn);
+            overlapRowEl.appendChild(overlapHint);
+            updateOverlapHint();
         }
 
         const rightControls = document.createElement('div'); rightControls.style.display = 'flex'; rightControls.style.gap = '8px';
@@ -717,7 +954,9 @@ window.renderTimestampEditor = function() {
         }
 
         controlsDiv.appendChild(leftControls); controlsDiv.appendChild(rightControls);
-        row.appendChild(controlsDiv); container.appendChild(row);
+        row.appendChild(controlsDiv);
+        if (overlapRowEl) row.appendChild(overlapRowEl);
+        container.appendChild(row);
     });
 
     if (window.isAdmin) {
@@ -733,11 +972,13 @@ window.addLyricLine = function(index) {
     window.currentLyricsArray.splice(insertAt, 0, "ท่อนใหม่...");
     if (!song.timestamps) song.timestamps = []; song.timestamps.splice(insertAt, 0, null);
     if (!song.singers) song.singers = []; song.singers.splice(insertAt, 0, "");
+    if (!Array.isArray(song.overlapEnds)) song.overlapEnds = []; song.overlapEnds.splice(insertAt, 0, null);
 
     if (song.covers) {
         song.covers.forEach(c => {
             if (c.timestamps) c.timestamps.splice(insertAt, 0, null);
             if (c.singers) c.singers.splice(insertAt, 0, "");
+            if (Array.isArray(c.overlapEnds)) c.overlapEnds.splice(insertAt, 0, null);
         });
     }
     window.saveTimestampsToFirebase(true).then(() => { window.renderTimestampEditor(); });
@@ -749,11 +990,13 @@ window.deleteLyricLine = function(index) {
     window.currentLyricsArray.splice(index, 1);
     if (song.timestamps) song.timestamps.splice(index, 1);
     if (song.singers) song.singers.splice(index, 1);
+    if (Array.isArray(song.overlapEnds)) song.overlapEnds.splice(index, 1);
 
     if (song.covers) {
         song.covers.forEach(c => {
             if (c.timestamps) c.timestamps.splice(index, 1);
             if (c.singers) c.singers.splice(index, 1);
+            if (Array.isArray(c.overlapEnds)) c.overlapEnds.splice(index, 1);
         });
     }
     window.saveTimestampsToFirebase(true).then(() => { window.renderTimestampEditor(); });
@@ -831,8 +1074,15 @@ window.updateLyricDisplay = function() {
 
     const prevIdx = window._prevAnimatedLyricIdx;
     let idx = window.currentLyricIndex;
+    let activeIndexes = Array.isArray(window.currentLyricIndices)
+        ? window.currentLyricIndices.filter(i => i >= 0 && i < window.currentLyricsArray.length)
+        : [];
+    if (activeIndexes.length === 0 && idx >= 0 && idx < window.currentLyricsArray.length) {
+        activeIndexes = [idx];
+    }
     if (immersive && (idx < 0 || idx >= window.currentLyricsArray.length) && window.currentLyricsArray.length > 0) {
         idx = 0;
+        activeIndexes = [0];
     }
 
     // 1. FIRST: เก็บพิกัดหน้าจอปัจจุบันของท่อนที่อยู่ในระยะสายตาก่อนเปลี่ยนสถานะ
@@ -847,13 +1097,22 @@ window.updateLyricDisplay = function() {
     }
 
     // 2. LAST: อัปเดตคลาส .active + ความชัดลึก + กางคำแปล + ตั้ง scrollTop ไปยังจุดกึ่งกลางใหม่
-    container.querySelectorAll('.lyric-line.active').forEach(line => line.classList.remove('active'));
+    // ท่อนล่าสุดได้ .active (PiP ยังหยิบตัวนี้ได้เหมือนเดิม)
+    // ท่อนที่ยังร้องคาบเกี่ยวอยู่ได้ .active-overlap แยกออกมา
+    container.querySelectorAll('.lyric-line.active, .lyric-line.active-overlap')
+        .forEach(line => line.classList.remove('active', 'active-overlap'));
 
     let activeLine = null;
     if (idx >= 0 && idx < window.currentLyricsArray.length) {
         activeLine = document.getElementById(`lyric-line-${idx}`);
         if (activeLine) activeLine.classList.add('active');
     }
+
+    activeIndexes.forEach(i => {
+        if (i === idx) return;
+        const el = document.getElementById(`lyric-line-${i}`);
+        if (el) el.classList.add('active-overlap');
+    });
 
     if (window.applyLangToggles) window.applyLangToggles(true);
     applyLyricDepthAttributes(container, immersive ? -1 : idx);
@@ -905,12 +1164,14 @@ window.syncLyricToPlayback = function() {
     const t = window.ytPlayer.getCurrentTime();
     if (typeof t !== 'number' || t <= 0) return;
     const activeTimestamps = window.getActiveTimestamps(currentSong);
-    let idx = -1;
-    for (let i = 0; i < activeTimestamps.length; i++) {
-        if (activeTimestamps[i] != null && t >= activeTimestamps[i]) idx = i;
-    }
-    if (idx >= 0 && idx !== window.currentLyricIndex) {
+    const activeOverlapEnds = window.getActiveOverlapEnds(currentSong);
+    const activeIndexes = window.getActiveLyricIndexes(activeTimestamps, activeOverlapEnds, t);
+    const idx = activeIndexes.length ? activeIndexes[activeIndexes.length - 1] : -1;
+    const activeKey = activeIndexes.join(',');
+    if (idx !== window.currentLyricIndex || window._lastActiveLyricKey !== activeKey) {
         window.currentLyricIndex = idx;
+        window.currentLyricIndices = activeIndexes;
+        window._lastActiveLyricKey = activeKey;
         window.updateLyricDisplay();
     }
 };
@@ -926,6 +1187,8 @@ window.forceLyricScroll = function() {
 window.nextLyric = function(isAuto = false) {
     if (window.currentLyricIndex < window.currentLyricsArray.length) {
         window.currentLyricIndex++;
+        window.currentLyricIndices = window.currentLyricIndex >= 0 ? [window.currentLyricIndex] : [];
+        window._lastActiveLyricKey = null;
         window.updateLyricDisplay();
 
         if (!isAuto && window.isAdmin && window.currentSongId && window.ytPlayer) {
@@ -949,8 +1212,20 @@ window.nextLyric = function(isAuto = false) {
 
                 const activeRow = document.getElementById(`ts-row-${window.currentLyricIndex}`);
                 if (activeRow) {
-                    const timeInput = activeRow.querySelector('input[type="number"]');
+                    const timeInput = activeRow.querySelector('.ts-start-input');
                     if (timeInput) timeInput.value = currentTime.toFixed(1);
+
+                    // ถ้าเวลาจบที่เคยตั้งไว้หลุดก่อนเวลาเริ่มใหม่ ให้ล้างค่าเก่า
+                    const overlapTarget = window.getOverlapTarget(song);
+                    if (overlapTarget && Array.isArray(overlapTarget.overlapEnds) &&
+                        overlapTarget.overlapEnds[window.currentLyricIndex] != null &&
+                        overlapTarget.overlapEnds[window.currentLyricIndex] <= currentTime) {
+                        overlapTarget.overlapEnds[window.currentLyricIndex] = null;
+                        const endInput = activeRow.querySelector('.ts-end-input');
+                        const overlapChk = activeRow.querySelector('.ts-overlap-chk');
+                        if (endInput) endInput.value = '';
+                        if (overlapChk) overlapChk.checked = false;
+                    }
                 }
                 window.saveTimestampsToFirebase();
             }
@@ -973,15 +1248,27 @@ window.prevLyric = function() {
                     if (song.timestamps) song.timestamps[window.currentLyricIndex] = null;
                 }
 
+                // ลบเวลาเริ่มแล้ว เวลาจบของท่อนนี้ก็ไม่มีความหมาย
+                const overlapTarget = window.getOverlapTarget(song);
+                if (overlapTarget && Array.isArray(overlapTarget.overlapEnds)) {
+                    overlapTarget.overlapEnds[window.currentLyricIndex] = null;
+                }
+
                 const activeRow = document.getElementById(`ts-row-${window.currentLyricIndex}`);
                 if (activeRow) {
-                    const timeInput = activeRow.querySelector('input[type="number"]');
+                    const timeInput = activeRow.querySelector('.ts-start-input');
                     if (timeInput) timeInput.value = '';
+                    const endInput = activeRow.querySelector('.ts-end-input');
+                    const overlapChk = activeRow.querySelector('.ts-overlap-chk');
+                    if (endInput) endInput.value = '';
+                    if (overlapChk) overlapChk.checked = false;
                 }
                 window.saveTimestampsToFirebase();
             }
         }
         window.currentLyricIndex--;
+        window.currentLyricIndices = window.currentLyricIndex >= 0 ? [window.currentLyricIndex] : [];
+        window._lastActiveLyricKey = null;
         window.updateLyricDisplay();
     }
 };
@@ -995,12 +1282,16 @@ window.resetSync = function() {
             if (isCover) {
                 song.covers[window.currentCoverIndex].timestamps = [];
                 song.covers[window.currentCoverIndex].singers = [];
+                song.covers[window.currentCoverIndex].overlapEnds = [];
             } else {
                 song.timestamps = [];
                 song.singers = [];
+                song.overlapEnds = [];
             }
             window.saveTimestampsToFirebase();
             window.currentLyricIndex = -1;
+            window.currentLyricIndices = [];
+            window._lastActiveLyricKey = null;
             window.renderTimestampEditor();
             window.updateLyricDisplay();
         }

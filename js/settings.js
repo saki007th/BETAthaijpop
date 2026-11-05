@@ -105,12 +105,12 @@ window.bindCompactLyricWatcher = function() {
     else if (compactLyricMql.addListener) compactLyricMql.addListener(onChange);
 };
 
-function applyLangToSection(section, idx, cur, hideFlags) {
+function applyLangToSection(section, idx, isActive, hideFlags) {
     if (!section) return;
     section.querySelectorAll('[class*="lang-"]').forEach(el => el.style.removeProperty('display'));
     section.querySelectorAll('.lyric-main, .lyric-sub').forEach(el => el.style.removeProperty('display'));
 
-    if (cur < 0 || idx !== cur) {
+    if (!isActive) {
         // ทุกท่อนยกเว้นท่อนปัจจุบัน แสดงแค่บรรทัดแรก (เนื้อเพลงหลัก) เท่านั้น
         section.querySelectorAll('.lang-0, .lyric-main').forEach(el => {
             el.style.setProperty('display', 'block', 'important');
@@ -165,24 +165,39 @@ window.applyLangToggles = function(onlyActiveDiff) {
     const state = window.getLangState(mode);
     const hideFlags = state.map(s => !s);
     const cur = window.currentLyricIndex;
-    const stateKey = mode + ':' + state.map(v => v ? '1' : '0').join('');
+    const activeSet = new Set(
+        Array.isArray(window.currentLyricIndices) && window.currentLyricIndices.length
+            ? window.currentLyricIndices
+            : (cur >= 0 ? [cur] : [])
+    );
+    const activeKey = Array.from(activeSet).sort((a, b) => a - b).join(',');
+    const stateKey = mode + ':' + state.map(v => v ? '1' : '0').join('') + ':' + activeKey;
 
     // ทางลัดระหว่างเล่นเพลง: อัปเดตเฉพาะท่อนเก่าและท่อนใหม่ ไม่ต้องวนแก้ DOM ทั้งเพลงทุกครั้ง
     if (onlyActiveDiff && container._langAppliedKey === stateKey && typeof container._langAppliedIdx === 'number') {
+        return;
+    }
+
+    // เพลงปกติ (active ท่อนเดียว) ใช้ทางลัดเดิม
+    if (onlyActiveDiff && activeSet.size === 1 && container._langAppliedKey &&
+        container._langAppliedActiveCount === 1 && typeof container._langAppliedIdx === 'number') {
         const prev = container._langAppliedIdx;
         if (prev !== cur) {
-            if (prev >= 0) applyLangToSection(document.getElementById(`lyric-line-${prev}`), prev, cur, hideFlags);
-            if (cur >= 0) applyLangToSection(document.getElementById(`lyric-line-${cur}`), cur, cur, hideFlags);
-            container._langAppliedIdx = cur;
+            if (prev >= 0) applyLangToSection(document.getElementById(`lyric-line-${prev}`), prev, false, hideFlags);
+            if (cur >= 0) applyLangToSection(document.getElementById(`lyric-line-${cur}`), cur, true, hideFlags);
         }
+        container._langAppliedKey = stateKey;
+        container._langAppliedIdx = cur;
+        container._langAppliedActiveCount = 1;
         return;
     }
 
     container.querySelectorAll('.lyric-line').forEach((section, idx) => {
-        applyLangToSection(section, idx, cur, hideFlags);
+        applyLangToSection(section, idx, activeSet.has(idx), hideFlags);
     });
     container._langAppliedKey = stateKey;
     container._langAppliedIdx = cur;
+    container._langAppliedActiveCount = activeSet.size;
 };
 
 window.syncLangCheckboxes = function() {
