@@ -13,8 +13,8 @@
 //    กดอัปเดตแล้วพารามิเตอร์ sim จะหายไปเอง เวอร์ชันจึงเด้งกลับเป็นตัวจริง
 // ==========================================
 
-const REAL_VERSION = '19.3.3';
-const REAL_BUILD = '20261105-3';
+const REAL_VERSION = '19.3.4';
+const REAL_BUILD = '20261105-4';
 
 const simParam = new URL(window.location.href).searchParams.get('sim');
 export const SIMULATED = !!simParam;

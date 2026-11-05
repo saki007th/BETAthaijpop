@@ -53,6 +53,7 @@ export async function fetchSongs() {
                 lyrics: data.lyrics,
                 timestamps: data.timestamps || [],
                 singers: data.singers || [],
+                overlapEnds: data.overlapEnds || [],
                 covers: data.covers || [],
                 createdAt: data.createdAt,
                 plays: data.plays || 0,
