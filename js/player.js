@@ -623,59 +623,79 @@ window.playSong = function(id, direction) {
     }, 100);
 };
 
+function stripUndefinedDeep(value) {
+    if (Array.isArray(value)) return value.map(stripUndefinedDeep);
+    if (value && typeof value === 'object') {
+        const out = {};
+        Object.keys(value).forEach(key => {
+            const v = value[key];
+            if (v !== undefined) out[key] = stripUndefinedDeep(v);
+        });
+        return out;
+    }
+    return value;
+}
+
 window.saveTimestampsToFirebase = async function(updateLyricsText = false) {
-    if (!window.isAdmin) return;
+    if (!window.isAdmin) return false;
     const song = window.songs.find(s => s.id === window.currentSongId);
-    if (!song) return;
+    if (!song) return false;
 
-    if (updateLyricsText) song.lyrics = window.currentLyricsArray.join('\n\n');
-    const count = window.currentLyricsArray.length;
+    try {
+        if (updateLyricsText) song.lyrics = window.currentLyricsArray.join('\n\n');
+        const count = window.currentLyricsArray.length;
 
-    let isCover = (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]);
+        let isCover = (window.currentCoverIndex >= 0 && song.covers && song.covers[window.currentCoverIndex]);
 
-    if (isCover) {
-        if (!song.covers[window.currentCoverIndex].timestamps || song.covers[window.currentCoverIndex].timestamps.length === 0) {
-            song.covers[window.currentCoverIndex].timestamps = [...(song.timestamps || [])];
+        if (isCover) {
+            if (!song.covers[window.currentCoverIndex].timestamps || song.covers[window.currentCoverIndex].timestamps.length === 0) {
+                song.covers[window.currentCoverIndex].timestamps = [...(song.timestamps || [])];
+            }
+            if (!song.covers[window.currentCoverIndex].singers || song.covers[window.currentCoverIndex].singers.length === 0) {
+                song.covers[window.currentCoverIndex].singers = [...(song.singers || [])];
+            }
         }
-        if (!song.covers[window.currentCoverIndex].singers || song.covers[window.currentCoverIndex].singers.length === 0) {
-            song.covers[window.currentCoverIndex].singers = [...(song.singers || [])];
+
+        let currentTs = isCover ? (song.covers[window.currentCoverIndex].timestamps || []) : (song.timestamps || []);
+        let currentSg = isCover ? (song.covers[window.currentCoverIndex].singers || []) : (song.singers || []);
+        let currentOv = isCover ? (song.covers[window.currentCoverIndex].overlapEnds || []) : (song.overlapEnds || []);
+
+        const safeTs = Array.from({ length: count }, (_, i) => currentTs[i] != null ? currentTs[i] : null);
+        const safeSg = Array.from({ length: count }, (_, i) => currentSg[i] != null ? currentSg[i] : "");
+        const safeOv = Array.from({ length: count }, (_, i) => {
+            const value = currentOv[i];
+            return (typeof value === 'number' && isFinite(value)) ? value : null;
+        });
+
+        const payload = {
+            timestamps: song.timestamps || [],
+            singers: song.singers || [],
+            covers: Array.isArray(song.covers) ? song.covers : []
+        };
+        if (updateLyricsText) payload.lyrics = song.lyrics;
+
+        if (isCover) {
+            song.covers[window.currentCoverIndex].timestamps = safeTs;
+            song.covers[window.currentCoverIndex].singers = safeSg;
+            song.covers[window.currentCoverIndex].overlapEnds = safeOv;
+            payload.covers = song.covers;
+        } else {
+            song.timestamps = safeTs;
+            song.singers = safeSg;
+            song.overlapEnds = safeOv;
+            payload.timestamps = safeTs;
+            payload.singers = safeSg;
+            payload.overlapEnds = safeOv;
         }
+
+        await updateDoc(doc(db, "songs", window.currentSongId), stripUndefinedDeep(payload));
+        if (updateLyricsText) { window.renderLyricsToContainer(); window.updateLyricDisplay(); }
+        return true;
+    } catch (err) {
+        console.error('[saveTimestampsToFirebase] failed', err);
+        alert('บันทึกลง Firestore ไม่สำเร็จ: ' + (err && err.message ? err.message : err));
+        return false;
     }
-
-    let currentTs = isCover ? (song.covers[window.currentCoverIndex].timestamps || []) : (song.timestamps || []);
-    let currentSg = isCover ? (song.covers[window.currentCoverIndex].singers || []) : (song.singers || []);
-    let currentOv = isCover ? (song.covers[window.currentCoverIndex].overlapEnds || []) : (song.overlapEnds || []);
-
-    const safeTs = Array.from({ length: count }, (_, i) => currentTs[i] != null ? currentTs[i] : null);
-    const safeSg = Array.from({ length: count }, (_, i) => currentSg[i] != null ? currentSg[i] : "");
-    const safeOv = Array.from({ length: count }, (_, i) => {
-        const value = currentOv[i];
-        return (typeof value === 'number' && isFinite(value)) ? value : null;
-    });
-
-    const payload = {
-        timestamps: song.timestamps || [],
-        singers: song.singers || [],
-        covers: song.covers || []
-    };
-    if (updateLyricsText) payload.lyrics = song.lyrics;
-
-    if (isCover) {
-        song.covers[window.currentCoverIndex].timestamps = safeTs;
-        song.covers[window.currentCoverIndex].singers = safeSg;
-        song.covers[window.currentCoverIndex].overlapEnds = safeOv;
-        payload.covers = song.covers;
-    } else {
-        song.timestamps = safeTs;
-        song.singers = safeSg;
-        song.overlapEnds = safeOv;
-        payload.timestamps = safeTs;
-        payload.singers = safeSg;
-        payload.overlapEnds = safeOv;
-    }
-
-    await updateDoc(doc(db, "songs", window.currentSongId), payload);
-    if (updateLyricsText) { window.renderLyricsToContainer(); window.updateLyricDisplay(); }
 };
 
 // ตั้ง/ล้างเวลาจบท่อนที่ร้องคาบเกี่ยว (index อ้างอิง currentLyricsArray)
@@ -689,7 +709,9 @@ window.setOverlapEnd = function(index, value) {
     while (target.overlapEnds.length < window.currentLyricsArray.length) target.overlapEnds.push(null);
 
     target.overlapEnds[index] = (typeof value === 'number' && isFinite(value)) ? value : null;
-    window.saveTimestampsToFirebase();
+    window.saveTimestampsToFirebase().catch(err => {
+        console.error('[setOverlapEnd] save failed', err);
+    });
 };
 
 // เวลาปัจจุบันหลังหัก offset หูฟัง (ใช้กับปุ่ม "ใช้เวลาปัจจุบัน")
