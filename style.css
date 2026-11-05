@@ -1570,6 +1570,16 @@ label.mv-toggle b{ color:var(--text-1); }
     filter:blur(0px) !important;
     text-shadow:0 4px 24px rgba(255,255,255,.18), 0 2px 16px rgba(0,0,0,.48);
 }
+/* ท่อนที่ยังร้องคาบเกี่ยวกับท่อนถัดไป (เลือกให้ท่อนก่อน "เยื้อง") */
+.lyric-line.active-overlap{
+    --lyric-scale:1.01;
+    font-size:calc(var(--lyric-font-size) + 0.12em);
+    color:rgba(255,255,255,.92);
+    opacity:.72 !important;
+    filter:blur(0px) !important;
+    background:rgba(255,255,255,.04);
+    text-shadow:0 2px 14px rgba(255,255,255,.1), 0 1px 10px rgba(0,0,0,.35);
+}
 /* อนิเมชั่นกางบรรทัดโรมาจิและคำแปลไทยแบบลอยตัวนุ่มนวลเมื่อเข้าท่อนร้อง
    ใช้ --line-opacity เพื่อรักษาค่าความจางของบรรทัดคำอ่าน (.reading-text = .55) ไม่ให้ถูกทับเป็น 1 */
 @keyframes lyricSubReveal{
@@ -1604,7 +1614,8 @@ label.mv-toggle b{ color:var(--text-1); }
 }
 .singer-badges{ display:flex; gap:8px; margin-bottom:8px; justify-content:center; flex-wrap:wrap; }
 .singer-badge{ font-size:.65em; background:var(--bg-elevated); padding:4px 12px; border-radius:var(--r-pill); }
-.lyric-line.active .singer-badge{ box-shadow:0 0 8px rgba(255,255,255,.15); }
+.lyric-line.active .singer-badge,
+.lyric-line.active-overlap .singer-badge{ box-shadow:0 0 8px rgba(255,255,255,.15); }
 
 .reading-text{ --line-opacity:.55; opacity:.55; font-size:.85em; }
 
@@ -2192,6 +2203,8 @@ body:has(.player-bar:not(.hidden)) .update-banner{ bottom:78px; }
     border:1px solid rgba(255,255,255,.07); border-radius:10px;
     padding:6px 18px; color:#fff; font-weight:600; line-height:1.4; overflow:hidden;
 }
+/* ถ้ามีท่อนร้องคาบเกี่ยว โหมด Immersive ยังแสดงท่อนล่าสุด (.active) ตัวเดียว */
+.now-playing-view.immersive .lyric-line.active-overlap{ display:none !important; }
 /* separate colors for the two languages, same as normal mode */
 .now-playing-view.immersive .lyric-line.active .lyric-main{
     color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.7);
