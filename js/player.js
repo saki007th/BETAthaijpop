@@ -1033,16 +1033,25 @@ window.syncTimestampEditorUI = function() {
 //   ทำให้ไม่มีการคำนวณ Layout Reflow ระหว่างอนิเมชั่นเลย และแต่ละท่อนไหลตามกันเป็นคลื่นนุ่มๆ
 window._prevAnimatedLyricIdx = -1;
 
-function applyLyricDepthAttributes(container, activeIdx) {
+function applyLyricDepthAttributes(container, activeIdx, activeIndexes) {
     const lines = container.querySelectorAll('.lyric-line');
-    if (activeIdx < 0) {
+    const activeSet = Array.isArray(activeIndexes) && activeIndexes.length
+        ? new Set(activeIndexes)
+        : (activeIdx >= 0 ? new Set([activeIdx]) : null);
+
+    if (!activeSet || !activeSet.size) {
         lines.forEach(el => el.removeAttribute('data-dist'));
         return;
     }
+
     lines.forEach((el, i) => {
-        const d = Math.abs(i - activeIdx);
-        if (d === 0) el.removeAttribute('data-dist');
-        else if (d === 1) el.setAttribute('data-dist', '1');
+        if (activeSet.has(i)) {
+            el.removeAttribute('data-dist');
+            return;
+        }
+        let d = Infinity;
+        activeSet.forEach(ai => { const diff = Math.abs(i - ai); if (diff < d) d = diff; });
+        if (d === 1) el.setAttribute('data-dist', '1');
         else if (d === 2) el.setAttribute('data-dist', '2');
         else if (d <= 4) el.setAttribute('data-dist', '3');
         else el.setAttribute('data-dist', 'far');
@@ -1115,7 +1124,7 @@ window.updateLyricDisplay = function() {
     });
 
     if (window.applyLangToggles) window.applyLangToggles(true);
-    applyLyricDepthAttributes(container, immersive ? -1 : idx);
+    applyLyricDepthAttributes(container, immersive ? -1 : idx, immersive ? [] : activeIndexes);
     window.syncTimestampEditorUI();
 
     if (activeLine && !immersive) {
