@@ -4,7 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-build" content="20261105-4">
+    <meta name="app-build" content="20261109-1">
     <title>Ultimate JP Mix</title>
     <link rel="icon" type="image/png" href="electron/icon.png">
     <link rel="apple-touch-icon" href="electron/icon.png">
@@ -23,7 +23,7 @@
         // กั้นแถบนำทางไว้ตามสถานะที่บันทึกไว้ก่อน CSS วาดหน้าจอครั้งแรก
         // (ป้องกันแถบกะพริบกางเต็มสักครู่ตอนเปิดหน้าเว็บ)
         try {
-            if (localStorage.getItem('ws_sidebar_collapsed') === '1') {
+            if (localStorage.getItem('ws_sidebar_collapsed') !== '0') {
                 document.documentElement.classList.add('sidebar-collapsed');
             }
         } catch (e) {}
