@@ -132,17 +132,28 @@ window.closeAddModal = function() {
 const SIDEBAR_COLLAPSED_KEY = 'ws_sidebar_collapsed';
 
 window.isSidebarCollapsed = function() {
-    try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'; }
-    catch (e) { return false; }
+    try {
+        const val = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+        return val === null ? true : val === '1';
+    }
+    catch (e) { return true; }
 };
 
 window.applySidebarCollapsed = function() {
     const collapsed = window.isSidebarCollapsed();
     document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
 
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && ! sidebar._hoverBound) {
+        sidebar._hoverBound = true;
+        sidebar.addEventListener('mouseleave', () => {
+            sidebar.classList.remove('sidebar-just-collapsed');
+        });
+    }
+
     const btn = document.getElementById('sidebarToggle');
     if (btn) {
-        btn.title = collapsed ? 'กางแถบด้านข้าง' : 'พับแถบด้านข้าง';
+        btn.title = collapsed ? 'ปักหมุดกางแถบด้านข้างค้างไว้' : 'พับแถบด้านข้าง (Auto กางเมื่อเมาส์ชี้)';
         btn.setAttribute('aria-label', btn.title);
         btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     }
@@ -155,6 +166,14 @@ window.setSidebarCollapsed = function(collapsed) {
     collapsed = !!collapsed;
     try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0'); }
     catch (e) {}
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        if (collapsed && sidebar.matches(':hover')) {
+            sidebar.classList.add('sidebar-just-collapsed');
+        } else {
+            sidebar.classList.remove('sidebar-just-collapsed');
+        }
+    }
     window.applySidebarCollapsed();
     return collapsed;
 };
